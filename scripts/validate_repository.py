@@ -33,6 +33,7 @@ def main() -> int:
         list((ROOT / "hooks").glob("*.py"))
         + list((ROOT / "scripts").glob("*.py"))
         + list((SKILL / "scripts").glob("*.py"))
+        + list((ROOT / "examples").glob("**/*.py"))
     ):
         source = path.read_text(encoding="utf-8")
         compile(source, str(path), "exec")

@@ -14,7 +14,7 @@ A Source-first development workflow that carries one compact Feature Map XML thr
 - Git: change history
 - xquery-mcp: narrow XPath/XQuery reads, XML formatting, and XSD validation
 - Codex hooks: context gate, lifecycle timing, edit tracking, and completion gates
-- Jev: optional bounded judgment for prompt-time context sufficiency and completion-time durable-map updates
+- Decision Provider: optional bounded judgment for prompt-time context sufficiency and completion-time durable-map updates (Jev is currently implemented)
 - Operable Japanese: meaning-first rendering rules aligned with `natural-japanese` principles
 
 ## Design principle
@@ -66,6 +66,18 @@ Detailed phase policy lives in:
 
 Source/tests, CI evidence, runtime traces, and release artifacts remain canonical in their native form. Feature Map stores only durable knowledge that is costly or ambiguous to reconstruct.
 
+
+## Agents API and Programmatic Tool Calling
+
+OpenAI Agents API can be used as an optional runtime for Feature Map Workflow without making the workflow runtime-dependent. With multiple agents, reader subagents stay read-only and only the parent/Single Writer may mutate canonical repository state.
+
+Programmatic Tool Calling is suited to predictable XPath/XQuery/filter/aggregate stages that can reduce intermediate output before model reasoning. Keep writes, approvals, Git publication, and external side effects on direct tool-call boundaries.
+
+See:
+
+- `references/agents-api.md`
+- `references/programmatic-tool-calling.md`
+- `examples/agents-api/`
 
 ## Repository coordination extension
 
@@ -199,7 +211,19 @@ Do not generate diagrams mechanically from every class. Keep them only when they
 
 This distribution is ready to become the repository root. It includes `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, `.github/CODEOWNERS`, Issue/PR templates, Dependabot configuration, CI/release workflows, and `docs/github-repository-settings.md`. Review the owner-specific placeholders before publishing.
 
-## Optional Jev integration
+## Decision Provider (optional)
+
+Bounded semantic judgments sit behind a `DecisionProvider` boundary. The default is `off`; `jev` is the implemented external provider. The `openai` name is reserved for the OpenAI Decisions API and intentionally remains disconnected until a public stable contract is available.
+
+```sh
+FEATURE_MAP_DECISION_PROVIDER=off|jev|openai
+FEATURE_MAP_DECISION_CONTEXT_MODE=off|metadata|prompt
+FEATURE_MAP_DECISION_COMPLETION_MODE=off|metadata|summary|diff
+```
+
+Legacy `FEATURE_MAP_JEV_*` variables remain supported. See `references/decision-providers.md`.
+
+### Jev integration
 
 Jev is disabled by default and split into two independent call sites.
 

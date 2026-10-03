@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "feature-map-workflow",
   "version": "0.4.0",
-  "description": "Maintain one Source-first Feature Map XML across catch-up, clarification, design, implementation, and verification. Includes Mermaid UML diagrams rendered in HTML, Codex context-sufficiency hooks, natural operable Japanese guidance, optional Jev decisions, and xquery-mcp XPath/XQuery/XSD validation.",
+  "description": "Maintain one Source-first Feature Map XML across catch-up, clarification, design, implementation, and verification. Includes Mermaid UML diagrams rendered in HTML, Codex context-sufficiency hooks, natural operable Japanese guidance, provider-neutral bounded decisions, an Agents API PoC, and xquery-mcp XPath/XQuery/XSD validation.",
   "license": "MIT",
   "keywords": [
     "development",
@@ -23,7 +23,7 @@
       "interface": {
         "displayName": "Feature Map Workflow",
         "shortDescription": "Source-first map, Mermaid UML, context gate, XSD checks",
-        "longDescription": "Carry one compact Feature Map XML through system catch-up and feature development. Optional Mermaid diagrams keep cross-boundary structure, sequence, and state knowledge close to the source map and render automatically in the HTML view. A UserPromptSubmit context gate detects risky ambiguity before work starts and guides Codex to ask one precise, natural Japanese clarification only when missing context materially changes scope, authority, behavior, or acceptance. Lifecycle hooks load minimal context, track XML edits and XSD validation, and run completion gates. Optional Jev decisions handle bounded semantic judgments while xquery-mcp provides XPath/XQuery and schema validation. Source code and tests remain canonical.",
+        "longDescription": "Carry one compact Feature Map XML through system catch-up and feature development. Optional Mermaid diagrams keep cross-boundary structure, sequence, and state knowledge close to the source map and render automatically in the HTML view. A UserPromptSubmit context gate detects risky ambiguity before work starts and guides Codex to ask one precise, natural Japanese clarification only when missing context materially changes scope, authority, behavior, or acceptance. Lifecycle hooks load minimal context, track XML edits and XSD validation, and run completion gates. Optional Decision Providers handle bounded semantic judgments while xquery-mcp provides XPath/XQuery and schema validation; Agents API can be used as an optional execution runtime. Source code and tests remain canonical.",
         "developerName": "katatsukuri",
         "category": "Developer Tools",
         "capabilities": [

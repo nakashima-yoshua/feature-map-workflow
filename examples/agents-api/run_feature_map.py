@@ -19,6 +19,8 @@ def build_instructions(allow_write: bool) -> str:
     return (
         "Use the repository's skills/feature-map-workflow/SKILL.md as the workflow contract. "
         "Read only the reference files needed for the task. "
+        "For bounded XPath/XQuery/filter/aggregate stages, use Programmatic Tool Calling and reduce intermediate results before reasoning. "
+        "Do not use programmatic calls for repository writes, Git publication, approvals, or external side effects. "
         "Delegate independent source/test/data investigation to subagents when useful, but keep all subagents read-only. "
         + write_policy
         + " Keep source and tests canonical, keep Feature Map XML compact, and distinguish confirmed evidence from inference."
@@ -58,9 +60,31 @@ def main() -> int:
     if not (workspace / "skills" / "feature-map-workflow" / "SKILL.md").is_file():
         raise SystemExit(f"Feature Map Workflow skill not found under {workspace}")
 
+    tools = [
+        {"type": "programmatic_tool_calling"},
+        {
+            "type": "mcp",
+            "server_label": "xquery",
+            "transport": {
+                "type": "stdio",
+                "command": "dotnet",
+                "args": ["tool", "run", "xquery-mcp"],
+                "cwd": str(workspace),
+            },
+            "allowed_tools": [
+                "xpath_evaluate",
+                "xquery_evaluate",
+                "xquery_validate",
+                "xml_validate_schema",
+                "xml_format",
+            ],
+            "required": False,
+        },
+    ]
     agent = {
         "model": args.model,
         "instructions": build_instructions(args.allow_write),
+        "tools": tools,
         "multi_agent": {
             "enabled": True,
             "max_concurrent_subagents": max(1, args.readers),
