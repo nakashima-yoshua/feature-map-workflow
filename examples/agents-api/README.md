@@ -8,7 +8,7 @@ It defaults to read-only investigation. Use `--allow-write` only when the parent
 
 - current OpenAI Python SDK;
 - `OPENAI_API_KEY` with Agents API permissions;
-- a self-hosted Agents API environment capable of using the selected workspace;
+- a self-hosted Agents API environment capable of using the selected workspace, with `codex exec-server` connected as the executor;
 - this repository checked out as the workspace.
 
 Install/update the SDK:

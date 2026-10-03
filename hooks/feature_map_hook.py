@@ -332,6 +332,82 @@ def _float_env(name: str, default: float, legacy_name: str | None = None) -> flo
         return default
 
 
+def _context_gate_signals(prompt: str) -> list[dict[str, str]]:
+    signals: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for category, pattern in AMBIGUITY_PATTERNS:
+        for match in pattern.finditer(prompt):
+            key = (category, match.group(0))
+            if key in seen:
+                continue
+            seen.add(key)
+            signals.append({"category": category, "text": match.group(0)})
+            if len(signals) >= 12:
+                return signals
+    return signals
+
+
+def _context_gate_context(
+    prompt: str,
+    summary: dict[str, Any],
+    signals: list[dict[str, str]],
+    decision: dict[str, Any] | None,
+    decision_warning: str | None,
+) -> str:
+    lines = [
+        "Context sufficiency gate before affected edits/actions:",
+        "1) Reuse conversation, Feature Map, source/tests/config/logs before asking the user.",
+        "2) Ask exactly one question only if missing context materially changes outcome, scope/exclusion, authority, business behavior, acceptance, destructive/data action, or an external dependency.",
+        "3) Otherwise state the narrowest reversible assumption and proceed; do not broaden scope or authority.",
+        "4) If asking, state the current interpretation first and make the answer possible with はい or a short correction when practical.",
+        "5) Render user-facing text as natural professional Japanese: preserve identifiers and certainty, keep conditions near their actions, avoid undefined vague terms, and do not use choppy controlled-language fragments.",
+        "Priority: meaning preservation > operability > naturalness > brevity.",
+    ]
+    if summary.get("scope"):
+        lines.append(f"Feature Map scope: {summary['scope']}")
+    if summary.get("exclude"):
+        lines.append(f"Feature Map exclusion: {summary['exclude']}")
+
+    high = [x for x in summary.get("open", []) if x.get("impact") == "high"]
+    if high:
+        rendered = []
+        for x in high[:3]:
+            label = x.get("id") or "?"
+            if x.get("type"):
+                label += f"[{x['type']}]"
+            rendered.append(label + "=" + x.get("text", ""))
+        lines.append("High-impact durable Open items: " + "; ".join(rendered))
+
+    if signals:
+        compact = []
+        for item in signals[:8]:
+            compact.append(f"{item['category']}:{item['text']}")
+        lines.append(
+            "Local ambiguity signals (advisory only; inspect evidence before asking): " + ", ".join(compact)
+        )
+
+    if decision:
+        threshold = _float_env(
+            "FEATURE_MAP_DECISION_CONTEXT_THRESHOLD",
+            0.75,
+            "FEATURE_MAP_CONTEXT_QUESTION_THRESHOLD",
+        )
+        q = float(decision.get("question_required") or 0.0)
+        t = str(decision.get("missing_context_type") or "none")
+        provider_name = str(decision.get("provider") or "decision")
+        if q >= threshold:
+            lines.append(
+                f"{provider_name} advisory: clarification likely required (p={q:.2f}, category={t}). Verify against local evidence; if the gap remains material, ask one question before tools that depend on it."
+            )
+        else:
+            lines.append(
+                f"{provider_name} advisory: clarification probability={q:.2f}, category={t}. This is not permission to ignore a material gap found from local evidence."
+            )
+    if decision_warning:
+        lines.append(decision_warning + "; continue with the local gate (fail-open).")
+    return "\n".join(lines)
+
+
 def _block(state: dict[str, Any], session_id: str, reason: str) -> None:
     state["stop_block_count"] = int(state.get("stop_block_count", 0)) + 1
     _save_state(session_id, state)

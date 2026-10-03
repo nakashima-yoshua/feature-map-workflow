@@ -10,6 +10,7 @@ HOOKS = ROOT / "hooks"
 if str(HOOKS) not in sys.path:
     sys.path.insert(0, str(HOOKS))
 
+import feature_map_hook  # noqa: E402
 from decision_provider import (  # noqa: E402
     JevDecisionProvider,
     OffDecisionProvider,
@@ -21,6 +22,22 @@ from decision_provider import (  # noqa: E402
 
 
 class DecisionProviderSelectionTests(unittest.TestCase):
+    def test_hook_context_helpers_are_available(self) -> None:
+        signals = feature_map_hook._context_gate_signals("関連箇所を適宜変更")
+        self.assertTrue(signals)
+        rendered = feature_map_hook._context_gate_context(
+            "",
+            {},
+            signals,
+            {
+                "provider": "test",
+                "question_required": 0.90,
+                "missing_context_type": "scope",
+            },
+            None,
+        )
+        self.assertIn("test advisory: clarification likely required", rendered)
+
     def test_default_is_off(self) -> None:
         provider = get_decision_provider({})
         self.assertIsInstance(provider, OffDecisionProvider)
