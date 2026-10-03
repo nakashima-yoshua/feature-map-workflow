@@ -3,7 +3,7 @@
 ## xquery-mcp
 
 - Project: https://github.com/phoenixmldb/xquery-mcp
-- Package: xquery-mcp 1.4.0.3
+- Package: xquery-mcp 2.5.1
 - License: Apache-2.0
 
 The plugin does not vendor the xquery-mcp binary. The setup script restores the pinned .NET tool from NuGet.

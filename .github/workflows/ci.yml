@@ -24,3 +24,4 @@ jobs:
           dotnet-channel: LTS
       - run: dotnet tool restore
       - run: dotnet tool list --local
+      - run: python scripts/smoke_test_xquery_mcp.py

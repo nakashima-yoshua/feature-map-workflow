@@ -5,7 +5,7 @@ The plugin pins `xquery-mcp` as a local .NET tool so an MCP-capable host can use
 ## Pinned dependency
 
 - Package: `xquery-mcp`
-- Version: `1.4.0.3`
+- Version: `2.5.1`
 - Runtime: .NET 10
 - License: Apache-2.0
 - Upstream: https://github.com/phoenixmldb/xquery-mcp

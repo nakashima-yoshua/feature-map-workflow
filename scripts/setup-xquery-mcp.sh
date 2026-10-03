@@ -16,5 +16,5 @@ if [ "$MAJOR" -lt 10 ]; then
 fi
 
 dotnet tool restore --tool-manifest "$MANIFEST"
-printf '%s\n' "xquery-mcp 1.4.0.3 restored for this plugin."
+printf '%s\n' "xquery-mcp restored from the pinned local tool manifest."
 printf '%s\n' "The MCP server is launched by mcp.json with: dotnet tool run xquery-mcp"
