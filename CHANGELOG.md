@@ -4,6 +4,11 @@ All notable user-visible changes are documented here.
 
 ## Unreleased
 
+- Add a provider-neutral DecisionProvider boundary while preserving legacy Jev configuration.
+- Reserve an OpenAI Decisions API provider without guessing an unpublished API contract.
+- Add an OpenAI Agents API self-hosted PoC with multi-agent read delegation and a single canonical writer.
+- Add bounded Programmatic Tool Calling guidance for read/query/reduction stages and stdio xquery-mcp integration.
+- Define one-writer-per-worktree rules for concurrent agent work.
 - Add an optional repository-coordination architecture for multi-agent asynchronous writes, dependency scheduling, conflict control, Git publication, and rebuildable XML projections.
 - Define Knowledge, Coordination, and Projection planes without mixing runtime queue state into Feature Map XML.
 - Update the pinned xquery-mcp dependency to 2.5.1.

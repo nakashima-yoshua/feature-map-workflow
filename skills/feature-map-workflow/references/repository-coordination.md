@@ -145,6 +145,20 @@ A Single Writer substantially reduces filesystem, XML, and Git race conditions w
 
 Use a service-owned worktree. Do not let the coordination service modify a developer's dirty working tree.
 
+### Worktree policy
+
+Use one writable worktree for each active canonical writer/feature-change boundary.
+
+- create the worktree from a known published base commit or branch;
+- give only the designated writer mutation authority in that worktree;
+- reader agents may inspect the same snapshot or their own read-only worktrees;
+- never run two canonical writers against the same writable worktree;
+- before committing, re-read the branch/worktree state and recheck conflicts;
+- after an external update makes the base stale, refresh or recreate the worktree rather than force-writing over it;
+- published history is corrected with a new commit, not amend/rebase/force-push.
+
+Worktrees isolate filesystem and branch state; they do not replace dependency, conflict, idempotency, or authorization checks.
+
 ## Idempotency
 
 Clients and agents retry after timeouts. Every externally submitted command must have a stable operation identifier or idempotency key.

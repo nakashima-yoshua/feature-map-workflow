@@ -19,6 +19,7 @@ jobs:
       - run: python -m pip install --disable-pip-version-check lxml
       - run: python scripts/validate_repository.py
       - run: python scripts/test_xquery_result.py
+      - run: python scripts/test_decision_provider.py
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: latest

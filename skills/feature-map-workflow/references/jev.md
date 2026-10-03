@@ -1,4 +1,7 @@
-# Jev Integration
+# Jev Decision Provider
+
+Jev is the currently implemented external provider behind the generic DecisionProvider boundary. See `decision-providers.md` for provider selection and generic environment variables.
+
 
 ## Role
 

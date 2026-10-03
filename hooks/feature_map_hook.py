@@ -7,11 +7,11 @@ import os
 import re
 import subprocess
 import sys
-import urllib.error
-import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
+
+from decision_provider import completion_mode, context_mode, get_decision_provider
 
 PLUGIN_ROOT = Path(os.environ.get("PLUGIN_ROOT", Path(__file__).resolve().parents[1])).resolve()
 PLUGIN_DATA = Path(os.environ.get("PLUGIN_DATA", PLUGIN_ROOT / ".plugin-data")).resolve()
@@ -322,21 +322,14 @@ def _compact_tool_response(value: Any) -> str:
         return str(value)
 
 
-def _jev_mode() -> str:
-    mode = os.environ.get("FEATURE_MAP_JEV_MODE", "off").strip().lower()
-    return mode if mode in {"off", "metadata", "summary", "diff"} else "off"
-
-
-def _float_env(name: str, default: float) -> float:
+def _float_env(name: str, default: float, legacy_name: str | None = None) -> float:
+    raw = os.environ.get(name)
+    if raw is None and legacy_name:
+        raw = os.environ.get(legacy_name)
     try:
-        return float(os.environ.get(name, str(default)))
+        return float(raw if raw is not None else str(default))
     except Exception:
         return default
-
-
-def _context_jev_mode() -> str:
-    mode = os.environ.get("FEATURE_MAP_CONTEXT_JEV_MODE", "off").strip().lower()
-    return mode if mode in {"off", "metadata", "prompt"} else "off"
 
 
 def _context_gate_signals(prompt: str) -> list[dict[str, str]]:
@@ -354,102 +347,12 @@ def _context_gate_signals(prompt: str) -> list[dict[str, str]]:
     return signals
 
 
-def _jev_context_decide(
-    mode: str,
-    summary: dict[str, Any],
-    prompt: str,
-    signals: list[dict[str, str]],
-) -> tuple[dict[str, Any] | None, str | None]:
-    api_key = os.environ.get("TYPESAFE_API_KEY", "").strip()
-    if not api_key:
-        return None, "FEATURE_MAP_CONTEXT_JEV_MODE is enabled but TYPESAFE_API_KEY is not set"
-
-    state: dict[str, Any] = {
-        "feature": {
-            "name": summary.get("feature", ""),
-            "state": summary.get("state", ""),
-            "purpose": summary.get("purpose", "")[:600],
-            "scope_present": bool(summary.get("scope")),
-            "exclude_present": bool(summary.get("exclude")),
-            "high_impact_open_count": sum(1 for x in summary.get("open", []) if x.get("impact") == "high"),
-        },
-        "prompt_length": len(prompt),
-        "local_signal_categories": sorted({x.get("category", "") for x in signals if x.get("category")}),
-    }
-    if mode == "prompt":
-        state["prompt"] = prompt[:3000]
-
-    questions = {
-        "context_sufficient": {
-            "type": "noul",
-            "instructions": (
-                "Is the request likely specific enough to proceed without asking the user, assuming the coding model "
-                "will first inspect cheap local evidence such as source, tests, config, and the Feature Map? High means sufficient."
-            ),
-        },
-        "question_required": {
-            "type": "noul",
-            "instructions": (
-                "Is one user clarification likely required before affected edits because missing context can materially change "
-                "scope, authority, externally visible behavior, acceptance, destructive/data action, or an external dependency?"
-            ),
-        },
-        "missing_context_type": {
-            "type": "choice",
-            "instructions": "Which single missing-context category is most material, if any?",
-            "criteria": {
-                "scope": "Target boundary or explicit exclusion is unclear.",
-                "authority": "Execution permission or an irreversible/external action is unclear.",
-                "business_rule": "Correct behavior depends on an unstated domain rule.",
-                "expected_behavior": "More than one externally visible result is plausible.",
-                "acceptance": "Completion cannot be tested without a success condition.",
-                "external_dependency": "Another service, party, contract, or system materially changes the action.",
-                "data": "Data semantics, migration, deletion, or correction behavior is unclear.",
-                "environment": "Target environment or deployment boundary is unclear.",
-                "none": "No material clarification is likely required.",
-            },
-        },
-    }
-    payload = {
-        "model": os.environ.get("FEATURE_MAP_JEV_MODEL", "jev-latest").strip() or "jev-latest",
-        "state": state,
-        "questions": questions,
-    }
-    req = urllib.request.Request(
-        "https://api.typesafe.ai/v1/systemone",
-        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=8.0) as resp:
-            body = resp.read().decode("utf-8", errors="replace")
-        data = json.loads(body)
-        answers = data.get("answers", {}) if isinstance(data, dict) else {}
-        result = {
-            "model": data.get("model") if isinstance(data, dict) else None,
-            "context_sufficient": float((answers.get("context_sufficient") or {}).get("noul", 0.0)),
-            "question_required": float((answers.get("question_required") or {}).get("noul", 0.0)),
-            "missing_context_type": (answers.get("missing_context_type") or {}).get("choice", "none"),
-            "missing_context_confidence": float((answers.get("missing_context_type") or {}).get("confidence", 0.0)),
-        }
-        return result, None
-    except urllib.error.HTTPError as exc:
-        try:
-            detail = exc.read().decode("utf-8", errors="replace")[:500]
-        except Exception:
-            detail = ""
-        return None, f"Context Jev HTTP {exc.code}: {detail or exc.reason}"
-    except Exception as exc:
-        return None, f"Context Jev unavailable: {exc}"
-
-
 def _context_gate_context(
     prompt: str,
     summary: dict[str, Any],
     signals: list[dict[str, str]],
-    jev: dict[str, Any] | None,
-    jev_warning: str | None,
+    decision: dict[str, Any] | None,
+    decision_warning: str | None,
 ) -> str:
     lines = [
         "Context sufficiency gate before affected edits/actions:",
@@ -483,114 +386,26 @@ def _context_gate_context(
             "Local ambiguity signals (advisory only; inspect evidence before asking): " + ", ".join(compact)
         )
 
-    if jev:
-        threshold = _float_env("FEATURE_MAP_CONTEXT_QUESTION_THRESHOLD", 0.75)
-        q = float(jev.get("question_required") or 0.0)
-        t = str(jev.get("missing_context_type") or "none")
+    if decision:
+        threshold = _float_env(
+            "FEATURE_MAP_DECISION_CONTEXT_THRESHOLD",
+            0.75,
+            "FEATURE_MAP_CONTEXT_QUESTION_THRESHOLD",
+        )
+        q = float(decision.get("question_required") or 0.0)
+        t = str(decision.get("missing_context_type") or "none")
+        provider_name = str(decision.get("provider") or "decision")
         if q >= threshold:
             lines.append(
-                f"Jev advisory: clarification likely required (p={q:.2f}, category={t}). Verify against local evidence; if the gap remains material, ask one question before tools that depend on it."
+                f"{provider_name} advisory: clarification likely required (p={q:.2f}, category={t}). Verify against local evidence; if the gap remains material, ask one question before tools that depend on it."
             )
         else:
             lines.append(
-                f"Jev advisory: clarification probability={q:.2f}, category={t}. This is not permission to ignore a material gap found from local evidence."
+                f"{provider_name} advisory: clarification probability={q:.2f}, category={t}. This is not permission to ignore a material gap found from local evidence."
             )
-    if jev_warning:
-        lines.append(jev_warning + "; continue with the local gate (fail-open).")
+    if decision_warning:
+        lines.append(decision_warning + "; continue with the local gate (fail-open).")
     return "\n".join(lines)
-
-
-def _jev_decide(
-    mode: str,
-    root: Path,
-    summary: dict[str, Any],
-    changed_files: list[str],
-    last_assistant_message: str,
-) -> tuple[dict[str, Any] | None, str | None]:
-    api_key = os.environ.get("TYPESAFE_API_KEY", "").strip()
-    if not api_key:
-        return None, "FEATURE_MAP_JEV_MODE is enabled but TYPESAFE_API_KEY is not set"
-
-    state: dict[str, Any] = {
-        "feature": {
-            "name": summary.get("feature", ""),
-            "mode": summary.get("mode", ""),
-            "state": summary.get("state", ""),
-            "purpose": summary.get("purpose", "")[:800],
-            "high_impact_open_count": sum(1 for x in summary.get("open", []) if x.get("impact") == "high"),
-            "verification_statuses": [x.get("status", "") for x in summary.get("verify", [])][:20],
-        },
-        "changed_files": changed_files[:40],
-        "diff_stat": _git_diff_stat(root),
-    }
-    if mode in {"summary", "diff"}:
-        state["assistant_summary"] = (last_assistant_message or "")[-3000:]
-    if mode == "diff":
-        state["git_diff"] = _git_diff_text(root)
-
-    questions = {
-        "update_required": {
-            "type": "noul",
-            "instructions": (
-                "Did this turn likely change durable feature knowledge that belongs in the Feature Map? "
-                "Count externally meaningful behavior, business rules, invariants, non-obvious design decisions, "
-                "verification evidence, source navigation changes, or unresolved blockers. Pure internal refactoring "
-                "with unchanged durable knowledge should be false."
-            ),
-        },
-        "update_section": {
-            "type": "choice",
-            "instructions": "Which single Feature Map section best matches the most important durable delta?",
-            "criteria": {
-                "source_map": "Entry points, symbols, data objects, APIs, procedures, or tests changed materially.",
-                "rule": "A business behavior or rule changed or was newly learned.",
-                "invariant": "A property that must remain true was added, changed, or clarified.",
-                "decision": "A non-obvious design decision and its reason should be retained.",
-                "verify": "Verification cases, observed behavior, or evidence changed materially.",
-                "open": "An unresolved question or blocker should be recorded or changed.",
-                "none": "No durable Feature Map update is needed.",
-            },
-        },
-        "human_review_required": {
-            "type": "noul",
-            "instructions": (
-                "Does the current turn likely leave a high-impact ambiguity, acceptance risk, or decision that should "
-                "be surfaced to a human before treating the feature as verified or closed?"
-            ),
-        },
-    }
-    payload = {
-        "model": os.environ.get("FEATURE_MAP_JEV_MODEL", "jev-latest").strip() or "jev-latest",
-        "state": state,
-        "questions": questions,
-    }
-    req = urllib.request.Request(
-        "https://api.typesafe.ai/v1/systemone",
-        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=8.0) as resp:
-            body = resp.read().decode("utf-8", errors="replace")
-        data = json.loads(body)
-        answers = data.get("answers", {}) if isinstance(data, dict) else {}
-        result = {
-            "model": data.get("model") if isinstance(data, dict) else None,
-            "update_required": float((answers.get("update_required") or {}).get("noul", 0.0)),
-            "update_section": (answers.get("update_section") or {}).get("choice", "none"),
-            "update_section_confidence": float((answers.get("update_section") or {}).get("confidence", 0.0)),
-            "human_review_required": float((answers.get("human_review_required") or {}).get("noul", 0.0)),
-        }
-        return result, None
-    except urllib.error.HTTPError as exc:
-        try:
-            detail = exc.read().decode("utf-8", errors="replace")[:500]
-        except Exception:
-            detail = ""
-        return None, f"Jev HTTP {exc.code}: {detail or exc.reason}"
-    except Exception as exc:
-        return None, f"Jev unavailable: {exc}"
 
 
 def _block(state: dict[str, Any], session_id: str, reason: str) -> None:
@@ -612,20 +427,21 @@ def _handle_user_prompt(event: dict[str, Any]) -> None:
         if not error and parsed:
             summary = parsed
 
-    jev: dict[str, Any] | None = None
-    jev_warning: str | None = None
-    mode = _context_jev_mode()
+    decision: dict[str, Any] | None = None
+    decision_warning: str | None = None
+    provider = get_decision_provider()
+    mode = context_mode(provider.name)
     high_open = [x for x in summary.get("open", []) if x.get("impact") == "high"]
     if mode != "off" and (signals or high_open):
-        jev, jev_warning = _jev_context_decide(mode, summary, prompt, signals)
+        decision, decision_warning = provider.context_decide(mode, summary, prompt, signals)
 
     state = _load_state(session_id)
     state["last_context_signals"] = signals
-    if jev:
-        state["last_context_jev"] = jev
+    if decision:
+        state["last_context_decision"] = decision
     _save_state(session_id, state)
 
-    context = _context_gate_context(prompt, summary, signals, jev, jev_warning)
+    context = _context_gate_context(prompt, summary, signals, decision, decision_warning)
     _emit({
         "hookSpecificOutput": {
             "hookEventName": "UserPromptSubmit",
@@ -649,9 +465,9 @@ def _handle_session_start(event: dict[str, Any]) -> None:
         "edit_count": 0,
         "stop_block_count": 0,
         "changed_files": _git_changed_files(root) if (root / ".git").exists() else [],
-        "jev_warning_emitted": False,
+        "decision_warning_emitted": False,
         "last_context_signals": [],
-        "last_context_jev": None,
+        "last_context_decision": None,
     }
 
     if feature_map:
@@ -782,26 +598,28 @@ def _handle_stop(event: dict[str, Any]) -> None:
     changed_files = _git_changed_files(root) if (root / ".git").exists() else list(state.get("changed_files") or [])
     code_changed = any(_looks_like_code_or_test(p, feature_map, root) for p in changed_files)
 
-    mode = _jev_mode()
-    jev_warning: str | None = None
-    jev: dict[str, Any] | None = None
+    provider = get_decision_provider()
+    mode = completion_mode(provider.name)
+    decision_warning: str | None = None
+    decision: dict[str, Any] | None = None
     if mode != "off" and code_changed and not map_changed:
-        jev, jev_warning = _jev_decide(
+        decision, decision_warning = provider.completion_decide(
             mode=mode,
-            root=root,
             summary=summary,
             changed_files=changed_files,
             last_assistant_message=str(event.get("last_assistant_message") or ""),
+            diff_stat=_git_diff_stat(root),
+            git_diff=_git_diff_text(root) if mode == "diff" else "",
         )
-        if jev:
-            state["last_jev"] = jev
+        if decision:
+            state["last_decision"] = decision
             _save_state(session_id, state)
-            update_threshold = _float_env("FEATURE_MAP_JEV_UPDATE_THRESHOLD", 0.70)
-            if jev.get("update_required", 0.0) >= update_threshold:
-                section = str(jev.get("update_section") or "unknown")
-                prob = float(jev.get("update_required") or 0.0)
+            update_threshold = _float_env("FEATURE_MAP_DECISION_UPDATE_THRESHOLD", 0.70, "FEATURE_MAP_JEV_UPDATE_THRESHOLD")
+            if decision.get("update_required", 0.0) >= update_threshold:
+                section = str(decision.get("update_section") or "unknown")
+                prob = float(decision.get("update_required") or 0.0)
                 reason = (
-                    f"Jev suggests a durable Feature Map update is likely (p={prob:.2f}, section={section}). "
+                    f"{decision.get('provider', 'decision')} suggests a durable Feature Map update is likely (p={prob:.2f}, section={section}). "
                     "Inspect the actual source/test change, patch only the durable delta, then validate the XML with xquery-mcp."
                 )
                 if int(state.get("stop_block_count", 0)) < max_blocks:
@@ -809,15 +627,15 @@ def _handle_stop(event: dict[str, Any]) -> None:
                     return
 
     messages: list[str] = []
-    if jev_warning and not state.get("jev_warning_emitted"):
-        state["jev_warning_emitted"] = True
+    if decision_warning and not state.get("decision_warning_emitted"):
+        state["decision_warning_emitted"] = True
         _save_state(session_id, state)
-        messages.append(jev_warning + "; continuing fail-open")
-    if jev:
-        review_threshold = _float_env("FEATURE_MAP_JEV_REVIEW_THRESHOLD", 0.85)
-        if jev.get("human_review_required", 0.0) >= review_threshold:
+        messages.append(decision_warning + "; continuing fail-open")
+    if decision:
+        review_threshold = _float_env("FEATURE_MAP_DECISION_REVIEW_THRESHOLD", 0.85, "FEATURE_MAP_JEV_REVIEW_THRESHOLD")
+        if decision.get("human_review_required", 0.0) >= review_threshold:
             messages.append(
-                f"Jev flags possible human review need (p={jev['human_review_required']:.2f}); surface the ambiguity or acceptance risk explicitly."
+                f"{decision.get('provider', 'decision')} flags possible human review need (p={decision['human_review_required']:.2f}); surface the ambiguity or acceptance risk explicitly."
             )
 
     payload: dict[str, Any] = {"continue": True}

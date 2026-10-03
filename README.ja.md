@@ -14,7 +14,7 @@ Feature Map Workflow は、**ソースコードを正本にしたまま、1枚�
 - Git: 変更履歴
 - xquery-mcp: XPath/XQueryによる部分参照、XML整形、XSD検証
 - Codex Hooks: コンテキスト不足の確認、ライフサイクル制御、編集追跡、完了ゲート
-- Jev: コンテキスト充足度やFeature Map更新要否を扱う任意の閉じた判断層
+- Decision Provider: コンテキスト充足度やFeature Map更新要否を扱う任意の閉じた判断層（現在の実装はJev）
 - Operable Japanese: `natural-japanese` の考え方を取り入れた、意味を保ったまま操作可能で自然な日本語
 
 ## 設計方針
@@ -66,6 +66,16 @@ Context Sufficiency
 
 ソース、テスト、CI証跡、Runtime Trace、Release Artifactは、それぞれの場所を正本とします。Feature Mapには、コード等から安価に再構築できない永続的な知識だけを残します。
 
+
+## Agents API / Programmatic Tool Calling
+
+OpenAI Agents APIは、Feature Map Workflowの任意実行基盤として利用できます。ワークフロー自体はAgents APIへ依存させず、複数Agentを使う場合もReaderはread-only、正本への変更はParent/Single Writerだけに限定します。
+
+Agents APIでは、XPath/XQueryなどの予測可能な読み取り・絞り込み・集計にProgrammatic Tool Callingを利用できます。書き込み、承認、Git公開、外部副作用はdirect tool callの境界に残します。
+
+- `references/agents-api.md`
+- `references/programmatic-tool-calling.md`
+- `examples/agents-api/`
 
 ## Repository Coordination拡張
 
@@ -211,7 +221,19 @@ Mermaid 12はモダンブラウザ向けです。描画結果の変化を抑え�
 
 GitHub側で設定する推奨値は `docs/github-repository-settings.md` にまとめています。
 
-## Jev連携（任意）
+## Decision Provider（任意）
+
+閉じた判断は `DecisionProvider` 境界の後ろに置きます。既定は `off`、現在の実装済み外部providerは `jev` です。`openai` はOpenAI Decisions API向け予約名ですが、公開された安定API契約が確認できるまで接続しません。
+
+```sh
+FEATURE_MAP_DECISION_PROVIDER=off|jev|openai
+FEATURE_MAP_DECISION_CONTEXT_MODE=off|metadata|prompt
+FEATURE_MAP_DECISION_COMPLETION_MODE=off|metadata|summary|diff
+```
+
+既存の `FEATURE_MAP_JEV_*` は後方互換のため引き続き利用できます。詳細は `references/decision-providers.md` を参照してください。
+
+### Jev連携
 
 Jevは既定では無効です。用途を2つに分けています。
 
