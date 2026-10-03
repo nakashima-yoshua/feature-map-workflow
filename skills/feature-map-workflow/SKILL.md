@@ -170,6 +170,14 @@ Prefer:
 - `xquery_evaluate`: compact projections or consistency checks that XPath alone cannot express cleanly.
 - `xquery_validate`: validate a reusable/complex XQuery before execution.
 
+For xquery-mcp 2.5.1 execution tools (`xpath_evaluate`, `xquery_evaluate`, `xquery_validate`), treat the returned text as an encoded `QueryResult` JSON envelope, not as the business value itself:
+
+- `ok=true` with `value`: use only `value`.
+- `ok=true` with `count=0` and no `value`: treat as a valid empty sequence, not an error.
+- `ok=false`: inspect `errors[].code/message/line/column/sourceSnippet/specUrl`; use `xquery_suggest_fix` or `xquery_explain_error` when it reduces guesswork.
+- Use `scripts/xquery_result.py` when deterministic normalization is needed.
+- Keep `xml_validate_schema` on its existing plain-text contract; the Codex validation hook intentionally depends on that exact success path.
+
 Do not use XQuery to generate prose. Use it to reduce context and target exact nodes.
 
 ## Output contract
