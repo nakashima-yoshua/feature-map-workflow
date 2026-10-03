@@ -2,7 +2,7 @@
 
 # Feature Map Workflow Plugin
 
-Feature Map Workflow は、**ソースコードを正本にしたまま、1枚のFeature Map XMLを開発中ずっと持ち回る**ための開発ワークフローです。初見システムのキャッチアップ、要件確認、設計、実装、検証まで、必要な情報だけをXMLに残します。
+Feature Map Workflow は、**ソースコードを正本にしたまま、1枚のFeature Map XMLを開発中ずっと持ち回る**ための開発ワークフローです。初見システムのキャッチアップから、要件定義、設計、テスト、実装、CI/CD、検証、As-Built文書、納品まで、後から再利用する価値がある情報だけをXMLに残します。
 
 ## 構成
 
@@ -37,6 +37,34 @@ Feature Map Workflow は、**ソースコードを正本にしたまま、1枚�
 ```
 
 内部の意味契約では、必要に応じて `goal / actor / action / target / condition / scope / exclude / authority / doneWhen / certainty` を整理します。ただし、これを第2の仕様書として保存しません。Feature Map XMLに残すのは、後から再利用する価値がある永続的な知識だけです。
+
+## 開発ライフサイクル全体での利用
+
+Feature Mapを第2の仕様書にせず、開発工程を横断する索引として利用します。
+
+```text
+Context Sufficiency
+  -> 要件定義
+  -> 基本設計
+  -> 業務シナリオ / E2E設計
+  -> テスト境界設計
+  -> 詳細設計
+  -> 条件・状態・境界テスト
+  -> 不足分だけUnit Test
+  -> 実装 + CI
+  -> Release Package / CD
+  -> As-Built表示
+  -> 納品・検収
+```
+
+工程ごとの詳細は次のReferenceに分離しています。
+
+- `references/development-lifecycle.md`: 各工程の入力、作業、Feature Mapへ残す差分、Hard/Semantic Gate、HALT条件、出力
+- `references/test-strategy.md`: E2E / Integration / DB / Unitの配置とテスト境界
+- `references/coverage-model.md`: 要件、シナリオ、ルール、状態・境界、副作用、動的経路のカバレッジ
+- `references/legacy-analysis.md`: 静的解析だけでは見えないDB・設定・実行時経路を含むレガシー解析
+
+ソース、テスト、CI証跡、Runtime Trace、Release Artifactは、それぞれの場所を正本とします。Feature Mapには、コード等から安価に再構築できない永続的な知識だけを残します。
 
 ## 初回セットアップ
 
