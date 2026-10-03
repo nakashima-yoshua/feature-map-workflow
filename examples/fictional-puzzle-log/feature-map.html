@@ -1,0 +1,186 @@
+<html>
+  <head>
+    <META http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>パズルの登録と完成記録 - Feature Map</title>
+    <style>
+          body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;max-width:1180px;margin:2rem auto;padding:0 1rem;line-height:1.55;color:#202124;background:#fff}
+          header{border-bottom:2px solid #ddd;margin-bottom:1.5rem} h1{margin-bottom:.25rem} h2{margin-top:1.8rem;border-bottom:1px solid #ddd;padding-bottom:.25rem}
+          h3{margin:.15rem 0 .75rem;font-size:1rem}.meta,.tag{color:#555}.tag{display:inline-block;border:1px solid #ccc;border-radius:999px;padding:.1rem .5rem;margin-right:.35rem;font-size:.85rem}
+          table{border-collapse:collapse;width:100%;margin:.5rem 0} th,td{border:1px solid #ddd;padding:.45rem;text-align:left;vertical-align:top} th{background:#f5f5f5}
+          code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.open-high{font-weight:700}
+          .diagram-card{border:1px solid #ddd;border-radius:.6rem;padding:1rem;margin:1rem 0;overflow:auto}.diagram-meta{color:#666;font-size:.85rem;margin-bottom:.5rem}
+          .mermaid{text-align:center;min-width:320px}.mermaid-error{color:#a00;white-space:pre-wrap;text-align:left}.mermaid-status{font-size:.85rem;color:#666}
+        </style>
+  </head>
+  <body><header><h1>パズルの登録と完成記録</h1>
+      <p class="meta">架空のパズル記録帳「星の小箱」 · <span class="tag">change</span><span class="tag">draft</span></p></header><h2>Goal</h2>
+    <p><strong>Purpose:</strong>架空の利用者がパズルを記録し、未完成と完成済みを区別できるようにする。</p>
+    <p><strong>Done:</strong>登録、重複拒否、完成への変更、完成済みへの再操作について、期待する動作を実装とテストで確認する。</p>
+    <p><strong>Scope:</strong>パズルIDと名前の登録、一覧表示、完成への変更。名前は1〜40文字とする。</p>
+    <p><strong>Exclude:</strong>アカウント、購入、決済、外部通信、他の利用者との共有、記録の削除。</p>
+    <h2>Use Cases</h2>
+    <p><strong>UC-REGISTER:</strong>利用者が未登録のパズルを追加する。<br><span class="meta">Sample: PZ-001 / 月の迷路。どちらも架空の値。</span></p>
+    <p><strong>UC-COMPLETE:</strong>利用者が登録済みのパズルを完成済みにする。<br><span class="meta">Sample: PZ-001を未完成から完成済みへ変更する。</span></p>
+    <h2>Source Map</h2>
+    <table>
+      <tr>
+        <th>Kind</th>
+        <th>Target</th>
+        <th>Access</th>
+      </tr>
+      <tr>
+        <td>screen</td>
+        <td><code>fictional:screen/PuzzleList (仮想の画面)</code></td>
+        <td>read-write</td>
+      </tr>
+      <tr>
+        <td>symbol</td>
+        <td><code>fictional:PuzzleLog.Register (仮想の登録処理)</code></td>
+        <td>call</td>
+      </tr>
+      <tr>
+        <td>symbol</td>
+        <td><code>fictional:PuzzleLog.Complete (仮想の完成処理)</code></td>
+        <td>call</td>
+      </tr>
+      <tr>
+        <td>test</td>
+        <td><code>fictional:tests/PuzzleLogTests (未作成のテスト)</code></td>
+        <td>execute</td>
+      </tr>
+    </table>
+    <h2>Diagrams</h2>
+    <p id="mermaid-status" class="mermaid-status">Mermaidを読み込み中です。描画できない場合も、図のソースはそのまま表示されます。</p><section class="diagram-card"><h3>登録時の条件分岐</h3>
+      <div class="diagram-meta">flowchart · DG-REGISTER</div>
+      <pre class="mermaid">
+flowchart TD
+    A[IDと名前を入力] --&gt; B{名前は1〜40文字か}
+    B --&gt;|いいえ| C[入力エラーを表示]
+    B --&gt;|はい| D{IDは登録済みか}
+    D --&gt;|はい| E[重複エラーを表示]
+    D --&gt;|いいえ| F[未完成として登録]
+    F --&gt; G[一覧を表示]
+    </pre></section><section class="diagram-card"><h3>完成操作の正常系と再操作</h3>
+      <div class="diagram-meta">sequence · DG-COMPLETE</div>
+      <pre class="mermaid">
+sequenceDiagram
+    actor U as 利用者
+    participant V as 一覧画面
+    participant L as パズル記録
+    U-&gt;&gt;V: 完成を選択
+    V-&gt;&gt;L: Complete(PZ-001)
+    alt 未完成
+        L-&gt;&gt;L: 完成済みへ変更
+        L--&gt;&gt;V: 完成済み
+    else 既に完成済み
+        L--&gt;&gt;V: 完成済みを維持
+    end
+    V--&gt;&gt;U: 完成済みを表示
+    </pre></section><section class="diagram-card"><h3>パズル記録の状態</h3>
+      <div class="diagram-meta">state · DG-STATE</div>
+      <pre class="mermaid">
+stateDiagram-v2
+    state "未完成" as Pending
+    state "完成済み" as Completed
+    [*] --&gt; Pending: 登録
+    Pending --&gt; Completed: 完成操作
+    Completed --&gt; Completed: 完成操作を再実行
+    </pre></section><h2>Knowledge</h2>
+    <ul>
+      <li><strong>ruleRULE-NAME:</strong>名前は1〜40文字とする。この仮想例では前後の空白を除去した後のUnicodeコードポイント数で数える。</li>
+      <li><strong>ruleRULE-ID:</strong>IDが重複する登録は拒否し、既存の名前と状態を変更しない。</li>
+      <li><strong>invariantINV-COUNT:</strong>完成操作によって記録件数は変わらない。</li>
+      <li><strong>invariantINV-STATE:</strong>登録済みの記録の状態は未完成または完成済みのいずれかとする。</li>
+      <li><strong>decisionDEC-REPEAT:</strong>完成済みに対する完成操作は成功として扱い、状態を維持する。<span class="meta">(reason: 二度クリックしても利用者が同じ結果を確認できるようにするため。)</span></li>
+      <li><strong>constraintCON-FICTION:</strong>全内容は説明用に創作したものであり、sourceMapは実装の存在やテスト成功を示さない。</li>
+    </ul>
+    <h2>Verify</h2>
+    <table>
+      <tr>
+        <th>ID</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Condition</th>
+        <th>Expect / Observe</th>
+      </tr>
+      <tr>
+        <td>TEST-REGISTER</td>
+        <td>normal</td>
+        <td>planned</td>
+        <td>未登録のPZ-001と名前「月の迷路」を登録する。</td>
+        <td>未完成の記録が1件増える。</td>
+      </tr>
+      <tr>
+        <td>TEST-NAME</td>
+        <td>boundary</td>
+        <td>planned</td>
+        <td>未登録IDで、空白除去後の名前が0、1、40、41文字の各入力を試す。</td>
+        <td>1文字と40文字だけを受け付け、0文字と41文字では記録を追加しない。</td>
+      </tr>
+      <tr>
+        <td>TEST-DUPLICATE</td>
+        <td>duplicate</td>
+        <td>planned</td>
+        <td>PZ-001を登録した後、同じIDで別の名前を登録する。</td>
+        <td>重複エラーとなり、元の名前、状態、件数を維持する。</td>
+      </tr>
+      <tr>
+        <td>TEST-COMPLETE</td>
+        <td>state</td>
+        <td>planned</td>
+        <td>未完成のPZ-001に完成操作を行う。</td>
+        <td>PZ-001だけが完成済みとなり、件数は変わらない。</td>
+      </tr>
+      <tr>
+        <td>TEST-REPEAT</td>
+        <td>retry</td>
+        <td>planned</td>
+        <td>完成済みのPZ-001に完成操作を再実行する。</td>
+        <td>成功として応答し、名前、状態、件数を維持する。</td>
+      </tr>
+    </table>
+    <h2>Open</h2>
+    <ul>
+      <li><strong>OPEN-STORAGE [medium / environment]:</strong>記録の保存方式は未定。現在の例示では保存方式を前提にしない。<span class="meta">→ この仮想システムを実装する場合に保存方式と再起動後の保持要否を決める。</span></li>
+      <li><strong>OPEN-MISSING [medium / expected-behavior]:</strong>未登録IDに対する完成操作の応答は未定。<span class="meta">→ 実装前に未登録IDへの完成操作の応答を決め、エラーケースを追加する。</span></li>
+    </ul><script>
+(function () {
+  const LOCAL = 'feature-map.mermaid.min.js';
+  const CDN = 'https://cdn.jsdelivr.net/npm/mermaid@12.0.0/dist/mermaid.min.js';
+  const status = document.getElementById('mermaid-status');
+
+  function showError(message) {
+    if (status) status.textContent = message;
+    document.querySelectorAll('.mermaid').forEach(function (node) {
+      node.classList.add('mermaid-error');
+    });
+  }
+
+  async function render() {
+    try {
+      window.mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', layout: 'dagre', theme: 'default', look: 'classic' });
+      await window.mermaid.run({ querySelector: '.mermaid' });
+      if (status) status.textContent = 'Mermaid 12.0.0 で描画しました。';
+    } catch (error) {
+      showError('Mermaidの描画に失敗しました。図のソースを確認してください: ' + String(error));
+    }
+  }
+
+  function load(src, fallback) {
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = render;
+    script.onerror = function () {
+      if (fallback) load(fallback, null);
+      else showError('Mermaidを読み込めませんでした。feature-map.mermaid.min.js を配置するか、ネットワーク接続を確認してください。');
+    };
+    document.head.appendChild(script);
+  }
+
+  if (window.mermaid) render();
+  else load(LOCAL, CDN);
+})();
+          </script></body>
+</html>
