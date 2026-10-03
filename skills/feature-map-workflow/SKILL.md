@@ -19,7 +19,7 @@ Use one Feature Map XML per feature as the durable human/AI index. Treat source 
 - Keep user-facing responses delta-oriented. Do not echo the full Feature Map unless asked.
 - Preserve user intent before optimizing wording. Use this priority: `meaning preservation > operability > naturalness > brevity`.
 
-Read `references/feature-map-contract.md` when creating or restructuring a map. Read `references/development-lifecycle.md` when planning work across requirements, design, tests, implementation, CI/CD, documentation, and delivery. Read `references/test-strategy.md` when choosing E2E/integration/DB/unit boundaries. Read `references/coverage-model.md` when defining behavioral coverage denominators or completion evidence. Read `references/legacy-analysis.md` when tracing unfamiliar or legacy systems, especially dynamic/data-driven execution. Read `references/operable-japanese.md` before writing clarification questions or converting vague development instructions into executable Japanese. Read `references/context-gate.md` when deciding whether to ask the user or proceed with an assumption. Read `references/xquery-mcp.md` for XPath/XQuery/XSD operations. Read `references/codex-hooks.md` when hooks are active or need troubleshooting. Read `references/jev.md` only when the optional Jev decision layer is enabled or being configured.
+Read `references/feature-map-contract.md` when creating or restructuring a map. Read `references/repository-coordination.md` when multiple agents or humans need asynchronous repository-level commands, dependency-aware scheduling, conflict control, Git publication, or cross-document XML projection. Read `references/development-lifecycle.md` when planning work across requirements, design, tests, implementation, CI/CD, documentation, and delivery. Read `references/test-strategy.md` when choosing E2E/integration/DB/unit boundaries. Read `references/coverage-model.md` when defining behavioral coverage denominators or completion evidence. Read `references/legacy-analysis.md` when tracing unfamiliar or legacy systems, especially dynamic/data-driven execution. Read `references/operable-japanese.md` before writing clarification questions or converting vague development instructions into executable Japanese. Read `references/context-gate.md` when deciding whether to ask the user or proceed with an assumption. Read `references/xquery-mcp.md` for XPath/XQuery/XSD operations. Read `references/codex-hooks.md` when hooks are active or need troubleshooting. Read `references/jev.md` only when the optional Jev decision layer is enabled or being configured.
 
 ## Context sufficiency gate
 
@@ -123,6 +123,26 @@ Keep these boundaries:
 For testing, use `references/test-strategy.md` and `references/coverage-model.md`. Prefer business scenarios at E2E, condition/state/data behavior at integration or DB level, and residual unit tests only where isolation adds value.
 
 For unfamiliar/legacy systems, use `references/legacy-analysis.md`. Distinguish possible, observed, observed-only, and unresolved execution paths. Never hide unknown areas behind a single coverage percentage.
+
+## Repository coordination extension
+
+Feature Map remains a knowledge index. Do not store queue state, leases, retries, operation journals, or projection metadata inside Feature Map XML.
+
+When work expands from one agent editing one feature into multiple humans/agents issuing asynchronous repository-level changes, follow references/repository-coordination.md.
+
+Keep these planes separate:
+
+- Knowledge Plane: source/tests plus Feature Map durable knowledge.
+- Coordination Plane: durable Task/Decision/Message/Dependency XML plus transient SQLite operation state.
+- Projection Plane: a rebuildable multi-document XML index used for cross-document queries and role-specific AI context.
+
+Use Repository API commands rather than unrestricted XML, XQuery Update, Git, shell, or arbitrary-path access. Writes should be idempotent, queued, dependency-aware, conflict-checked at enqueue and again before execution, serialized by one writer per repository, validated, committed, pushed, and only then projected.
+
+Treat dependency and conflict as different concerns. Dependency decides execution order; conflict decides whether operations may coexist. Downstream work blocked by an upstream domain failure is blocked, not failed.
+
+Use resource versions for optimistic concurrency and a repository XML stateRevision for projection freshness. Time stamps are informational; hashes/revisions establish consistency.
+
+Do not require BaseX specifically. A BaseX-like XML database is one Projection Engine option. xquery-mcp remains suitable for narrow single-document XPath/XQuery/XSD work. Keep the projection behind an interface so it can be rebuilt or replaced without changing the agent-facing command contract.
 
 ## Modes
 
