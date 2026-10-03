@@ -41,13 +41,31 @@ def main() -> int:
 
     xsd_doc = etree.parse(str(ASSETS / "feature-map.xsd"))
     schema = etree.XMLSchema(xsd_doc)
-    example = etree.parse(str(ASSETS / "feature-map.example.xml"))
-    if not schema.validate(example):
+    fixture = etree.fromstring(b"""<featureMap version="1.3" mode="change" state="draft">
+  <meta>
+    <system>validation-fixture</system>
+    <feature>rendering</feature>
+  </meta>
+  <goal>
+    <purpose>Validate the public schema and renderer without a repository-specific example.</purpose>
+  </goal>
+  <sourceMap>
+    <ref kind="entry" target="src:entry"/>
+  </sourceMap>
+  <diagrams>
+    <diagram id="DG1" kind="sequence">sequenceDiagram
+A-&gt;&gt;B: validate</diagram>
+    <diagram id="DG2" kind="class">classDiagram
+class Fixture</diagram>
+  </diagrams>
+</featureMap>""")
+    fixture_doc = etree.ElementTree(fixture)
+    if not schema.validate(fixture_doc):
         raise SystemExit(str(schema.error_log))
-    print("xsd ok: feature-map.example.xml")
+    print("xsd ok: inline public validation fixture")
 
     xslt = etree.XSLT(etree.parse(str(ASSETS / "feature-map.xsl")))
-    html = str(xslt(example))
+    html = str(xslt(fixture_doc))
     required = (
         'class="mermaid"',
         "sequenceDiagram",
