@@ -209,7 +209,7 @@ Do not generate diagrams mechanically from every class. Keep them only when they
 
 ## OSS repository files
 
-This distribution is ready to become the repository root. It includes `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, `.github/CODEOWNERS`, Issue/PR templates, Dependabot configuration, CI/release workflows, and `docs/github-repository-settings.md`. Review the owner-specific placeholders before publishing.
+This distribution is ready to become the repository root. It includes `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, `.github/CODEOWNERS`, Issue/PR templates, Dependabot configuration, a release workflow, and `docs/github-repository-settings.md`. Review the owner-specific placeholders before publishing.
 
 ## Decision Provider (optional)
 

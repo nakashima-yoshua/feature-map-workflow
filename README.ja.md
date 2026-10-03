@@ -216,7 +216,7 @@ Mermaid 12はモダンブラウザ向けです。描画結果の変化を抑え�
 - `.github/CODEOWNERS`
 - Issue / PRテンプレート
 - Dependabot設定
-- CI / Release workflow
+- Release workflow
 - `docs/github-repository-settings.md`
 
 GitHub側で設定する推奨値は `docs/github-repository-settings.md` にまとめています。
