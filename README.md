@@ -1,3 +1,5 @@
+[日本語](README.ja.md) | English
+
 # Feature Map Workflow Plugin
 
 A Source-first development workflow that carries one compact Feature Map XML through catch-up, clarification, design, implementation, and verification.
