@@ -66,6 +66,43 @@ Context Sufficiency
 
 ソース、テスト、CI証跡、Runtime Trace、Release Artifactは、それぞれの場所を正本とします。Feature Mapには、コード等から安価に再構築できない永続的な知識だけを残します。
 
+
+## Repository Coordination拡張
+
+複数AIや人間が同じリポジトリへ非同期に変更要求を出す場合は、Feature Map XMLへQueueやleaseを詰め込まず、別のCoordination Planeを追加します。
+
+~~~text
+Knowledge Plane
+  Feature Map XML / source / tests
+          |
+          | Query / durable knowledge
+          v
+Repository API
+          |
+          +--> Coordination Plane
+          |      Command / Operation / Dependency
+          |      SQLite Queue / Single Writer
+          |
+          +--> Projection Plane
+                 multi-document XML index
+                 role-specific AI context
+~~~
+
+責務は次のように分離します。
+
+- Feature Map XML: コードから再構築しにくい永続的な開発知識
+- Coordination XML: Task、Decision、Message、Dependencyなどの長期的なワークフロー状態
+- SQLite: Queue、retry、lock、実行ジャーナルなどの一時的なRuntime状態
+- Git: 変更履歴と共有済み状態
+- Projection Engine: 複数XMLの横断検索とAI向けContext生成
+- Repository API: AIと人間からの安全な読み書き境界
+
+AIへXML全体を渡すことは前提にしません。必要なFeature、Task、Dependency、DecisionだけをQueryしてContextを組み立てます。
+
+書き込みは、Command受付、Idempotency確認、競合予約、Queue投入、Dependency判定、Single Writer、XML検証、Git commit、Git push、Projection更新の順で非同期に処理します。人間はpush済みの結果をレビューし、修正は履歴を書き換えず新しいOperationとして追加します。
+
+詳細な責務、状態遷移、競合・依存関係、Crash Recovery、stateRevision、Projectionの鮮度管理、MVP境界は skills/feature-map-workflow/references/repository-coordination.md を参照してください。
+
 ## 初回セットアップ
 
 `xquery-mcp` 2.5.1 をローカル.NET Toolとして固定しています。最初に1回だけNuGetから復元してください。

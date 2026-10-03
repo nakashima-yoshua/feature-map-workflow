@@ -66,6 +66,43 @@ Detailed phase policy lives in:
 
 Source/tests, CI evidence, runtime traces, and release artifacts remain canonical in their native form. Feature Map stores only durable knowledge that is costly or ambiguous to reconstruct.
 
+
+## Repository coordination extension
+
+When multiple agents or humans submit asynchronous changes to the same repository, do not turn Feature Map XML into a queue or lease store. Add a separate coordination plane.
+
+~~~text
+Knowledge Plane
+  Feature Map XML / source / tests
+          |
+          | query / durable knowledge
+          v
+Repository API
+          |
+          +--> Coordination Plane
+          |      Command / Operation / Dependency
+          |      SQLite queue / Single Writer
+          |
+          +--> Projection Plane
+                 multi-document XML index
+                 role-specific AI context
+~~~
+
+Keep responsibilities separate:
+
+- Feature Map XML: durable development knowledge that is costly to reconstruct from code;
+- Coordination XML: durable workflow state such as Task, Decision, Message, and Dependency;
+- SQLite: transient queue, retry, lock, and operation-journal state;
+- Git: history and shared published state;
+- Projection Engine: cross-document XML search and AI-context projection;
+- Repository API: the safe read/write boundary for humans and agents.
+
+Do not send all XML to the model. Query only the Feature, Task, Dependency, Decision, and evidence needed for the current role.
+
+Writes are asynchronous: accept a command, enforce idempotency, reserve conflicts, enqueue, resolve dependencies, serialize through a Single Writer, validate XML, commit, push, then update the projection. Humans review pushed results; corrections are new operations and commits rather than history rewrites.
+
+See skills/feature-map-workflow/references/repository-coordination.md for the responsibility model, state machines, dependency/conflict rules, crash recovery, stateRevision semantics, projection freshness, and MVP boundary.
+
 ## First-time setup
 
 This plugin pins `xquery-mcp` 2.5.1 as a local .NET tool. Restore it once from NuGet.
