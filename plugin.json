@@ -1,0 +1,42 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "feature-map-workflow",
+  "version": "0.4.0",
+  "description": "Maintain one Source-first Feature Map XML across catch-up, clarification, design, implementation, and verification. Includes Mermaid UML diagrams rendered in HTML, Codex context-sufficiency hooks, natural operable Japanese guidance, optional Jev decisions, and xquery-mcp XPath/XQuery/XSD validation.",
+  "license": "MIT",
+  "keywords": [
+    "development",
+    "xml",
+    "xquery",
+    "xpath",
+    "xsd",
+    "source-first",
+    "feature-map",
+    "requirements",
+    "japanese",
+    "mermaid",
+    "uml",
+    "oss"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Feature Map Workflow",
+        "shortDescription": "Source-first map, Mermaid UML, context gate, XSD checks",
+        "longDescription": "Carry one compact Feature Map XML through system catch-up and feature development. Optional Mermaid diagrams keep cross-boundary structure, sequence, and state knowledge close to the source map and render automatically in the HTML view. A UserPromptSubmit context gate detects risky ambiguity before work starts and guides Codex to ask one precise, natural Japanese clarification only when missing context materially changes scope, authority, behavior, or acceptance. Lifecycle hooks load minimal context, track XML edits and XSD validation, and run completion gates. Optional Jev decisions handle bounded semantic judgments while xquery-mcp provides XPath/XQuery and schema validation. Source code and tests remain canonical.",
+        "developerName": "katatsukuri",
+        "category": "Developer Tools",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "defaultPrompt": [
+          "Analyze this feature using the Source-first Feature Map. If critical context is missing, ask one precise natural-Japanese question before editing; otherwise update only durable knowledge deltas.",
+          "Implement this change with the Feature Map workflow. Keep source/tests canonical, preserve the user's scope and authority, patch only durable XML deltas, and validate with xquery-mcp.",
+          "Use the context gate and Feature Map lifecycle hooks to catch ambiguous scope, missing acceptance conditions, missing durable updates, or XSD validation before finishing."
+        ]
+      },
+      "hooks": "./hooks/hooks.json"
+    }
+  }
+}

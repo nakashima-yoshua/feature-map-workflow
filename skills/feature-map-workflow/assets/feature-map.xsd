@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:annotation>
+    <xs:documentation xml:lang="ja">Source-first Feature Map 1.3. Source/tests are canonical; this XML retains only navigation, durable domain knowledge, compact Mermaid diagrams, decisions, verification evidence, explicit scope boundaries, and unresolved blockers. Git owns history.</xs:documentation>
+  </xs:annotation>
+
+  <xs:simpleType name="NonEmptyText">
+    <xs:restriction base="xs:string">
+      <xs:whiteSpace value="collapse"/>
+      <xs:minLength value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="NonEmptyPreservedText">
+    <xs:restriction base="xs:string">
+      <xs:whiteSpace value="preserve"/>
+      <xs:minLength value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="VersionType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="1.1"/>
+      <xs:enumeration value="1.2"/>
+      <xs:enumeration value="1.3"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ModeType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="catchup"/>
+      <xs:enumeration value="change"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="MapStateType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="draft"/>
+      <xs:enumeration value="investigating"/>
+      <xs:enumeration value="ready"/>
+      <xs:enumeration value="verified"/>
+      <xs:enumeration value="closed"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="RefKindType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="entry"/>
+      <xs:enumeration value="symbol"/>
+      <xs:enumeration value="table"/>
+      <xs:enumeration value="view"/>
+      <xs:enumeration value="procedure"/>
+      <xs:enumeration value="query"/>
+      <xs:enumeration value="api"/>
+      <xs:enumeration value="screen"/>
+      <xs:enumeration value="batch"/>
+      <xs:enumeration value="config"/>
+      <xs:enumeration value="test"/>
+      <xs:enumeration value="log"/>
+      <xs:enumeration value="commit"/>
+      <xs:enumeration value="external"/>
+      <xs:enumeration value="other"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="AccessType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="read"/>
+      <xs:enumeration value="write"/>
+      <xs:enumeration value="read-write"/>
+      <xs:enumeration value="execute"/>
+      <xs:enumeration value="call"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="DiagramKindType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="class"/>
+      <xs:enumeration value="sequence"/>
+      <xs:enumeration value="usecase"/>
+      <xs:enumeration value="state"/>
+      <xs:enumeration value="activity"/>
+      <xs:enumeration value="er"/>
+      <xs:enumeration value="flowchart"/>
+      <xs:enumeration value="architecture"/>
+      <xs:enumeration value="other"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CaseType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="normal"/>
+      <xs:enumeration value="boundary"/>
+      <xs:enumeration value="error"/>
+      <xs:enumeration value="permission"/>
+      <xs:enumeration value="state"/>
+      <xs:enumeration value="duplicate"/>
+      <xs:enumeration value="retry"/>
+      <xs:enumeration value="regression"/>
+      <xs:enumeration value="other"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CaseStatusType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="planned"/>
+      <xs:enumeration value="passed"/>
+      <xs:enumeration value="failed"/>
+      <xs:enumeration value="blocked"/>
+      <xs:enumeration value="not-run"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ImpactType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="low"/>
+      <xs:enumeration value="medium"/>
+      <xs:enumeration value="high"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="OpenType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="scope"/>
+      <xs:enumeration value="authority"/>
+      <xs:enumeration value="business-rule"/>
+      <xs:enumeration value="expected-behavior"/>
+      <xs:enumeration value="acceptance"/>
+      <xs:enumeration value="external-dependency"/>
+      <xs:enumeration value="data"/>
+      <xs:enumeration value="environment"/>
+      <xs:enumeration value="other"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="IdTextType">
+    <xs:simpleContent>
+      <xs:extension base="NonEmptyText">
+        <xs:attribute name="id" type="xs:ID" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="DecisionType">
+    <xs:simpleContent>
+      <xs:extension base="NonEmptyText">
+        <xs:attribute name="id" type="xs:ID" use="optional"/>
+        <xs:attribute name="reason" type="NonEmptyText" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="RefType">
+    <xs:attribute name="id" type="xs:ID" use="optional"/>
+    <xs:attribute name="kind" type="RefKindType" use="required"/>
+    <xs:attribute name="target" type="NonEmptyText" use="required"/>
+    <xs:attribute name="access" type="AccessType" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="DiagramType">
+    <xs:simpleContent>
+      <xs:extension base="NonEmptyPreservedText">
+        <xs:attribute name="id" type="xs:ID" use="optional"/>
+        <xs:attribute name="kind" type="DiagramKindType" use="required"/>
+        <xs:attribute name="title" type="NonEmptyText" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="EvidenceType">
+    <xs:attribute name="ref" type="NonEmptyText" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="UseCaseType">
+    <xs:sequence>
+      <xs:element name="scenario" type="NonEmptyText"/>
+      <xs:element name="input" type="NonEmptyText" minOccurs="0"/>
+      <xs:element name="outcome" type="NonEmptyText" minOccurs="0"/>
+      <xs:element name="sample" type="NonEmptyText" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="VerifyCaseType">
+    <xs:sequence>
+      <xs:element name="condition" type="NonEmptyText"/>
+      <xs:element name="expect" type="NonEmptyText"/>
+      <xs:element name="observe" type="NonEmptyText" minOccurs="0"/>
+      <xs:element name="evidence" type="EvidenceType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="optional"/>
+    <xs:attribute name="type" type="CaseType" use="required"/>
+    <xs:attribute name="status" type="CaseStatusType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="OpenItemType">
+    <xs:simpleContent>
+      <xs:extension base="NonEmptyText">
+        <xs:attribute name="id" type="xs:ID" use="optional"/>
+        <xs:attribute name="type" type="OpenType" use="optional"/>
+        <xs:attribute name="impact" type="ImpactType" use="optional"/>
+        <xs:attribute name="next" type="NonEmptyText" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:element name="featureMap">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="meta">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="system" type="NonEmptyText"/>
+              <xs:element name="feature" type="NonEmptyText"/>
+              <xs:element name="environment" type="NonEmptyText" minOccurs="0"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="goal">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="purpose" type="NonEmptyText"/>
+              <xs:element name="done" type="NonEmptyText" minOccurs="0"/>
+              <xs:element name="scope" type="NonEmptyText" minOccurs="0"/>
+              <xs:element name="exclude" type="NonEmptyText" minOccurs="0"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="useCase" type="UseCaseType" minOccurs="0" maxOccurs="unbounded"/>
+
+        <xs:element name="sourceMap">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="ref" type="RefType" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="diagrams" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="diagram" type="DiagramType" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="knowledge" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="rule" type="IdTextType" minOccurs="0" maxOccurs="unbounded"/>
+              <xs:element name="invariant" type="IdTextType" minOccurs="0" maxOccurs="unbounded"/>
+              <xs:element name="decision" type="DecisionType" minOccurs="0" maxOccurs="unbounded"/>
+              <xs:element name="constraint" type="IdTextType" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="verify" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="case" type="VerifyCaseType" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="open" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="item" type="OpenItemType" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="version" type="VersionType" use="required"/>
+      <xs:attribute name="mode" type="ModeType" use="required"/>
+      <xs:attribute name="state" type="MapStateType" use="required"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

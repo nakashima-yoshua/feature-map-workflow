@@ -1,0 +1,23 @@
+name: Feature request
+description: Propose a focused improvement to the workflow.
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What workflow cost or failure mode are you trying to remove?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Smaller alternatives considered
+      description: Include a no-change or lower-complexity option when relevant.

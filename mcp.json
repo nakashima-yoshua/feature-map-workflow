@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "xquery": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": ["tool", "run", "xquery-mcp"],
+      "cwd": "${PLUGIN_ROOT}"
+    }
+  }
+}

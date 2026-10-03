@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "xquery-mcp": {
+      "version": "1.4.0.3",
+      "commands": ["xquery-mcp"]
+    }
+  }
+}
