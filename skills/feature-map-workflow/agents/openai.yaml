@@ -1,0 +1,3 @@
+interface:
+  display_name: "Feature Map Workflow"
+  short_description: "Source-first XML maps with context gate, natural Japanese, Jev, and XSD validation"

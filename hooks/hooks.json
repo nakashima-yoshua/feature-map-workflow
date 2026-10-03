@@ -1,0 +1,75 @@
+{
+  "description": "Feature Map lifecycle hooks: check context sufficiency, load compact context, track edits and XSD validation, then run completion checks with optional Jev decisions.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${PLUGIN_ROOT}/hooks/feature_map_hook.py user-prompt",
+            "commandWindows": "py -3 \"${PLUGIN_ROOT}/hooks/feature_map_hook.py\" user-prompt",
+            "timeout": 12,
+            "statusMessage": "Checking context sufficiency",
+            "additionalContextLimit": 1000
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${PLUGIN_ROOT}/hooks/feature_map_hook.py session-start",
+            "commandWindows": "py -3 \"${PLUGIN_ROOT}/hooks/feature_map_hook.py\" session-start",
+            "timeout": 5,
+            "statusMessage": "Loading Feature Map context",
+            "additionalContextLimit": 900
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${PLUGIN_ROOT}/hooks/feature_map_hook.py post-tool",
+            "commandWindows": "py -3 \"${PLUGIN_ROOT}/hooks/feature_map_hook.py\" post-tool",
+            "timeout": 5,
+            "statusMessage": "Tracking Feature Map delta",
+            "additionalContextLimit": 500
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__xquery__xml_validate_schema",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${PLUGIN_ROOT}/hooks/feature_map_hook.py post-tool",
+            "commandWindows": "py -3 \"${PLUGIN_ROOT}/hooks/feature_map_hook.py\" post-tool",
+            "timeout": 5,
+            "statusMessage": "Recording Feature Map validation"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${PLUGIN_ROOT}/hooks/feature_map_hook.py stop",
+            "commandWindows": "py -3 \"${PLUGIN_ROOT}/hooks/feature_map_hook.py\" stop",
+            "timeout": 20,
+            "statusMessage": "Checking Feature Map completion",
+            "additionalContextLimit": 900
+          }
+        ]
+      }
+    ]
+  }
+}
