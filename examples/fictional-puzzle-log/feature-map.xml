@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="../../skills/feature-map-workflow/assets/feature-map.xsl"?>
+<!-- Public fictional example. All names, rules, identifiers and references are invented. -->
+<featureMap version="1.3" mode="change" state="draft">
+  <meta>
+    <system>架空のパズル記録帳「星の小箱」</system>
+    <feature>パズルの登録と完成記録</feature>
+    <environment>公開用の完全な仮想例。実在する個人、組織、業務、システムとは関係しない。実装は同梱していない。</environment>
+  </meta>
+  <goal>
+    <purpose>架空の利用者がパズルを記録し、未完成と完成済みを区別できるようにする。</purpose>
+    <done>登録、重複拒否、完成への変更、完成済みへの再操作について、期待する動作を実装とテストで確認する。</done>
+    <scope>パズルIDと名前の登録、一覧表示、完成への変更。名前は1〜40文字とする。</scope>
+    <exclude>アカウント、購入、決済、外部通信、他の利用者との共有、記録の削除。</exclude>
+  </goal>
+  <useCase id="UC-REGISTER">
+    <scenario>利用者が未登録のパズルを追加する。</scenario>
+    <input>パズルIDと名前。</input>
+    <outcome>未完成の記録が1件追加される。</outcome>
+    <sample>PZ-001 / 月の迷路。どちらも架空の値。</sample>
+  </useCase>
+  <useCase id="UC-COMPLETE">
+    <scenario>利用者が登録済みのパズルを完成済みにする。</scenario>
+    <input>登録済みのパズルID。</input>
+    <outcome>対象の状態だけが完成済みに変わる。既に完成済みなら状態を維持する。</outcome>
+    <sample>PZ-001を未完成から完成済みへ変更する。</sample>
+  </useCase>
+  <sourceMap>
+    <!-- These are illustrative future references, not existing files or evidence. -->
+    <ref id="SRC-SCREEN" kind="screen" target="fictional:screen/PuzzleList (仮想の画面)" access="read-write"/>
+    <ref id="SRC-REGISTER" kind="symbol" target="fictional:PuzzleLog.Register (仮想の登録処理)" access="call"/>
+    <ref id="SRC-COMPLETE" kind="symbol" target="fictional:PuzzleLog.Complete (仮想の完成処理)" access="call"/>
+    <ref id="SRC-TEST" kind="test" target="fictional:tests/PuzzleLogTests (未作成のテスト)" access="execute"/>
+  </sourceMap>
+  <diagrams>
+    <diagram id="DG-REGISTER" kind="flowchart" title="登録時の条件分岐"><![CDATA[
+flowchart TD
+    A[IDと名前を入力] --> B{名前は1〜40文字か}
+    B -->|いいえ| C[入力エラーを表示]
+    B -->|はい| D{IDは登録済みか}
+    D -->|はい| E[重複エラーを表示]
+    D -->|いいえ| F[未完成として登録]
+    F --> G[一覧を表示]
+    ]]></diagram>
+    <diagram id="DG-COMPLETE" kind="sequence" title="完成操作の正常系と再操作"><![CDATA[
+sequenceDiagram
+    actor U as 利用者
+    participant V as 一覧画面
+    participant L as パズル記録
+    U->>V: 完成を選択
+    V->>L: Complete(PZ-001)
+    alt 未完成
+        L->>L: 完成済みへ変更
+        L-->>V: 完成済み
+    else 既に完成済み
+        L-->>V: 完成済みを維持
+    end
+    V-->>U: 完成済みを表示
+    ]]></diagram>
+    <diagram id="DG-STATE" kind="state" title="パズル記録の状態"><![CDATA[
+stateDiagram-v2
+    state "未完成" as Pending
+    state "完成済み" as Completed
+    [*] --> Pending: 登録
+    Pending --> Completed: 完成操作
+    Completed --> Completed: 完成操作を再実行
+    ]]></diagram>
+  </diagrams>
+  <knowledge>
+    <rule id="RULE-NAME">名前は1〜40文字とする。この仮想例では前後の空白を除去した後のUnicodeコードポイント数で数える。</rule>
+    <rule id="RULE-ID">IDが重複する登録は拒否し、既存の名前と状態を変更しない。</rule>
+    <invariant id="INV-COUNT">完成操作によって記録件数は変わらない。</invariant>
+    <invariant id="INV-STATE">登録済みの記録の状態は未完成または完成済みのいずれかとする。</invariant>
+    <decision id="DEC-REPEAT" reason="二度クリックしても利用者が同じ結果を確認できるようにするため。">完成済みに対する完成操作は成功として扱い、状態を維持する。</decision>
+    <constraint id="CON-FICTION">全内容は説明用に創作したものであり、sourceMapは実装の存在やテスト成功を示さない。</constraint>
+  </knowledge>
+  <verify>
+    <case id="TEST-REGISTER" type="normal" status="planned">
+      <condition>未登録のPZ-001と名前「月の迷路」を登録する。</condition>
+      <expect>未完成の記録が1件増える。</expect>
+    </case>
+    <case id="TEST-NAME" type="boundary" status="planned">
+      <condition>未登録IDで、空白除去後の名前が0、1、40、41文字の各入力を試す。</condition>
+      <expect>1文字と40文字だけを受け付け、0文字と41文字では記録を追加しない。</expect>
+    </case>
+    <case id="TEST-DUPLICATE" type="duplicate" status="planned">
+      <condition>PZ-001を登録した後、同じIDで別の名前を登録する。</condition>
+      <expect>重複エラーとなり、元の名前、状態、件数を維持する。</expect>
+    </case>
+    <case id="TEST-COMPLETE" type="state" status="planned">
+      <condition>未完成のPZ-001に完成操作を行う。</condition>
+      <expect>PZ-001だけが完成済みとなり、件数は変わらない。</expect>
+    </case>
+    <case id="TEST-REPEAT" type="retry" status="planned">
+      <condition>完成済みのPZ-001に完成操作を再実行する。</condition>
+      <expect>成功として応答し、名前、状態、件数を維持する。</expect>
+    </case>
+  </verify>
+  <open>
+    <item id="OPEN-STORAGE" type="environment" impact="medium" next="この仮想システムを実装する場合に保存方式と再起動後の保持要否を決める。">記録の保存方式は未定。現在の例示では保存方式を前提にしない。</item>
+    <item id="OPEN-MISSING" type="expected-behavior" impact="medium" next="実装前に未登録IDへの完成操作の応答を決め、エラーケースを追加する。">未登録IDに対する完成操作の応答は未定。</item>
+  </open>
+</featureMap>
