@@ -24,6 +24,51 @@ The plugin intentionally does not vendor the large self-contained platform binar
 | Normalize XML formatting | `xml_format` |
 | Diagnose XPath/XQuery error | `xquery_explain_error` / spec lookup tools |
 
+## Structured QueryResult contract
+
+In xquery-mcp 2.5.1, `xpath_evaluate`, `xquery_evaluate`, and `xquery_validate` return a JSON object as MCP text content. The current shape is:
+
+```json
+{
+  "ok": true,
+  "value": "...",
+  "count": null,
+  "elapsedMs": 3
+}
+```
+
+Failures use:
+
+```json
+{
+  "ok": false,
+  "errors": [
+    {
+      "code": "XPST0003",
+      "message": "...",
+      "line": 1,
+      "column": 8,
+      "sourceSnippet": "for $x in",
+      "specUrl": null
+    }
+  ]
+}
+```
+
+An empty sequence is successful and is represented by `ok=true`, `count=0`, with no `value` key. Do not confuse it with an empty string or an error.
+
+The bundled `scripts/xquery_result.py` accepts either the inner JSON object, a JSON string, or an MCP `content:[{type:"text",text:"..."}]` envelope and normalizes it to:
+
+- `ok`
+- `value`
+- `count`
+- `elapsed_ms`
+- `errors[].code/message/line/column/source_snippet/spec_url`
+
+Treat unexpected shapes as contract failures instead of guessing. This is deliberately strict so an upstream protocol change is caught by CI.
+
+`xml_validate_schema` is not part of this adapter. It still returns the plain string `Valid: XML conforms to the schema.`, and the Codex PostToolUse hook continues to use that contract.
+
 ## Context-minimizing patterns
 
 Read rules only:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import importlib.util
 import json
 import queue
 import subprocess
@@ -20,6 +21,15 @@ REQUIRED_TOOLS = {
     "xquery_validate",
 }
 VALIDATION_OK = "Valid: XML conforms to the schema."
+
+ADAPTER_PATH = ROOT / "skills" / "feature-map-workflow" / "scripts" / "xquery_result.py"
+SPEC = importlib.util.spec_from_file_location("feature_map_xquery_result", ADAPTER_PATH)
+if SPEC is None or SPEC.loader is None:
+    raise RuntimeError(f"cannot load {ADAPTER_PATH}")
+ADAPTER = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = ADAPTER
+SPEC.loader.exec_module(ADAPTER)
+parse_query_result = ADAPTER.parse_query_result
 
 
 class McpProcess:
@@ -70,6 +80,20 @@ class McpProcess:
                 raise RuntimeError(message["_decode_error"])
             if message.get("id") == request_id:
                 return message
+
+    def call_tool(self, request_id: int, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        self.send(
+            {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "method": "tools/call",
+                "params": {"name": name, "arguments": arguments},
+            }
+        )
+        response = self.response(request_id)
+        if "error" in response:
+            raise RuntimeError(f"{name} JSON-RPC error: {response['error']}")
+        return response.get("result", {})
 
     def close(self) -> None:
         if self.proc.poll() is None:
@@ -124,27 +148,33 @@ def try_protocol(protocol_version: str) -> tuple[bool, str]:
             '<xs:element name="value" type="xs:string"/>'
             "</xs:sequence></xs:complexType></xs:element></xs:schema>"
         )
-        mcp.send(
-            {
-                "jsonrpc": "2.0",
-                "id": 3,
-                "method": "tools/call",
-                "params": {
-                    "name": "xml_validate_schema",
-                    "arguments": {"xml": xml, "xsd": xsd},
-                },
-            }
+        validation = mcp.call_tool(3, "xml_validate_schema", {"xml": xml, "xsd": xsd})
+        validation_text = json.dumps(validation, ensure_ascii=False)
+        if VALIDATION_OK not in validation_text:
+            return False, f"xml_validate_schema contract changed: {validation_text[:1000]}"
+
+        xpath = parse_query_result(
+            mcp.call_tool(4, "xpath_evaluate", {"xpath": "/root/value/text()", "xml": xml})
         )
-        called = mcp.response(3)
-        if "error" in called:
-            return False, f"xml_validate_schema JSON-RPC error: {called['error']}"
-        result_text = json.dumps(called.get("result", {}), ensure_ascii=False)
-        if VALIDATION_OK not in result_text:
-            return False, f"xml_validate_schema contract changed: {result_text[:1000]}"
+        if not xpath.ok or xpath.value != "ok":
+            return False, f"xpath_evaluate structured result unexpected: {xpath.to_dict()}"
+
+        empty = parse_query_result(
+            mcp.call_tool(5, "xquery_evaluate", {"query": "()"})
+        )
+        if not empty.is_empty_sequence:
+            return False, f"xquery_evaluate empty-sequence contract changed: {empty.to_dict()}"
+
+        invalid = parse_query_result(
+            mcp.call_tool(6, "xquery_validate", {"query": "for $x in"})
+        )
+        if invalid.ok or not invalid.errors or not invalid.errors[0].code:
+            return False, f"xquery_validate error contract changed: {invalid.to_dict()}"
 
         print(
-            f"xquery-mcp MCP smoke test passed "
-            f"(requested={protocol_version}, negotiated={negotiated or 'unknown'})"
+            "xquery-mcp MCP smoke test passed "
+            f"(requested={protocol_version}, negotiated={negotiated or 'unknown'}, "
+            f"xpath=ok, empty=count0, error={invalid.errors[0].code})"
         )
         return True, ""
     except Exception as exc:
