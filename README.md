@@ -56,6 +56,19 @@ macOS/Linux:
 
 Requires .NET 10 SDK.
 
+## Structured xquery-mcp results
+
+In xquery-mcp 2.5.1, `xpath_evaluate`, `xquery_evaluate`, and `xquery_validate` return a JSON `QueryResult` encoded in the MCP text result. Normalize that payload before using it:
+
+```text
+MCP tool result
+  -> QueryResult adapter
+  -> ok / value / count / elapsed_ms / errors[]
+  -> workflow decision
+```
+
+The bundled `skills/feature-map-workflow/scripts/xquery_result.py` adapter distinguishes a successful value, an empty sequence (`count=0`), and a structured error. `xml_validate_schema` intentionally keeps its existing plain-text success contract because the Codex validation hook depends on it.
+
 Codex plugin hooks are non-managed hooks. Review and trust `hooks/hooks.json` and `hooks/feature_map_hook.py` before enabling them. Hook scripts run only where the execution environment contains the plugin files; a web-only install does not deploy local scripts.
 
 ## Hook behavior
