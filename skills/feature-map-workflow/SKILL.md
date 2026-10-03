@@ -19,7 +19,7 @@ Use one Feature Map XML per feature as the durable human/AI index. Treat source 
 - Keep user-facing responses delta-oriented. Do not echo the full Feature Map unless asked.
 - Preserve user intent before optimizing wording. Use this priority: `meaning preservation > operability > naturalness > brevity`.
 
-Read `references/feature-map-contract.md` when creating or restructuring a map. Read `references/operable-japanese.md` before writing clarification questions or converting vague development instructions into executable Japanese. Read `references/context-gate.md` when deciding whether to ask the user or proceed with an assumption. Read `references/xquery-mcp.md` for XPath/XQuery/XSD operations. Read `references/codex-hooks.md` when hooks are active or need troubleshooting. Read `references/jev.md` only when the optional Jev decision layer is enabled or being configured.
+Read `references/feature-map-contract.md` when creating or restructuring a map. Read `references/development-lifecycle.md` when planning work across requirements, design, tests, implementation, CI/CD, documentation, and delivery. Read `references/test-strategy.md` when choosing E2E/integration/DB/unit boundaries. Read `references/coverage-model.md` when defining behavioral coverage denominators or completion evidence. Read `references/legacy-analysis.md` when tracing unfamiliar or legacy systems, especially dynamic/data-driven execution. Read `references/operable-japanese.md` before writing clarification questions or converting vague development instructions into executable Japanese. Read `references/context-gate.md` when deciding whether to ask the user or proceed with an assumption. Read `references/xquery-mcp.md` for XPath/XQuery/XSD operations. Read `references/codex-hooks.md` when hooks are active or need troubleshooting. Read `references/jev.md` only when the optional Jev decision layer is enabled or being configured.
 
 ## Context sufficiency gate
 
@@ -108,6 +108,21 @@ Do not create a diagram when source references are already easier to understand.
 - state machines and retry/rollback transitions;
 - a small class relationship that explains a non-obvious boundary;
 - data/entity relationships that materially affect behavior.
+
+## Full lifecycle policy
+
+Feature Map is the durable cross-phase index, not a container for every phase artifact. When the task spans development phases, follow `references/development-lifecycle.md`.
+
+Keep these boundaries:
+
+- requirements/design decisions that are expensive to reconstruct may become durable Feature Map knowledge;
+- detailed test catalogs remain in tests/test data, while representative guarantees and evidence may be referenced by `verify`;
+- CI results, generated coverage reports, runtime traces, and release artifacts remain canonical outside XML;
+- legacy analysis may use richer internal graphs and evidence artifacts, but only durable findings, navigation references, representative diagrams, and unresolved blockers belong in Feature Map XML.
+
+For testing, use `references/test-strategy.md` and `references/coverage-model.md`. Prefer business scenarios at E2E, condition/state/data behavior at integration or DB level, and residual unit tests only where isolation adds value.
+
+For unfamiliar/legacy systems, use `references/legacy-analysis.md`. Distinguish possible, observed, observed-only, and unresolved execution paths. Never hide unknown areas behind a single coverage percentage.
 
 ## Modes
 

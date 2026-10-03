@@ -2,7 +2,7 @@
 
 # Feature Map Workflow Plugin
 
-A Source-first development workflow that carries one compact Feature Map XML through catch-up, clarification, design, implementation, and verification.
+A Source-first development workflow that carries one compact Feature Map XML through catch-up, requirements, design, testing, implementation, CI/CD, verification, documentation, and delivery.
 
 ## Architecture
 
@@ -37,6 +37,34 @@ meaning preservation > operability > naturalness > brevity
 ```
 
 The internal meaning contract may use `goal / actor / action / target / condition / scope / exclude / authority / doneWhen / certainty`. These are not persisted as a second specification. Only durable feature knowledge belongs in Feature Map XML.
+
+## Full lifecycle use cases
+
+The same Feature Map can act as the durable index across the full development lifecycle without becoming a second specification.
+
+```text
+Context sufficiency
+  -> requirements
+  -> basic design
+  -> business scenarios / E2E
+  -> test-boundary design
+  -> detailed design
+  -> condition/state/boundary tests
+  -> residual unit tests
+  -> implementation + CI
+  -> release package / CD
+  -> As-Built view
+  -> delivery / acceptance
+```
+
+Detailed phase policy lives in:
+
+- `references/development-lifecycle.md`: inputs, activities, durable deltas, hard/semantic gates, HALT conditions, outputs;
+- `references/test-strategy.md`: E2E/integration/DB/unit placement and explicit test boundaries;
+- `references/coverage-model.md`: requirement/scenario/rule/state/effect/dynamic-route coverage;
+- `references/legacy-analysis.md`: static + dynamic + DB/config/runtime evidence for unfamiliar and legacy systems.
+
+Source/tests, CI evidence, runtime traces, and release artifacts remain canonical in their native form. Feature Map stores only durable knowledge that is costly or ambiguous to reconstruct.
 
 ## First-time setup
 
