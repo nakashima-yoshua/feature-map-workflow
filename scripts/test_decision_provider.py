@@ -46,6 +46,12 @@ class DecisionProviderSelectionTests(unittest.TestCase):
         self.assertEqual("prompt", context_mode(provider.name, env))
         self.assertEqual("summary", completion_mode(provider.name, env))
 
+    def test_legacy_context_mode_selects_jev(self) -> None:
+        env = {"FEATURE_MAP_CONTEXT_JEV_MODE": "metadata"}
+        provider = get_decision_provider(env)
+        self.assertIsInstance(provider, JevDecisionProvider)
+        self.assertEqual("metadata", context_mode(provider.name, env))
+
     def test_openai_provider_is_reserved_without_guessing_contract(self) -> None:
         env = {
             "FEATURE_MAP_DECISION_PROVIDER": "openai",

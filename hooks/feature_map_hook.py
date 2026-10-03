@@ -551,8 +551,8 @@ def _handle_stop(event: dict[str, Any]) -> None:
                     return
 
     messages: list[str] = []
-    if decision_warning and not state.get("jev_warning_emitted"):
-        state["jev_warning_emitted"] = True
+    if decision_warning and not state.get("decision_warning_emitted"):
+        state["decision_warning_emitted"] = True
         _save_state(session_id, state)
         messages.append(decision_warning + "; continuing fail-open")
     if decision:
