@@ -2,6 +2,11 @@
 
 All notable user-visible changes are documented here.
 
+## Unreleased
+
+- Update the pinned xquery-mcp dependency to 2.5.1.
+- Add an MCP contract smoke test that launches the pinned server, lists required tools, and calls `xml_validate_schema`.
+
 ## 0.4.0
 
 - Add Feature Map schema version 1.3.
