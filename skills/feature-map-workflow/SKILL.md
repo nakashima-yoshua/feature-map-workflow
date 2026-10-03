@@ -19,7 +19,7 @@ Use one Feature Map XML per feature as the durable human/AI index. Treat source 
 - Keep user-facing responses delta-oriented. Do not echo the full Feature Map unless asked.
 - Preserve user intent before optimizing wording. Use this priority: `meaning preservation > operability > naturalness > brevity`.
 
-Read `references/feature-map-contract.md` when creating or restructuring a map. Read `references/repository-coordination.md` when multiple agents or humans need asynchronous repository-level commands, dependency-aware scheduling, conflict control, Git publication, or cross-document XML projection. Read `references/development-lifecycle.md` when planning work across requirements, design, tests, implementation, CI/CD, documentation, and delivery. Read `references/test-strategy.md` when choosing E2E/integration/DB/unit boundaries. Read `references/coverage-model.md` when defining behavioral coverage denominators or completion evidence. Read `references/legacy-analysis.md` when tracing unfamiliar or legacy systems, especially dynamic/data-driven execution. Read `references/operable-japanese.md` before writing clarification questions or converting vague development instructions into executable Japanese. Read `references/context-gate.md` when deciding whether to ask the user or proceed with an assumption. Read `references/xquery-mcp.md` for XPath/XQuery/XSD operations. Read `references/codex-hooks.md` when hooks are active or need troubleshooting. Read `references/jev.md` only when the optional Jev decision layer is enabled or being configured.
+Read `references/feature-map-contract.md` when creating or restructuring a map. Read `references/agents-api.md` when running the workflow through the OpenAI Agents API or delegating read-only investigation to subagents. Read `references/repository-coordination.md` when multiple agents or humans need asynchronous repository-level commands, dependency-aware scheduling, conflict control, Git publication, or cross-document XML projection. Read `references/development-lifecycle.md` when planning work across requirements, design, tests, implementation, CI/CD, documentation, and delivery. Read `references/test-strategy.md` when choosing E2E/integration/DB/unit boundaries. Read `references/coverage-model.md` when defining behavioral coverage denominators or completion evidence. Read `references/legacy-analysis.md` when tracing unfamiliar or legacy systems, especially dynamic/data-driven execution. Read `references/operable-japanese.md` before writing clarification questions or converting vague development instructions into executable Japanese. Read `references/context-gate.md` when deciding whether to ask the user or proceed with an assumption. Read `references/xquery-mcp.md` for XPath/XQuery/XSD operations. Read `references/codex-hooks.md` when hooks are active or need troubleshooting. Read `references/jev.md` only when the optional Jev decision layer is enabled or being configured.
 
 ## Context sufficiency gate
 
@@ -123,6 +123,17 @@ Keep these boundaries:
 For testing, use `references/test-strategy.md` and `references/coverage-model.md`. Prefer business scenarios at E2E, condition/state/data behavior at integration or DB level, and residual unit tests only where isolation adds value.
 
 For unfamiliar/legacy systems, use `references/legacy-analysis.md`. Distinguish possible, observed, observed-only, and unresolved execution paths. Never hide unknown areas behind a single coverage percentage.
+
+## Agent runtime policy
+
+When the OpenAI Agents API is used as the execution runtime, follow `references/agents-api.md`.
+
+- Keep Feature Map Workflow runtime-independent; Agents API is an optional harness, not the source of truth.
+- Use reader subagents only for independent investigation.
+- Keep reader subagents read-only.
+- Keep one parent/canonical writer for repository changes.
+- Re-read current repository state before the writer applies a change assembled from parallel findings.
+- Use one bounded session per feature/change boundary where practical.
 
 ## Repository coordination extension
 
