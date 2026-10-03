@@ -56,6 +56,19 @@ macOS/Linux:
 
 .NET 10 SDKが必要です。
 
+## xquery-mcpのstructured JSON
+
+xquery-mcp 2.5.1では、`xpath_evaluate`、`xquery_evaluate`、`xquery_validate` が、MCPのtext result内にJSON形式の `QueryResult` を返します。値を直接使わず、先に正規化します。
+
+```text
+MCP tool result
+  -> QueryResult Adapter
+  -> ok / value / count / elapsed_ms / errors[]
+  -> ワークフロー上の判断
+```
+
+同梱の `skills/feature-map-workflow/scripts/xquery_result.py` は、正常値、空シーケンス（`count=0`）、構造化エラーを区別します。Codex Hookが利用している `xml_validate_schema` は、互換性のため従来のプレーンテキスト成功契約を維持します。
+
 Codex PluginのHookはnon-managed hookです。有効化する前に `hooks/hooks.json` と `hooks/feature_map_hook.py` を確認し、信頼できる内容か判断してください。HookスクリプトはPluginファイルが実行環境に存在する場合だけ動作します。Web上でPluginを追加しただけでは、ローカル環境へスクリプトは配置されません。
 
 ## Hookの動作
