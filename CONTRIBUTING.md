@@ -22,8 +22,8 @@ Avoid broad framework additions unless they remove more complexity than they add
 
 1. Fork the repository and create a topic branch.
 2. Make the smallest coherent change.
-3. Run `python scripts/validate_repository.py`.
-4. If you changed XML/XSD/XSLT, confirm that `feature-map.example.xml` validates and the generated HTML contains the Mermaid blocks.
+3. Run applicable local checks, including `python scripts/test_xquery_result.py`.
+4. If you changed XML/XSD/XSLT, validate the affected maps against `feature-map.xsd` and confirm that the generated HTML contains the Mermaid blocks.
 5. Update `CHANGELOG.md` for user-visible changes.
 6. Open a pull request with the behavior change, reason, and verification evidence.
 

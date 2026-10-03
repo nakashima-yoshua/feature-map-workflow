@@ -53,13 +53,11 @@ Recommended rules:
 - Require status checks before merging
 - Require linear history
 
-Required status check after the first CI run:
-
-- `validate`
+The repository no longer provides the `validate` CI check. Configure required status checks using active workflows, including any separately configured security scanning.
 
 Review count:
 
-- One-person maintainer: **0 required approvals** initially, or allow the maintainer role to bypass the approval requirement. Still require the PR and CI path for normal changes.
+- One-person maintainer: **0 required approvals** initially, or allow the maintainer role to bypass the approval requirement. Still require the PR path for normal changes.
 - Two or more maintainers: **1 required approval** for ordinary changes.
 
 Do not require signed commits by default. They improve provenance but increase contributor friction. Enable later if the maintainer policy explicitly requires signing.
@@ -100,9 +98,9 @@ Before the first public release:
 1. Replace placeholder ownership in `.github/CODEOWNERS` if needed.
 2. Confirm `LICENSE` and `THIRD_PARTY_NOTICES.md`.
 3. Confirm Mermaid and xquery-mcp pinned versions.
-4. Run `python scripts/validate_repository.py`.
+4. Run applicable local checks, including `python scripts/test_xquery_result.py`, and confirm that `python scripts/package_plugin.py` creates the release archive.
 5. Review `SECURITY.md` and enable private vulnerability reporting.
-6. Create the `main` ruleset after the `validate` check has appeared at least once.
+6. Create the `main` ruleset using the active status checks required by repository policy.
 
 ## Secrets
 
