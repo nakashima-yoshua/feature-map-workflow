@@ -29,7 +29,11 @@ def main() -> int:
     ):
         check_json(ROOT / rel)
 
-    for path in list((ROOT / "hooks").glob("*.py")) + list((SKILL / "scripts").glob("*.py")):
+    for path in (
+        list((ROOT / "hooks").glob("*.py"))
+        + list((ROOT / "scripts").glob("*.py"))
+        + list((SKILL / "scripts").glob("*.py"))
+    ):
         source = path.read_text(encoding="utf-8")
         compile(source, str(path), "exec")
         print(f"python ok: {path.relative_to(ROOT)}")
@@ -57,6 +61,18 @@ def main() -> int:
     if missing:
         raise SystemExit(f"HTML renderer missing expected markers: {missing}")
     print("xslt ok: Mermaid blocks and pinned loader emitted")
+
+    manifest = json.loads((ROOT / ".config/dotnet-tools.json").read_text(encoding="utf-8"))
+    xquery_version = manifest["tools"]["xquery-mcp"]["version"]
+    for rel in (
+        "README.md",
+        "README.ja.md",
+        "THIRD_PARTY_NOTICES.md",
+        "skills/feature-map-workflow/references/xquery-mcp.md",
+    ):
+        if xquery_version not in (ROOT / rel).read_text(encoding="utf-8"):
+            raise SystemExit(f"{rel} does not mention pinned xquery-mcp {xquery_version}")
+    print(f"xquery-mcp version references ok: {xquery_version}")
 
     plugin = json.loads((ROOT / "plugin.json").read_text(encoding="utf-8"))
     if plugin.get("version") != "0.4.0":

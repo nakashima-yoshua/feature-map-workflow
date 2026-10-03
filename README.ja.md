@@ -40,7 +40,7 @@ Feature Map Workflow は、**ソースコードを正本にしたまま、1枚�
 
 ## 初回セットアップ
 
-`xquery-mcp` 1.4.0.3 をローカル.NET Toolとして固定しています。最初に1回だけNuGetから復元してください。
+`xquery-mcp` 2.5.1 をローカル.NET Toolとして固定しています。最初に1回だけNuGetから復元してください。
 
 Windows PowerShell:
 

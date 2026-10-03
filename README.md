@@ -40,7 +40,7 @@ The internal meaning contract may use `goal / actor / action / target / conditio
 
 ## First-time setup
 
-This plugin pins `xquery-mcp` 1.4.0.3 as a local .NET tool. Restore it once from NuGet.
+This plugin pins `xquery-mcp` 2.5.1 as a local .NET tool. Restore it once from NuGet.
 
 Windows PowerShell:
 

@@ -3,8 +3,10 @@
   "isRoot": true,
   "tools": {
     "xquery-mcp": {
-      "version": "1.4.0.3",
-      "commands": ["xquery-mcp"]
+      "version": "2.5.1",
+      "commands": [
+        "xquery-mcp"
+      ]
     }
   }
 }

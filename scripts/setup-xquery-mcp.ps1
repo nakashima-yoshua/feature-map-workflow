@@ -15,5 +15,5 @@ if ($Major -lt 10) {
 & dotnet tool restore --tool-manifest $Manifest
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-Write-Host "xquery-mcp 1.4.0.3 restored for this plugin."
+Write-Host "xquery-mcp restored from the pinned local tool manifest."
 Write-Host "The MCP server is launched by mcp.json with: dotnet tool run xquery-mcp"
