@@ -19,6 +19,16 @@ Use one Feature Map XML per feature as the durable human/AI index. Treat source 
 - Keep user-facing responses delta-oriented. Do not echo the full Feature Map unless asked.
 - Preserve user intent before optimizing wording. Use this priority: `meaning preservation > operability > naturalness > brevity`.
 
+### YAGNI / implementation scope
+
+- Implement only behavior required by the current accepted goal and done condition.
+- Do not design for hypothetical future requirements.
+- Prefer the existing concrete implementation over a new abstraction when it can satisfy the current requirement safely.
+- Do not add interfaces, extension points, configuration options, generic frameworks, or reusable layers unless the current requirement or existing architecture needs them.
+- Do not refactor unrelated code merely because a cleaner design is possible.
+- Defer a new abstraction until there are at least two concrete current use cases, unless an existing architectural contract already requires it.
+- Once the done condition and required verification are satisfied, stop. Do not continue with cleanup, generalization, or adjacent improvement.
+
 Read `references/feature-map-contract.md` when creating or restructuring a map. Read `references/agents-api.md` when running the workflow through the OpenAI Agents API or delegating read-only investigation to subagents. Read `references/repository-coordination.md` when multiple agents or humans need asynchronous repository-level commands, dependency-aware scheduling, conflict control, Git publication, or cross-document XML projection. Read `references/development-lifecycle.md` when planning work across requirements, design, tests, implementation, CI/CD, documentation, and delivery. Read `references/test-strategy.md` when choosing E2E/integration/DB/unit boundaries. Read `references/coverage-model.md` when defining behavioral coverage denominators or completion evidence. Read `references/legacy-analysis.md` when tracing unfamiliar or legacy systems, especially dynamic/data-driven execution. Read `references/operable-japanese.md` before writing clarification questions or converting vague development instructions into executable Japanese. Read `references/context-gate.md` when deciding whether to ask the user or proceed with an assumption. Read `references/xquery-mcp.md` for XPath/XQuery/XSD operations. Read `references/programmatic-tool-calling.md` when several deterministic read/query/validation tool calls can be reduced in code. Read `references/decision-providers.md` when configuring bounded decision engines. Read `references/codex-hooks.md` when hooks are active or need troubleshooting. Read `references/jev.md` only when the optional Jev decision layer is enabled or being configured.
 
 ## Context sufficiency gate
