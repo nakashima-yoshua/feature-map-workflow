@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "task_id": "offline-value-fix",
+  "purpose": "Repair value() so it returns the existing test's expected value, 2.",
+  "exclude": ["Changing tests, publishing, external API calls"],
+  "contract_ref": "examples/task-runner/README.md#change-contract",
+  "invariants": ["INV-VALUE: value() returns 2 without side effects"],
+  "acceptance": ["REQ-VALUE: the existing tests/test_behavior.py passes"],
+  "risk": "LOW",
+  "allowed_paths": ["app.py"],
+  "read_paths": ["app.py", "tests/test_behavior.py", "feature-map.xml"],
+  "protected_paths": ["tests/test_behavior.py"],
+  "feature_map": "feature-map.xml",
+  "checks": [["python3", "tests/test_behavior.py"]],
+  "max_attempts": 3,
+  "max_seconds": 120,
+  "command_seconds": 15,
+  "external_input_allowed": false,
+  "recovery": "The source fixture stays unchanged. Keep evidence and remove the runner's detached worktree after review.",
+  "unverified": ["A real Codex session, live Decisions API behavior and business benefit are not measured by this offline fixture."],
+  "optimization": {
+    "constraint": "Repeated corrections for a small objectively testable defect",
+    "alternatives": ["Manual one-off repair", "NO_CHANGE", "Bounded runner experiment"],
+    "adoption": "Adopt only if total delivery and human review cost improve with invariants preserved",
+    "withdrawal": "Use the manual workflow if automation adds more review or operational work"
+  }
+}

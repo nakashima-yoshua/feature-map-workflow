@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<featureMap version="1.3" mode="change" state="ready">
+  <meta>
+    <system>Offline Task Runner fixture</system>
+    <feature>Repair the existing value contract</feature>
+  </meta>
+  <goal>
+    <purpose>Return the expected value without changing its independent test.</purpose>
+    <done>The fixed test observes value() == 2.</done>
+    <scope>app.py:value</scope>
+    <exclude>Test changes, external calls, publication and approval.</exclude>
+  </goal>
+  <sourceMap>
+    <ref kind="symbol" target="app.py:value"/>
+    <ref kind="test" target="tests/test_behavior.py"/>
+  </sourceMap>
+  <knowledge>
+    <invariant id="INV-VALUE">value() returns 2 without side effects.</invariant>
+  </knowledge>
+</featureMap>
