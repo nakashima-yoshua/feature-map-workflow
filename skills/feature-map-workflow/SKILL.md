@@ -205,7 +205,11 @@ Use a configured decision provider only for bounded judgments such as:
 
 Keep exact facts, file discovery, XML parsing, Git state, schema validity, thresholds, and permissions in ordinary code. Keep free-form investigation, design, implementation, and final Japanese phrasing in the coding model. Never let a provider result directly write XML or become the sole basis for asking the user.
 
-The decision layer is disabled by default. Jev is the implemented provider; the OpenAI Decisions API name is reserved but intentionally not connected until a public stable API contract exists. Respect repository/client data-handling rules before enabling any external provider.
+The decision layer is disabled by default. OpenAI Decisions API is the public-beta provider; Jev remains a legacy-compatible implementation. Respect repository/client data-handling rules before enabling any external provider. Refusals, API errors and malformed answers are undetermined advice, never evidence of approval or verification.
+
+## Optional bounded task execution
+
+Use `references/autonomous-task-runner.md` for tasks with fixed executable acceptance, approved paths and bounded retries. `scripts/task_runner.py` requires Linux OS isolation for evaluation and stores run state outside Feature Map XML. LOW tasks require post-implementation human review; MEDIUM tasks also require revision/config-bound prior Contract approval. HIGH/CRITICAL tasks remain human-led outside this MVP. A passing candidate is `HUMAN_REVIEW_REQUIRED`, never automatically approved, pushed, merged or deployed. No API/model call is made without explicit opt-in. Update durable Feature Map knowledge afterwards through this existing workflow, not in trial logs.
 
 ## Programmatic Tool Calling policy
 

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import math
 import os
+import re
 import urllib.error
 import urllib.request
 from typing import Any, Mapping
@@ -33,6 +35,167 @@ class DecisionProvider:
 
 class OffDecisionProvider(DecisionProvider):
     name = "off"
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+class OpenAIDecisionsProvider(DecisionProvider):
+    """Beta adapter. Advice only: never establishes permissions or verification."""
+
+    name = "openai"
+    ENDPOINT = "https://api.openai.com/v1/decisions"
+    CONTEXT_CHOICES = {
+        "scope": "Target or exclusions are unclear.",
+        "authority": "Permission for an external or irreversible action is unclear.",
+        "business_rule": "A domain rule is missing.",
+        "expected_behavior": "Multiple externally visible results are plausible.",
+        "acceptance": "An observable success condition is missing.",
+        "external_dependency": "An external contract or dependency is unclear.",
+        "data": "Data semantics or migration behavior is unclear.",
+        "environment": "The execution or deployment boundary is unclear.",
+        "none": "No material clarification appears necessary.",
+    }
+    SECTION_CHOICES = {
+        "source_map": "Source, test, data or API navigation changed.",
+        "rule": "A durable business rule changed.",
+        "invariant": "A property that must remain true changed.",
+        "decision": "A non-obvious design decision should be retained.",
+        "verify": "Verification evidence changed.",
+        "open": "An unresolved material blocker changed.",
+        "none": "No durable Feature Map delta is needed.",
+    }
+
+    def __init__(self, env: Mapping[str, str] | None = None) -> None:
+        self.env = env if env is not None else os.environ
+
+    def _redact(self, text: str) -> str:
+        # Content modes are explicit opt-in, not a guarantee of anonymization.
+        for name, value in self.env.items():
+            if re.search(r"key|token|secret|password", name, re.I) and len(value) >= 8:
+                text = text.replace(value, "[REDACTED]")
+        text = re.sub(r"-----BEGIN [^-]*PRIVATE KEY-----.*?-----END [^-]*PRIVATE KEY-----",
+                      "[REDACTED PRIVATE KEY]", text, flags=re.S)
+        text = re.sub(r"\b(?:sk-[A-Za-z0-9_-]{8,}|gh[pousr]_[A-Za-z0-9_]{8,})\b", "[REDACTED]", text)
+        text = re.sub(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", "[REDACTED EMAIL]", text)
+        text = re.sub(r"(?im)((?:api[_-]?key|password|token|secret)\s*[=:]\s*)[^\s,;]+",
+                      r"\1[REDACTED]", text)
+        return text
+
+    @staticmethod
+    def _probability(value: Any) -> float:
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError("invalid probability")
+        if not math.isfinite(value) or not 0 <= value <= 1:
+            raise ValueError("invalid probability")
+        return float(value)
+
+    def _request(self, state: dict[str, Any], questions: list[dict[str, Any]],
+                 confidence_key: str) -> tuple[dict[str, Any] | None, str | None]:
+        key = self.env.get("OPENAI_API_KEY", "").strip()
+        if not key:
+            return None, "OpenAI Decisions is enabled but OPENAI_API_KEY is not set"
+        model = self.env.get("FEATURE_MAP_DECISION_MODEL", "gpt-6-luna").strip() or "gpt-6-luna"
+        payload = {"model": model, "input": self._redact(json.dumps(state, ensure_ascii=False)),
+                   "questions": questions}
+        req = urllib.request.Request(self.ENDPOINT, method="POST",
+            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+        try:
+            opener = urllib.request.build_opener(_NoRedirect())
+            with opener.open(req, timeout=8.0) as response:
+                raw = response.read(65537)
+            if len(raw) > 65536:
+                raise ValueError("response too large")
+            data = json.loads(raw)
+            if not isinstance(data, dict) or not isinstance(data.get("answers"), list):
+                raise ValueError("invalid response")
+            if data.get("model", model) != model:
+                raise ValueError("unexpected model")
+            by_name: dict[str, Any] = {}
+            for answer in data["answers"]:
+                if not isinstance(answer, dict) or not isinstance(answer.get("name"), str):
+                    raise ValueError("unnamed answer")
+                if answer["name"] in by_name:
+                    raise ValueError("duplicate answer")
+                by_name[answer["name"]] = answer
+            if set(by_name) != {q["name"] for q in questions}:
+                raise ValueError("missing or unexpected answer")
+            result: dict[str, Any] = {"provider": self.name, "model": model}
+            for question in questions:
+                answer = by_name[question["name"]]
+                if answer.get("type") != question["type"]:
+                    raise ValueError("refusal or changed answer type")
+                if question["type"] == "predicate":
+                    result[question["name"]] = self._probability(answer.get("probability"))
+                else:
+                    choice = answer.get("choice")
+                    if not isinstance(choice, str) or choice not in {c["value"] for c in question["choices"]}:
+                        raise ValueError("invalid choice")
+                    result[question["name"]] = choice
+                    result[confidence_key] = self._probability(answer.get("confidence"))
+                    if "probabilities" in answer:
+                        probabilities = answer["probabilities"]
+                        if not isinstance(probabilities, list):
+                            raise ValueError("invalid choice distribution")
+                        values = [p.get("value") for p in probabilities if isinstance(p, dict)]
+                        if len(values) != len(probabilities) or len(values) != len(set(values)) or \
+                                set(values) != {c["value"] for c in question["choices"]}:
+                            raise ValueError("invalid choice distribution")
+                        if abs(sum(self._probability(p.get("probability")) for p in probabilities) - 1) > .01:
+                            raise ValueError("invalid choice distribution")
+            return result, None
+        except urllib.error.HTTPError as exc:
+            # Never include response bodies, headers, credentials, or request text.
+            return None, f"OpenAI Decisions HTTP {exc.code}; advisory unavailable"
+        except Exception as exc:
+            return None, f"OpenAI Decisions unavailable ({type(exc).__name__}); advisory undetermined"
+
+    @staticmethod
+    def _predicate(name: str, instructions: str) -> dict[str, Any]:
+        return {"name": name, "type": "predicate", "instructions": instructions}
+
+    @staticmethod
+    def _choice(name: str, instructions: str, choices: dict[str, str]) -> dict[str, Any]:
+        return {"name": name, "type": "choice", "instructions": instructions,
+                "choices": [{"value": value, "description": description}
+                            for value, description in choices.items()]}
+
+    def context_decide(self, mode, summary, prompt, signals):
+        if mode not in {"metadata", "prompt"}:
+            return None, None
+        state = {"scope_present": bool(summary.get("scope")),
+                 "exclude_present": bool(summary.get("exclude")),
+                 "high_impact_open_count": sum(x.get("impact") == "high" for x in summary.get("open", [])),
+                 "prompt_length": len(prompt),
+                 "local_signal_categories": sorted({x.get("category") for x in signals
+                     if x.get("category") in {"scope", "criteria", "authority"}})}
+        if mode == "prompt":
+            state["prompt"] = self._redact(prompt)[:3000]
+        return self._request(state, [
+            self._predicate("context_sufficient", "Is local context likely sufficient after checking source, tests and the Feature Map?"),
+            self._predicate("question_required", "Is a human clarification likely required for materially missing scope, authority, behavior, acceptance or dependency?"),
+            self._choice("missing_context_type", "Select the most material missing-context category.", self.CONTEXT_CHOICES),
+        ], "missing_context_confidence")
+
+    def completion_decide(self, mode, summary, changed_files, last_assistant_message, diff_stat, git_diff):
+        if mode not in {"metadata", "summary", "diff"}:
+            return None, None
+        state = {"changed_file_count": len(changed_files),
+                 "high_impact_open_count": sum(x.get("impact") == "high" for x in summary.get("open", [])),
+                 "verification_statuses": [x.get("status") for x in summary.get("verify", [])
+                     if x.get("status") in {"passed", "failed", "blocked", "planned", "not-run"}][:20]}
+        if mode in {"summary", "diff"}:
+            state["assistant_summary"] = self._redact(last_assistant_message or "")[-3000:]
+        if mode == "diff":
+            state["git_diff"] = self._redact(git_diff)[:8000]
+        return self._request(state, [
+            self._predicate("update_required", "Did durable feature knowledge change? Internal refactoring alone is not a durable delta."),
+            self._choice("update_section", "Select the section for the most important durable delta.", self.SECTION_CHOICES),
+            self._predicate("human_review_required", "Is a material ambiguity or acceptance risk likely to need human review? This is advice, never approval."),
+        ], "update_section_confidence")
 
 
 class UnavailableDecisionProvider(DecisionProvider):
@@ -289,10 +452,7 @@ def get_decision_provider(env: Mapping[str, str] | None = None) -> DecisionProvi
     if selected == "jev":
         return JevDecisionProvider(env)
     if selected == "openai":
-        return UnavailableDecisionProvider(
-            "openai",
-            "the OpenAI Decisions API adapter is reserved until a public, stable API contract is available",
-        )
+        return OpenAIDecisionsProvider(env)
     return UnavailableDecisionProvider(selected, "unknown provider")
 
 

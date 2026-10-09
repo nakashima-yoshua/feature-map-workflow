@@ -1,0 +1,27 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - run: python -m pip install lxml
+      - run: sudo apt-get update && sudo apt-get install -y bubblewrap
+      - run: python scripts/test_decision_provider.py
+      - run: python scripts/test_xquery_result.py
+      - run: python scripts/test_task_runner.py
+        env:
+          REQUIRE_RUNNER_SANDBOX: "1"
+      - run: python scripts/validate_repository.py
+      - run: python scripts/package_plugin.py

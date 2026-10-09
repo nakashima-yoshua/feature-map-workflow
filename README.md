@@ -14,7 +14,8 @@ A Source-first development workflow that carries one compact Feature Map XML thr
 - Git: change history
 - xquery-mcp: narrow XPath/XQuery reads, XML formatting, and XSD validation
 - Codex hooks: context gate, lifecycle timing, edit tracking, and completion gates
-- Decision Provider: optional bounded judgment for prompt-time context sufficiency and completion-time durable-map updates (Jev is currently implemented)
+- Decision Provider: optional bounded advice through OpenAI Decisions API or legacy Jev (default off)
+- Task Runner: opt-in bounded attempts, isolated evaluation, checkpoints and revision-bound human review
 - Operable Japanese: meaning-first rendering rules aligned with `natural-japanese` principles
 
 ## Design principle
@@ -158,7 +159,7 @@ The bundled hooks are intentionally narrow:
 2. `SessionStart`: find one Feature Map, parse it locally, and add only a compact context slice.
 3. `PostToolUse` on `Edit|Write`: track changed files and detect malformed Feature Map XML without emitting routine context.
 4. `PostToolUse` on `mcp__xquery__xml_validate_schema`: remember the canonical hash of an XML payload that xquery-mcp confirmed as valid.
-5. `Stop`: enforce local consistency checks, require XSD validation after a Feature Map change, and optionally ask Jev whether code/test changes likely require a durable Feature Map delta.
+5. `Stop`: enforce local consistency checks, require XSD validation after a Feature Map change, and optionally ask the configured Decision Provider whether code/test changes likely require a durable Feature Map delta.
 
 The prompt-time hook uses `additionalContext`, not a hard prompt block. Context sufficiency is semantic; regex matches are only signals. This lets Codex inspect source/tests/config/Feature Map before deciding whether a question is actually required.
 
@@ -215,7 +216,7 @@ This distribution is ready to become the repository root. It includes `LICENSE`,
 
 ## Decision Provider (optional)
 
-Bounded semantic judgments sit behind a `DecisionProvider` boundary. The default is `off`; `jev` is the implemented external provider. The `openai` name is reserved for the OpenAI Decisions API and intentionally remains disconnected until a public stable contract is available.
+Bounded semantic judgments sit behind a `DecisionProvider` boundary. The default remains `off`. `openai` implements the public-beta OpenAI Decisions API; `jev` remains a legacy-compatible provider. Nothing switches existing users automatically.
 
 ```sh
 FEATURE_MAP_DECISION_PROVIDER=off|jev|openai
@@ -224,6 +225,32 @@ FEATURE_MAP_DECISION_COMPLETION_MODE=off|metadata|summary|diff
 ```
 
 Legacy `FEATURE_MAP_JEV_*` variables remain supported. See `references/decision-providers.md`.
+
+### OpenAI Decisions API
+
+Explicitly select `FEATURE_MAP_DECISION_PROVIDER=openai`, use an existing
+`OPENAI_API_KEY`, and set one or both generic modes. The default model is
+`gpt-6-luna` (`FEATURE_MAP_DECISION_MODEL` can override it). Metadata sends counts,
+presence flags and fixed categories, not source, names, paths, prompt text or diffs.
+`prompt`, `summary` and `diff` are explicit content opt-ins; review data policies
+before enabling them. Known secrets and emails are redacted, but that is not a
+complete DLP guarantee. Errors/refusals/malformed responses yield warning plus
+undetermined advice. Git/XSD/test/permission/HALT and human approval gates remain
+independent. See the [provider contract](skills/feature-map-workflow/references/decision-providers.md).
+
+## Autonomous Task Runner (optional)
+
+`python scripts/task_runner.py` runs one LOW or explicitly approved MEDIUM task
+with fixed paths/checks, budgets, a detached worktree, mandatory Linux bubblewrap
+evaluation, evidence and safe checkpoint resume. Successful self-check produces
+`HUMAN_REVIEW_REQUIRED`, never automatic approval/push/merge/deploy. HIGH/CRITICAL
+tasks remain human-led. Missing isolation or stale/in-flight state HALTs.
+
+Start with the [offline example](examples/task-runner/README.md), which needs no
+API key. The optional version-checked Codex proposal broker requires explicit
+source-transmission opt-in. See [accountability, execution and restart contract](skills/feature-map-workflow/references/autonomous-task-runner.md).
+
+## Legacy Jev configuration
 
 ### Jev integration
 
