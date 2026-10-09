@@ -66,6 +66,8 @@ Context Sufficiency
 
 ソース、テスト、CI証跡、Runtime Trace、Release Artifactは、それぞれの場所を正本とします。Feature Mapには、コード等から安価に再構築できない永続的な知識だけを残します。
 
+全体最適を目的とし、制約を根拠に変更・変更不要を選ぶYAGNIの設計と段階導入計画は [YAGNI × 全体最適](skills/feature-map-workflow/references/yagni-whole-system-optimization.md) を参照してください（[開発計画 Issue #8](https://github.com/nakashima-yoshua/feature-map-workflow/issues/8)）。手法や分析文書を全タスクへ必須化しません。
+
 
 ## Agents API / Programmatic Tool Calling
 
