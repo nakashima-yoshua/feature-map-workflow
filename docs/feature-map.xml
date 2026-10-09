@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="../skills/feature-map-workflow/assets/feature-map.xsl"?>
+<featureMap version="1.3" mode="change" state="ready">
+  <meta>
+    <system>Feature Map Workflow</system>
+    <feature>Bounded task execution and advisory OpenAI Decisions</feature>
+    <environment>Linux evaluator with bubblewrap; external providers default off.</environment>
+  </meta>
+  <goal>
+    <purpose>Reduce repeated instructions for objectively testable changes while keeping human accountability.</purpose>
+    <done>Fixed criteria, bounded execution, retained evidence and safe checkpoint restart produce a revision-bound human review request.</done>
+    <scope>Single LOW/MEDIUM task; opt-in Decisions advice; bounded retries and checkpoints.</scope>
+    <exclude>Autonomous approval/publication, HIGH/CRITICAL execution, production data, queues, multiple agents and UI.</exclude>
+  </goal>
+  <sourceMap>
+    <ref kind="external" target="https://github.com/nakashima-yoshua/feature-map-workflow/issues/8"/>
+    <ref kind="external" target="https://github.com/nakashima-yoshua/system-understanding-architecture"/>
+    <ref kind="symbol" target="hooks/decision_provider.py:OpenAIDecisionsProvider"/>
+    <ref kind="symbol" target="scripts/task_runner.py:Runner"/>
+    <ref kind="symbol" target="scripts/task_runner.py:Sandbox"/>
+    <ref kind="test" target="scripts/test_task_runner.py:RealSandboxTests"/>
+    <ref kind="test" target="scripts/test_decision_provider.py:OpenAIDecisionsTests"/>
+    <ref kind="other" target="skills/feature-map-workflow/references/autonomous-task-runner.md"/>
+  </sourceMap>
+  <knowledge>
+    <invariant id="INV-HUMAN-ACCOUNTABILITY">Self-check never constitutes human approval, merge permission or release authorization.</invariant>
+    <invariant id="INV-EVALUATION">Required tests and acceptance inputs remain outside model write authority; an improved metric never overrides a failed required check.</invariant>
+    <invariant id="INV-NO-REPLAY">Unknown in-flight work is HALTed rather than replayed. Safe checkpoints preserve attempts, evidence and remaining wall-time budget.</invariant>
+    <invariant id="INV-ADVICE">Decision Provider failures affect advice only; permissions, XML/schema, tests and human approval remain independent.</invariant>
+    <decision id="ADR-PROPOSAL-BOUNDARY" reason="Separate proposed content from command execution, canonical source writes and human review authority.">Codex supplies bounded file-change data; the runner validates all edits before writing to its own detached worktree.</decision>
+    <constraint id="CON-OS-ISOLATION">Evaluators require functioning Linux bubblewrap. Missing isolation is a blocking environment failure.</constraint>
+    <constraint id="CON-BETA">OpenAI Decisions API and the version-pinned optional Codex broker require explicit data-transmission consent and independent quality evaluation.</constraint>
+  </knowledge>
+  <verify>
+    <case id="VERIFY-BOUNDED-REPAIR" type="retry" status="passed">
+      <condition>Existing failing test, incorrect proposal, corrected proposal.</condition>
+      <expect>Failure evidence survives; only the passing bounded candidate advances to human review.</expect>
+      <evidence ref="scripts/test_task_runner.py:RealSandboxTests.test_actual_failed_attempt_then_improvement"/>
+    </case>
+    <case id="VERIFY-OS-BOUNDARY" type="permission" status="passed">
+      <condition>Evaluator attempts source writes or host-loopback communication.</condition>
+      <expect>Read-only source, hidden Git metadata and isolated network prevent the side effects.</expect>
+      <evidence ref="scripts/test_task_runner.py:RealSandboxTests.test_actual_sandbox_rejects_host_side_effects_and_network"/>
+    </case>
+    <case id="VERIFY-DECISION-COMPAT" type="regression" status="passed">
+      <condition>Mocked named OpenAI predicate/choice responses at both existing hook call sites.</condition>
+      <expect>Normalized advice is compatible; required local gates remain independent.</expect>
+      <evidence ref="scripts/test_decision_provider.py:OpenAIDecisionsTests.test_both_real_hook_call_sites_use_normalized_openai_advice"/>
+    </case>
+  </verify>
+  <open>
+    <item id="OPEN-LIVE-EVIDENCE" type="external-dependency" impact="medium" next="Use a separately authorized synthetic live smoke test before opting into production decisions.">Live Decisions/Codex quality, cost and latency have not been measured; all API transport tests are mocked.</item>
+    <item id="OPEN-ADOPTION" type="acceptance" impact="medium" next="Compare accepted-delivery time, human intervention, review wait and defects against the manual workflow.">The offline repair proves mechanics and boundaries, not a whole-system benefit.</item>
+  </open>
+</featureMap>

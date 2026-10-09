@@ -207,6 +207,10 @@ Keep exact facts, file discovery, XML parsing, Git state, schema validity, thres
 
 The decision layer is disabled by default. OpenAI Decisions API is the public-beta provider; Jev remains a legacy-compatible implementation. Respect repository/client data-handling rules before enabling any external provider. Refusals, API errors and malformed answers are undetermined advice, never evidence of approval or verification.
 
+## Optional bounded task execution
+
+Use `references/autonomous-task-runner.md` for tasks with fixed executable acceptance, approved paths and bounded retries. `scripts/task_runner.py` requires Linux OS isolation for evaluation and stores run state outside Feature Map XML. LOW tasks require post-implementation human review; MEDIUM tasks also require revision/config-bound prior Contract approval. HIGH/CRITICAL tasks remain human-led outside this MVP. A passing candidate is `HUMAN_REVIEW_REQUIRED`, never automatically approved, pushed, merged or deployed. No API/model call is made without explicit opt-in. Update durable Feature Map knowledge afterwards through this existing workflow, not in trial logs.
+
 ## Programmatic Tool Calling policy
 
 Use Programmatic Tool Calling only for bounded, predictable read/query/filter/aggregate/validation stages that can return a smaller structured result. Prefer direct tool calls when each result changes the next semantic decision, and for writes, approvals, final native-artifact validation, Git publication, or external side effects. See `references/programmatic-tool-calling.md`.

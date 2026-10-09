@@ -15,6 +15,7 @@ Feature Map Workflow は、**ソースコードを正本にしたまま、1枚�
 - xquery-mcp: XPath/XQueryによる部分参照、XML整形、XSD検証
 - Codex Hooks: コンテキスト不足の確認、ライフサイクル制御、編集追跡、完了ゲート
 - Decision Provider: OpenAI Decisions APIと既存Jevに対応する任意の判断補助（既定off）
+- Task Runner: 試行の上限、隔離評価、checkpoint、人間レビューを扱う任意の実行器
 - Operable Japanese: `natural-japanese` の考え方を取り入れた、意味を保ったまま操作可能で自然な日本語
 
 ## 設計方針
@@ -249,6 +250,19 @@ FEATURE_MAP_DECISION_COMPLETION_MODE=off|metadata|summary|diff
 API障害、refusal、不正レスポンスは警告と未判断にします。Git、XSD、テスト、
 権限、HALT、人間の承認は別の必須ゲートです。APIの判断で解除しません。
 詳細は [provider契約](skills/feature-map-workflow/references/decision-providers.md) を参照してください。
+
+## Autonomous Task Runner（任意）
+
+`python scripts/task_runner.py` は、LOWまたは事前承認済みのMEDIUMタスクを
+固定した変更パス・検証コマンド・実行予算で扱います。隔離Worktree、Linuxの
+bubblewrapによる評価、試行の証拠保存、checkpointからの再開に対応します。
+自己検証に合格すると `HUMAN_REVIEW_REQUIRED` になります。承認、push、merge、
+deployは自動で行いません。HIGH/CRITICALは人主導の工程で扱います。
+隔離できない場合や状態が古い場合、中断した処理の成否が不明な場合はHALTします。
+
+まずはAPIキー不要の [オフライン例](examples/task-runner/README.md) を試してください。
+任意のCodex提案生成には、対応CLI版の確認とソース送信の明示許可が必要です。
+[責任・実行・再開の契約](skills/feature-map-workflow/references/autonomous-task-runner.md) に詳細をまとめています。
 
 ## 既存Jev設定
 

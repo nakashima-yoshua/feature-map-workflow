@@ -15,6 +15,7 @@ A Source-first development workflow that carries one compact Feature Map XML thr
 - xquery-mcp: narrow XPath/XQuery reads, XML formatting, and XSD validation
 - Codex hooks: context gate, lifecycle timing, edit tracking, and completion gates
 - Decision Provider: optional bounded advice through OpenAI Decisions API or legacy Jev (default off)
+- Task Runner: opt-in bounded attempts, isolated evaluation, checkpoints and revision-bound human review
 - Operable Japanese: meaning-first rendering rules aligned with `natural-japanese` principles
 
 ## Design principle
@@ -236,6 +237,18 @@ before enabling them. Known secrets and emails are redacted, but that is not a
 complete DLP guarantee. Errors/refusals/malformed responses yield warning plus
 undetermined advice. Git/XSD/test/permission/HALT and human approval gates remain
 independent. See the [provider contract](skills/feature-map-workflow/references/decision-providers.md).
+
+## Autonomous Task Runner (optional)
+
+`python scripts/task_runner.py` runs one LOW or explicitly approved MEDIUM task
+with fixed paths/checks, budgets, a detached worktree, mandatory Linux bubblewrap
+evaluation, evidence and safe checkpoint resume. Successful self-check produces
+`HUMAN_REVIEW_REQUIRED`, never automatic approval/push/merge/deploy. HIGH/CRITICAL
+tasks remain human-led. Missing isolation or stale/in-flight state HALTs.
+
+Start with the [offline example](examples/task-runner/README.md), which needs no
+API key. The optional version-checked Codex proposal broker requires explicit
+source-transmission opt-in. See [accountability, execution and restart contract](skills/feature-map-workflow/references/autonomous-task-runner.md).
 
 ## Legacy Jev configuration
 

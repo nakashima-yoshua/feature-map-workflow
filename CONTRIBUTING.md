@@ -12,7 +12,8 @@ Good changes improve one of these areas:
 - Mermaid rendering;
 - Codex lifecycle hooks;
 - xquery-mcp integration;
-- bounded Jev decisions;
+- bounded Decision Provider advice and backward-compatible Jev configuration;
+- opt-in bounded task execution with independent human review;
 - context sufficiency and operable Japanese;
 - validation, packaging, or documentation.
 
@@ -22,7 +23,7 @@ Avoid broad framework additions unless they remove more complexity than they add
 
 1. Fork the repository and create a topic branch.
 2. Make the smallest coherent change.
-3. Run applicable local checks, including `python scripts/test_xquery_result.py`.
+3. Run applicable local checks: `python scripts/test_xquery_result.py`, `python scripts/test_decision_provider.py`, `python scripts/test_task_runner.py`, and `python scripts/validate_repository.py`. On a Linux host supporting bubblewrap, set `REQUIRE_RUNNER_SANDBOX=1` for runner tests; CI requires actual OS isolation. No live API calls are part of these tests.
 4. If you changed XML/XSD/XSLT, validate the affected maps against `feature-map.xsd` and confirm that the generated HTML contains the Mermaid blocks.
 5. Update `CHANGELOG.md` for user-visible changes.
 6. Open a pull request with the behavior change, reason, and verification evidence.

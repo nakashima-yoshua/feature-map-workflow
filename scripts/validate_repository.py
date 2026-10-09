@@ -63,6 +63,13 @@ class Fixture</diagram>
     if not schema.validate(fixture_doc):
         raise SystemExit(str(schema.error_log))
     print("xsd ok: inline public validation fixture")
+    for path in ROOT.rglob("feature-map.xml"):
+        if any(part in {".git", ".plugin-data", "dist", ".package-staging"} for part in path.relative_to(ROOT).parts):
+            continue
+        doc = etree.parse(str(path), etree.XMLParser(resolve_entities=False, no_network=True))
+        if not schema.validate(doc):
+            raise SystemExit(f"{path.relative_to(ROOT)}: {schema.error_log}")
+        print(f"xsd ok: {path.relative_to(ROOT)}")
 
     xslt = etree.XSLT(etree.parse(str(ASSETS / "feature-map.xsl")))
     html = str(xslt(fixture_doc))
