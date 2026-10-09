@@ -66,6 +66,8 @@ Detailed phase policy lives in:
 
 Source/tests, CI evidence, runtime traces, and release artifacts remain canonical in their native form. Feature Map stores only durable knowledge that is costly or ambiguous to reconstruct.
 
+For a YAGNI-based, whole-system approach to deciding whether and how to improve a workflow, see [YAGNI × whole-system optimization: design and phased plan](skills/feature-map-workflow/references/yagni-whole-system-optimization.md) ([tracking issue #8](https://github.com/nakashima-yoshua/feature-map-workflow/issues/8)). It does not mandate new analysis artifacts or techniques for every task.
+
 
 ## Agents API and Programmatic Tool Calling
 
