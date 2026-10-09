@@ -5,7 +5,7 @@ All notable user-visible changes are documented here.
 ## Unreleased
 
 - Add a provider-neutral DecisionProvider boundary while preserving legacy Jev configuration.
-- Reserve an OpenAI Decisions API provider without guessing an unpublished API contract.
+- Implement the public-beta OpenAI Decisions API adapter with named predicate/choice normalization, default-off content controls, sanitized failures and legacy Jev compatibility.
 - Add an OpenAI Agents API self-hosted PoC with multi-agent read delegation and a single canonical writer.
 - Add bounded Programmatic Tool Calling guidance for read/query/reduction stages and stdio xquery-mcp integration.
 - Define one-writer-per-worktree rules for concurrent agent work.

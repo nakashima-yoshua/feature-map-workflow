@@ -205,7 +205,7 @@ Use a configured decision provider only for bounded judgments such as:
 
 Keep exact facts, file discovery, XML parsing, Git state, schema validity, thresholds, and permissions in ordinary code. Keep free-form investigation, design, implementation, and final Japanese phrasing in the coding model. Never let a provider result directly write XML or become the sole basis for asking the user.
 
-The decision layer is disabled by default. Jev is the implemented provider; the OpenAI Decisions API name is reserved but intentionally not connected until a public stable API contract exists. Respect repository/client data-handling rules before enabling any external provider.
+The decision layer is disabled by default. OpenAI Decisions API is the public-beta provider; Jev remains a legacy-compatible implementation. Respect repository/client data-handling rules before enabling any external provider. Refusals, API errors and malformed answers are undetermined advice, never evidence of approval or verification.
 
 ## Programmatic Tool Calling policy
 

@@ -14,7 +14,7 @@ Feature Map Workflow は、**ソースコードを正本にしたまま、1枚�
 - Git: 変更履歴
 - xquery-mcp: XPath/XQueryによる部分参照、XML整形、XSD検証
 - Codex Hooks: コンテキスト不足の確認、ライフサイクル制御、編集追跡、完了ゲート
-- Decision Provider: コンテキスト充足度やFeature Map更新要否を扱う任意の閉じた判断層（現在の実装はJev）
+- Decision Provider: OpenAI Decisions APIと既存Jevに対応する任意の判断補助（既定off）
 - Operable Japanese: `natural-japanese` の考え方を取り入れた、意味を保ったまま操作可能で自然な日本語
 
 ## 設計方針
@@ -225,7 +225,7 @@ GitHub側で設定する推奨値は `docs/github-repository-settings.md` にま
 
 ## Decision Provider（任意）
 
-閉じた判断は `DecisionProvider` 境界の後ろに置きます。既定は `off`、現在の実装済み外部providerは `jev` です。`openai` はOpenAI Decisions API向け予約名ですが、公開された安定API契約が確認できるまで接続しません。
+閉じた判断は `DecisionProvider` 境界の後ろに置きます。既定は `off` のままです。`openai` は公開ベータのOpenAI Decisions APIに対応し、`jev` は既存利用者向けの互換実装として残します。旧設定を自動で切り替えることはありません。
 
 ```sh
 FEATURE_MAP_DECISION_PROVIDER=off|jev|openai
@@ -234,6 +234,23 @@ FEATURE_MAP_DECISION_COMPLETION_MODE=off|metadata|summary|diff
 ```
 
 既存の `FEATURE_MAP_JEV_*` は後方互換のため引き続き利用できます。詳細は `references/decision-providers.md` を参照してください。
+
+### OpenAI Decisions API
+
+明示的に `FEATURE_MAP_DECISION_PROVIDER=openai` を選択し、既存の
+`OPENAI_API_KEY` と共通モードを設定します。既定モデルは `gpt-6-luna` です。
+`FEATURE_MAP_DECISION_MODEL` で変更できます。
+
+`metadata` が送るのは件数、有無、固定カテゴリだけです。コード、名前、パス、
+プロンプト本文、diffは含めません。本文を送る `prompt`、`summary`、`diff` は
+明示的な選択が必要です。送信が契約上禁止される場合は `off` にしてください。
+既知の秘密情報やメールアドレスを伏せますが、すべての機密情報を検出する保証はありません。
+
+API障害、refusal、不正レスポンスは警告と未判断にします。Git、XSD、テスト、
+権限、HALT、人間の承認は別の必須ゲートです。APIの判断で解除しません。
+詳細は [provider契約](skills/feature-map-workflow/references/decision-providers.md) を参照してください。
+
+## 既存Jev設定
 
 ### Jev連携
 
