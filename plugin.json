@@ -33,7 +33,8 @@
         "defaultPrompt": [
           "Analyze this feature using the Source-first Feature Map. If critical context is missing, ask one precise natural-Japanese question before editing; otherwise update only durable knowledge deltas.",
           "Implement this change with the Feature Map workflow. Keep source/tests canonical, preserve the user's scope and authority, patch only durable XML deltas, and validate with xquery-mcp.",
-          "Use the context gate and Feature Map lifecycle hooks to catch ambiguous scope, missing acceptance conditions, missing durable updates, or XSD validation before finishing."
+          "Use the context gate and Feature Map lifecycle hooks to catch ambiguous scope, missing acceptance conditions, missing durable updates, or XSD validation before finishing.",
+          "Trace from the real EXE/job/UI entry to the selected BL branch. Discover only path-specific DB/API/config prerequisites, prepare isolated fixtures with explicit authorization, then verify the first blocking gate and report observed evidence."
         ]
       },
       "hooks": "./hooks/hooks.json"
