@@ -67,6 +67,14 @@ Context Sufficiency
 
 ソース、テスト、CI証跡、Runtime Trace、Release Artifactは、それぞれの場所を正本とします。Feature Mapには、コード等から安価に再構築できない永続的な知識だけを残します。
 
+### 仕様書のないシステムで対象BLに到達する
+
+EXEやジョブの起動点から特定のBL・分岐を実行したいのに、DBの関連マスタ、JOIN条件、外部API応答、設定値、処理順序などの前提が分からない場合は、[目標到達型の経路探索・テストデータ準備手順](skills/feature-map-workflow/references/target-reachability.md) を利用します。
+
+AIが対象処理から逆方向、起動点から順方向に経路を調べ、選択した経路に必要なAND/OR/NOT条件だけを抽出します。読取り中心の事前点検、許可された隔離環境でのデータ・APIスタブ準備、実行時に最初に通過できなかった条件の再調査を繰り返します。「経路候補の発見」「対象への到達」「期待動作の検証」「初期状態からの再現」を区別し、実行できない場合は未実行の計画として報告します。
+
+テストデータや詳細トレースをFeature Map XMLへ重複保存せず、テスト側を正本とします。XMLのスキーマやモード、新しい実行基盤は追加しません。
+
 全体最適を目的とし、制約を根拠に変更・変更不要を選ぶYAGNIの設計と段階導入計画は [YAGNI × 全体最適](skills/feature-map-workflow/references/yagni-whole-system-optimization.md) を参照してください（[開発計画 Issue #8](https://github.com/nakashima-yoshua/feature-map-workflow/issues/8)）。手法や分析文書を全タスクへ必須化しません。
 
 
