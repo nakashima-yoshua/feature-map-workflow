@@ -107,7 +107,7 @@ For every phase, distinguish:
 
 **Input:** scenario, dependencies, data effects, external interfaces.
 
-**Activity:** define where the test enters, what runs for real, what is stubbed, what state is controlled, what is observed, and what the test does not guarantee.
+**Activity:** define where the test enters, what runs for real, what is stubbed, what state is controlled, what is observed, and what the test does not guarantee. When launch-to-target prerequisites are unclear, use `target-reachability.md` to select one real route and discover its minimum fixture/setup closure before attempting execution.
 
 **Durable Feature Map delta:** only non-obvious boundaries that are expensive to reconstruct. See `test-strategy.md`.
 

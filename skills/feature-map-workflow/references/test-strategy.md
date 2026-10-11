@@ -156,6 +156,8 @@ Useful boundaries may already exist at:
 
 An event handler containing UI, SQL, business rules, and file/process I/O is a valid initial E2E boundary even if it is a poor long-term design. Extract only the parts that produce a clear testing or maintainability payoff.
 
+When an EXE, event, or job cannot reach a target BL because data/config/API prerequisites are unknown, use `target-reachability.md` for backwards/forwards path discovery, read-only preflight, isolated fixture setup, and blocking-frontier validation. A fixture or stub does not by itself prove real target execution.
+
 ## Evidence
 
 A passing UI message is not enough for DB-heavy business systems. Prefer observable business effects such as:

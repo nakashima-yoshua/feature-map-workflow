@@ -67,6 +67,12 @@ Detailed phase policy lives in:
 
 Source/tests, CI evidence, runtime traces, and release artifacts remain canonical in their native form. Feature Map stores only durable knowledge that is costly or ambiguous to reconstruct.
 
+### Goal-directed reachability for undocumented systems
+
+When a specific business-logic branch cannot be exercised from its real EXE/job/UI entry point because DB records, JOINs, master tables, API replies, flags or setup order are missing, use the [target reachability and test fixture discovery workflow](skills/feature-map-workflow/references/target-reachability.md).
+
+The AI traces backwards from the target and forwards from launch, builds the **minimum path-specific AND/OR/NOT prerequisites**, performs read-only preflight checks, prepares authorized test fixtures/stubs, and investigates the first blocking runtime gate. It reports **route discovered / target reached / behavior verified / reproducible** separately. Real execution requires an isolated and explicitly authorized environment; otherwise it produces a not-run plan. Detailed traces and fixture data stay with tests; Feature Map XML holds only durable findings and evidence references. No new schema, mode or mandatory runtime dependency is added.
+
 For a YAGNI-based, whole-system approach to deciding whether and how to improve a workflow, see [YAGNI × whole-system optimization: design and phased plan](skills/feature-map-workflow/references/yagni-whole-system-optimization.md) ([tracking issue #8](https://github.com/nakashima-yoshua/feature-map-workflow/issues/8)). It does not mandate new analysis artifacts or techniques for every task.
 
 
