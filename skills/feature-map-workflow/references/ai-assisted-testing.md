@@ -53,6 +53,23 @@ Test tools retain their native JUnit/TRX/Playwright reports. To connect them to 
 - Bind human acceptance to exact source revision and evidence run. A new revision requires a fresh verification decision.
 - **Do not repurpose scripts/task_runner.py**: it uses Linux bubblewrap, protected test paths and no network. Browser/Windows/DB E2E execution needs a separately authorized isolated environment and its project-native runner. Preserve existing approvals, hook gates, test protections and HALT rules.
 
+## Optional tool installation
+
+For the fictional browser-to-SQLite example, use the source-controlled installer
+`scripts/setup-ai-testing.py`, or the `.ps1` / `.sh` wrappers. It defaults to
+Playwright Python (pinned in `scripts/requirements-ai-testing.txt`) and Chromium
+in a dedicated `.venv-ai-testing`. A dry-run (`--dry-run`) previews commands;
+`--check` verifies package/browser presence; `--smoke` executes the actual
+browser/UI/DB scenario in an authorized isolated environment.
+
+On Windows, `--windows-ui-project path/to/TestProject.csproj` optionally
+adds pinned FlaUI.UIA3 only to that explicitly authorized test project.
+`--with-xquery` optionally restores the existing pinned .NET local tool.
+`--skip-web` skips Playwright when only .NET functionality is needed.
+No package or service is mandatory for ordinary Feature Map use. Do not install
+GUI tools into the existing Linux bubblewrap Task Runner. Do not auto-install
+Python, .NET SDK, system OS libraries or privileged dependencies.
+
 ## Runnable example and rollout
 
 See `examples/ai-assisted-testing/README.md`. The example reuses the existing fictional puzzle Feature Map IDs, launches a loopback-only Python app using fresh SQLite, verifies an HTTP registration and DB transition, and saves structured evidence. Its optional Playwright mode performs real input/click/screenshot/trace where a browser is installed. It uses no AI/API key and no customer data.

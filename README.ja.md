@@ -76,6 +76,30 @@ AIが対象処理から逆方向、起動点から順方向に経路を調べ、
 
 テストデータや詳細トレースをFeature Map XMLへ重複保存せず、テスト側を正本とします。XMLのスキーマやモード、新しい実行基盤は追加しません。
 
+### AI支援テスト用ツールの導入
+
+テスト用のPlaywright（Python）とChromiumは、[セットアップ手順](examples/ai-assisted-testing/README.md)に従い、リポジトリ内の専用仮想環境へ導入できます。インストール前にPython 3.10以降が必要です。
+
+Windows PowerShell:
+
+```powershell
+./scripts/setup-ai-testing.ps1 -DryRun
+./scripts/setup-ai-testing.ps1
+./scripts/setup-ai-testing.ps1 -Check
+./scripts/setup-ai-testing.ps1 -Smoke
+```
+
+Linux / macOS:
+
+```sh
+bash ./scripts/setup-ai-testing.sh --dry-run
+bash ./scripts/setup-ai-testing.sh
+bash ./scripts/setup-ai-testing.sh --check
+bash ./scripts/setup-ai-testing.sh --smoke
+```
+
+`-WithXQuery` / `--with-xquery` は既存xquery-mcpローカルツールの復元（.NET 10 SDK必須）。Windowsの `-WindowsUiProject <テスト用.csproj>` は指定されたプロジェクトにだけFlaUI.UIA3を追加します。`-SkipWeb` はWebテスト用ツールを導入しません。GitHub Actionsは非ネットワークのドライランとスクリプトの単体テストを確認し、実際のブラウザ打鍵は導入先の隔離環境で `-Smoke` を実行して確認します。Linuxの不足するOSライブラリやPython/.NET SDKの自動インストールはしません。
+
 ### AIを利用した機能テストとエビデンス
 
 [AI支援テストの手順](skills/feature-map-workflow/references/ai-assisted-testing.md)を追加しました。Feature Mapの業務シナリオを既存のPlaywright・Windows UI・CLI・DBテストへ接続します。AIは必要十分なケース・前提データの探索とテストコード案の生成、コードはUI操作・DB照合・証跡保存、人は業務期待値の承認を担当します。スクリーンショット・トレース・ログ・DB差分はテスト側に保持し、Feature Mapには永続的な参照だけを記録します。[架空データで動かせるサンプル](examples/ai-assisted-testing/README.md)にはHTTPからSQLiteへの検証と任意のPlaywright打鍵を含めています。既存のXMLスキーマやTask Runnerは変更しません。
