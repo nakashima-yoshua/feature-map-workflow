@@ -18,13 +18,14 @@ import sys
 import time
 import uuid
 from pathlib import Path, PurePosixPath
-from typing import Any
+from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parents[1]
 XSD = ROOT / "skills/feature-map-workflow/assets/feature-map.xsd"
 MAX_OUTPUT = 1024 * 1024
 MAX_CONTENT = 2 * 1024 * 1024
 TERMINAL = {"HUMAN_REVIEW_REQUIRED", "NO_CHANGE", "HALT"}
+STOP_REQUEST = "stop.request"
 
 
 class Halt(RuntimeError):
@@ -106,8 +107,11 @@ def redact(text: str) -> str:
 
 
 def process(argv: list[str], cwd: Path, timeout: float,
-            env: dict[str, str] | None = None, stdin: str | None = None) -> tuple[int, str]:
+            env: dict[str, str] | None = None, stdin: str | None = None,
+            stop_requested: Callable[[], bool] | None = None) -> tuple[int, str]:
     """Bound output and kill the entire process group, including descendants."""
+    if stop_requested and stop_requested():
+        raise Halt("Operator stop requested", "operator_stop")
     if timeout <= 0:
         raise Halt("Elapsed-time budget exhausted", "budget")
     try:
@@ -125,6 +129,8 @@ def process(argv: list[str], cwd: Path, timeout: float,
         selector.register(p.stdin, selectors.EVENT_WRITE)
     try:
         while selector.get_map():
+            if stop_requested and stop_requested():
+                raise Halt("Operator stop requested", "operator_stop")
             remaining = end - time.monotonic()
             if remaining <= 0:
                 raise Halt("Approved command timed out", "environment")
@@ -146,11 +152,15 @@ def process(argv: list[str], cwd: Path, timeout: float,
                         output.extend(block)
                         if len(output) > MAX_OUTPUT:
                             raise Halt("Approved command exceeded output limit", "environment")
-        try:
-            code = p.wait(timeout=max(.01, end - time.monotonic()))
-        except subprocess.TimeoutExpired:
-            raise Halt("Approved command timed out", "environment") from None
-        return code, output.decode("utf-8", errors="replace")
+        # Streams may close while a child is still running. Keep stop/timeout responsive.
+        while p.poll() is None:
+            if stop_requested and stop_requested():
+                raise Halt("Operator stop requested", "operator_stop")
+            remaining = end - time.monotonic()
+            if remaining <= 0:
+                raise Halt("Approved command timed out", "environment")
+            time.sleep(min(remaining, .1))
+        return p.returncode, output.decode("utf-8", errors="replace")
     finally:
         selector.close()
         # Also terminate children that closed their stdout before the parent exited.
@@ -247,13 +257,17 @@ class Sandbox:
                     "--chdir", "/work", "--", *argv]
         return command
 
-    def check(self, worktree: Path, timeout: float, empty_git: Path) -> None:
-        code, _ = process(self.command(worktree, ["/bin/true"], empty_git), worktree, timeout)
+    def check(self, worktree: Path, timeout: float, empty_git: Path,
+              stop_requested: Callable[[], bool] | None = None) -> None:
+        code, _ = process(self.command(worktree, ["/bin/true"], empty_git), worktree, timeout,
+                          stop_requested=stop_requested)
         if code:
             raise Halt("OS isolation unavailable; no task command was executed", "environment")
 
-    def run(self, worktree: Path, argv: list[str], timeout: float, empty_git: Path) -> tuple[int, str]:
-        return process(self.command(worktree, argv, empty_git), worktree, timeout)
+    def run(self, worktree: Path, argv: list[str], timeout: float, empty_git: Path,
+            stop_requested: Callable[[], bool] | None = None) -> tuple[int, str]:
+        return process(self.command(worktree, argv, empty_git), worktree, timeout,
+                       stop_requested=stop_requested)
 
 
 PROPOSAL_SCHEMA = {"type": "object", "additionalProperties": False,
@@ -293,7 +307,8 @@ class CodexProposer:
         binary = shutil.which("codex")
         if not binary:
             raise Halt("Codex CLI is not installed", "environment")
-        code, version = process([binary, "--version"], runner.directory, runner.timeout())
+        code, version = process([binary, "--version"], runner.directory, runner.timeout(),
+                                stop_requested=runner.stop_requested)
         if code or version.strip().splitlines()[-1] != self.VERSION or runner.config.get("codex_version") != self.VERSION:
             raise Halt("Codex CLI version differs from the reviewed launch contract", "environment")
         broker = runner.directory / "broker"
@@ -331,7 +346,8 @@ class CodexProposer:
         for flag in self.DISABLED:
             argv += ["--disable", flag]
         # No project configuration, repository, credentials files, or MCP servers in broker cwd.
-        code, events = process([*argv, "-"], broker, runner.timeout(), env, prompt)
+        code, events = process([*argv, "-"], broker, runner.timeout(), env, prompt,
+                               stop_requested=runner.stop_requested)
         if code or not output.is_file():
             raise Halt("Codex proposal execution failed; no change adopted", "environment")
         for line in events.splitlines():
@@ -406,7 +422,15 @@ class Runner:
         self.state["success_rate"] = sum(a.get("status") == "passed" for a in attempts) / len(attempts) if attempts else None
         atomic_json(self.directory / "state.json", self.state)
 
+    def stop_requested(self) -> bool:
+        control = self.directory / STOP_REQUEST
+        if control.is_symlink():
+            raise Halt("Operator stop control is invalid", "permission")
+        return control.exists()
+
     def timeout(self):
+        if self.stop_requested():
+            raise Halt("Operator stop requested", "operator_stop")
         remaining = self.config["max_seconds"] - (time.time() - self.state["started_at"])
         if remaining <= 0:
             raise Halt("Elapsed-time budget exhausted", "budget")
@@ -486,7 +510,8 @@ class Runner:
     def evaluate(self, label: str) -> dict[str, Any]:
         results = []
         for index, argv in enumerate(self.config["checks"]):
-            code, text = self.sandbox.run(self.worktree, argv, self.timeout(), self.empty_git)
+            code, text = self.sandbox.run(self.worktree, argv, self.timeout(), self.empty_git,
+                                          self.stop_requested)
             evidence = f"{label}-check-{index}.log"
             (self.directory / evidence).write_text(redact(text), encoding="utf-8")
             if code in {126, 127}:
@@ -554,7 +579,8 @@ class Runner:
                      "baseline": state.get("baseline"), "last_result": state.get("last_result"),
                      "attempts": len(state["attempts"]), "elapsed_seconds": state.get("elapsed_seconds"),
                      "human_interventions": state.get("human_interventions"), "usage": state.get("usage"),
-                     "patch": "candidate.patch" if (self.directory / "candidate.patch").exists() else None}
+                     "patch": "candidate.patch" if (self.directory / "candidate.patch").exists() else None,
+                     "evidence_anchor": self.evidence_anchor()}
         report = {"status": state["status"], "review_state": state["review_state"],
                   "business_purpose_and_exclusions": {"purpose": self.config["purpose"], "exclude": self.config["exclude"],
                       "contract_ref": self.config["contract_ref"]},
@@ -572,6 +598,12 @@ class Runner:
                   "HUMAN_DECISION": "Review the exact candidate revision and residual risks. Self-check is not approval or release authorization."}
         atomic_json(self.directory / "human-review-request.json", report)
 
+    def evidence_anchor(self) -> str:
+        """Stable fingerprint to compare with a hash recorded outside the run store."""
+        return digest({key: self.state.get(key) for key in (
+            "run_id", "base_revision", "candidate_revision", "config_hash",
+            "runner_hash", "evidence_hashes")})
+
     def halt(self, exc: Halt):
         self.state.update(status="HALT", halt_reason=str(exc), failure_category=exc.category, next_action="human_inspection")
         self.save()
@@ -585,7 +617,8 @@ class Runner:
         try:
             self.timeout()
             self.gates()
-            self.sandbox.check(self.worktree, self.timeout(), self.empty_git)
+            self.sandbox.check(self.worktree, self.timeout(), self.empty_git,
+                               self.stop_requested)
             if not self.verify_evidence():
                 return self.state
             if "baseline" not in self.state:
@@ -631,6 +664,7 @@ class Runner:
                     improved = result["metric"] < baseline["metric"] if self.config["metric"] == "minimize" else result["metric"] > baseline["metric"]
                 attempt["comparison"] = "improved_or_not_required" if improved else "not_improved"
                 if result["status"] == "passed" and (improved or proposal["status"] == "no_change"):
+                    self.timeout()  # An operator stop must invalidate even a passing candidate.
                     if git(self.worktree, "status", "--porcelain", "--untracked-files=all"):
                         changed = self.changed_paths()
                         if not changed or not changed <= set(self.config["allowed_paths"]):
@@ -645,6 +679,7 @@ class Runner:
                         self.state["status"] = "HUMAN_REVIEW_REQUIRED"
                     else:
                         self.state["status"] = "NO_CHANGE"
+                    self.timeout()
                     self.state["next_action"] = "human_review"
                     self.seal_evidence()
                     self.save()
@@ -679,7 +714,11 @@ class Runner:
                 sorted(self.directory.glob("attempt-*-proposal.json"))
         self.state["evidence_hashes"] = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
-    def verify_evidence(self):
+    def verify_evidence(self, expected_anchor: str | None = None):
+        if expected_anchor is not None and self.evidence_anchor() != expected_anchor:
+            self.state["review_state"] = "INVALIDATED"
+            self.halt(Halt("Evidence anchor differs from independent reviewer record", "repository_conflict"))
+            return False
         expected = self.state.get("candidate_revision") or self.state["base_revision"]
         if git(self.worktree, "rev-parse", "HEAD") != expected or git(self.worktree, "status", "--porcelain", "--untracked-files=all"):
             self.state["review_state"] = "INVALIDATED"
@@ -712,6 +751,27 @@ class Runner:
         self.report()
 
 
+def request_stop(directory: Path) -> bool:
+    """Host-only stop request; intentionally does not wait for the runner lock."""
+    directory = directory.resolve()
+    state = read_json(directory / "state.json")
+    if not isinstance(state, dict) or state.get("run_id") != directory.name:
+        raise Halt("Not a valid Task Runner run directory", "permission")
+    if state.get("status") in TERMINAL:
+        return False
+    marker = directory / STOP_REQUEST
+    try:
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
+        fd = os.open(marker, flags, 0o600)
+    except FileExistsError:
+        return True  # A stop has already been requested.
+    with os.fdopen(fd, "w", encoding="utf-8") as stream:
+        stream.write(f"requested_at={time.time():.3f}\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    return True
+
+
 @contextlib.contextmanager
 def locked(directory: Path):
     if platform.system() != "Linux":
@@ -737,7 +797,10 @@ def main() -> int:
     status = commands.add_parser("status")
     review = commands.add_parser("review")
     retry = commands.add_parser("retry")
-    for command in (resume, status, review, retry):
+    stop = commands.add_parser("stop", help="Request a host-controlled emergency HALT")
+    verify = commands.add_parser("verify", help="Verify candidate and evidence against an optional external anchor")
+    verify.add_argument("--expected-anchor", help="Previously recorded trusted evidence fingerprint")
+    for command in (resume, status, review, retry, stop, verify):
         command.add_argument("run", type=Path)
     for command in (start, resume, retry):
         command.add_argument("--proposal", action="append", type=Path, default=[])
@@ -752,6 +815,12 @@ def main() -> int:
     review.add_argument("--decision", required=True, choices=["APPROVED", "CONDITIONAL", "CHANGES_REQUESTED", "REJECTED", "DEFERRED"])
     args = parser.parse_args()
     try:
+        if args.action == "stop":
+            directory = args.run.resolve()
+            requested = request_stop(directory)
+            print(json.dumps({"run": str(directory), "stop_requested": requested,
+                              "note": "Request recorded; check status for HALT. No automatic rollback."}, ensure_ascii=False))
+            return 0
         if args.action == "start":
             runner = Runner.create(args.repo, args.store, read_json(args.config),
                                    read_json(args.approval) if args.approval else None)
@@ -762,6 +831,12 @@ def main() -> int:
         with locked(directory):
             if runner is None:
                 runner = Runner.load(directory)
+            if args.action == "verify":
+                valid = runner.verify_evidence(args.expected_anchor)
+                print(json.dumps({"run": str(directory), "status": runner.state["status"],
+                                  "review_state": runner.state["review_state"], "evidence_valid": valid,
+                                  "evidence_anchor": runner.evidence_anchor()}, ensure_ascii=False, indent=2))
+                return 0 if valid else 2
             if args.action == "retry":
                 if not runner.verify_evidence() or runner.state["review_state"] != "CHANGES_REQUESTED":
                     raise Halt("Retry requires a human change request on the unchanged reviewed revision", "permission")
