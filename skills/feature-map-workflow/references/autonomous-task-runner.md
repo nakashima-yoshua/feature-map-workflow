@@ -191,6 +191,36 @@ Terminal HALTs are not automatically unlocked; inspect evidence and create a new
 approved run. Keep run evidence while review is pending. Remove worktrees using
 `git worktree remove` only after the responsible human has retained needed artifacts.
 
+### Host stop and independent evidence verification
+
+For an active run, an operator with host access can request a stop **without**
+waiting for the single-writer lock. The runner polls the marker during blocking
+model/evaluator commands and at phase boundaries, kills the active command's
+process group on detection, and records `HALT / operator_stop`. It does not
+automatically undo any external action, unlock a HALT, or stop an already completed
+run. Inspect actual OS processes and evidence before restarting.
+
+```sh
+python scripts/task_runner.py stop /path/outside/repo/runs/RUN_ID
+python scripts/task_runner.py status /path/outside/repo/runs/RUN_ID
+```
+
+After a completed evaluation and **before human approval**, run `verify`, retain
+the reported `evidence_anchor` outside the model-writable/run-store boundary,
+then verify again with the independent anchor:
+
+```sh
+python scripts/task_runner.py verify /path/outside/repo/runs/RUN_ID
+python scripts/task_runner.py verify /path/outside/repo/runs/RUN_ID --expected-anchor TRUSTED_ANCHOR
+```
+
+Local SHA-256 hashes alone do not prevent rewriting both hashes and local data.
+This is tamper detection against an independently retained anchor, not a
+cryptographic signature or substitute for host permissions. See
+[AI trust controls](ai-trust-controls.md) and `SECURITY.md`.
+The initial anchor must be taken from an already-reviewed run configuration,
+and #14–#17 remain distinct release prerequisites.
+
 The runnable offline example is in `examples/task-runner/README.md`. Run
 `python scripts/test_task_runner.py`; on supported Linux also set
 `REQUIRE_RUNNER_SANDBOX=1` to make actual OS isolation checks mandatory.
