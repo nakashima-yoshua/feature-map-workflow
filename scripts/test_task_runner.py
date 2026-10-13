@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import os
 import socket
@@ -42,10 +43,11 @@ class FixtureEvaluator:
     def check(self, *args):
         pass
 
-    def run(self, worktree, argv, timeout, empty_git):
+    def run(self, worktree, argv, timeout, empty_git, stop_requested=None):
         self.calls += 1
         return tr.process([sys.executable, *argv[1:]], worktree, timeout,
-                          {"PATH": os.environ.get("PATH", ""), "PYTHONDONTWRITEBYTECODE": "1"})
+                          {"PATH": os.environ.get("PATH", ""), "PYTHONDONTWRITEBYTECODE": "1"},
+                          stop_requested=stop_requested)
 
 
 class RunnerTests(unittest.TestCase):
@@ -165,6 +167,79 @@ class RunnerTests(unittest.TestCase):
         runner = self.create(approval)
         self.assertEqual(runner.execute(Proposals(GOOD))["failure_category"], "permission")
 
+    def test_host_stop_request_halts_without_executing_a_proposal(self):
+        runner = self.create()
+        self.assertTrue(tr.request_stop(runner.directory))
+        self.assertTrue(tr.request_stop(runner.directory))
+        self.assertEqual((runner.directory / tr.STOP_REQUEST).stat().st_mode & 0o777, 0o600)
+        proposer = Proposals(GOOD)
+        state = runner.execute(proposer)
+        self.assertEqual(state["status"], "HALT")
+        self.assertEqual(state["failure_category"], "operator_stop")
+        self.assertEqual(state["review_state"], "UNREVIEWED")
+        self.assertEqual(proposer.calls, 0)
+        self.assertEqual(self.evaluator.calls, 0)
+        self.assertIn("return 1", (self.repo / "app.py").read_text())
+        self.assertFalse(tr.request_stop(runner.directory))
+
+    def test_stop_during_successful_candidate_prevents_review(self):
+        class StopAfterCandidate(FixtureEvaluator):
+            def __init__(self):
+                super().__init__()
+                self.owner = None
+
+            def run(self, worktree, argv, timeout, empty_git, stop_requested=None):
+                result = super().run(worktree, argv, timeout, empty_git, stop_requested)
+                if self.calls == 2:
+                    tr.request_stop(self.owner.directory)
+                return result
+
+        evaluator = StopAfterCandidate()
+        runner = self.create(sandbox=evaluator)
+        evaluator.owner = runner
+        state = runner.execute(Proposals(GOOD))
+        self.assertEqual(state["status"], "HALT")
+        self.assertEqual(state["failure_category"], "operator_stop")
+        self.assertEqual(state["review_state"], "UNREVIEWED")
+        self.assertIsNone(state["candidate_revision"])
+
+    def test_independent_evidence_anchor_detects_resealed_tampering(self):
+        runner = self.create()
+        runner.execute(Proposals(GOOD))
+        trusted_anchor = runner.evidence_anchor()
+        self.assertTrue(runner.verify_evidence(trusted_anchor))
+        # Recompute the stored hash as a malicious or accidental local mutation might.
+        changed = "tampered candidate evidence\\n"
+        (runner.directory / "candidate.patch").write_text(changed)
+        runner.state["evidence_hashes"]["candidate.patch"] = hashlib.sha256(changed.encode()).hexdigest()
+        runner.save()
+        self.assertFalse(runner.verify_evidence(trusted_anchor))
+        self.assertEqual(runner.state["review_state"], "INVALIDATED")
+        self.assertEqual(runner.state["status"], "HALT")
+
+    def test_host_stop_and_verify_cli_entrypoints(self):
+        runner = self.create()
+        with patch.object(sys, "argv", ["task_runner", "stop", str(runner.directory)]), \
+                patch("builtins.print") as written:
+            self.assertEqual(tr.main(), 0)
+            self.assertIn('"stop_requested": true', written.call_args[0][0])
+        self.assertEqual(runner.execute(Proposals(GOOD))["failure_category"], "operator_stop")
+
+        accepted = self.create()
+        accepted.execute(Proposals(GOOD))
+        anchor = accepted.evidence_anchor()
+        with patch.object(sys, "argv", ["task_runner", "verify", str(accepted.directory),
+                                        "--expected-anchor", anchor]), \
+                patch("builtins.print") as written:
+            self.assertEqual(tr.main(), 0)
+            self.assertIn('"evidence_valid": true', written.call_args[0][0])
+
+    def test_operator_stop_prevents_human_review_until_new_run(self):
+        runner = self.create()
+        runner.execute(Proposals(GOOD))
+        self.assertFalse(tr.request_stop(runner.directory))  # Already terminal and awaiting review.
+        self.assertEqual(runner.state["status"], "HUMAN_REVIEW_REQUIRED")
+
     def test_os_isolation_failure_is_fail_closed(self):
         class Unavailable(FixtureEvaluator):
             def check(self, *args):
@@ -226,8 +301,8 @@ class RunnerTests(unittest.TestCase):
 
     def test_candidate_modified_during_evaluation_is_not_adopted(self):
         class ConcurrentWriter(FixtureEvaluator):
-            def run(self, worktree, argv, timeout, empty_git):
-                result = super().run(worktree, argv, timeout, empty_git)
+            def run(self, worktree, argv, timeout, empty_git, stop_requested=None):
+                result = super().run(worktree, argv, timeout, empty_git, stop_requested)
                 if self.calls > 1:
                     (worktree / "app.py").write_text("def value():\n    return 999\n")
                 return result
@@ -316,7 +391,7 @@ class RunnerTests(unittest.TestCase):
         runner = self.create()
         calls = []
 
-        def fake_process(argv, cwd, timeout, env=None, stdin=None):
+        def fake_process(argv, cwd, timeout, env=None, stdin=None, stop_requested=None):
             calls.append((argv, cwd, env, stdin))
             if "--version" in argv:
                 return 0, tr.CodexProposer.VERSION + "\n"
@@ -403,6 +478,31 @@ class ProcessAndContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(tr.Halt):
                 tr.process([sys.executable, "-c", "import os,time; p=os.fork(); time.sleep(3) if p==0 else None"], Path(d), .05)
+
+    def test_operator_stop_interrupts_running_process_group(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            ready = root / "ready"
+            def stop_requested():
+                return ready.exists()
+            script = "from pathlib import Path; Path(" + repr(str(ready)) + ").write_text('ok'); import time; time.sleep(9)"
+            started = time.monotonic()
+            with self.assertRaisesRegex(tr.Halt, "Operator stop requested") as ctx:
+                tr.process([sys.executable, "-c", script], root, 5,
+                           stop_requested=stop_requested)
+            self.assertEqual(ctx.exception.category, "operator_stop")
+            self.assertLess(time.monotonic() - started, 4)
+
+    def test_host_stop_control_rejects_symlink(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp) / "run"
+            directory.mkdir()
+            tr.atomic_json(directory / "state.json",
+                           {"run_id": directory.name, "status": "READY"})
+            marker = directory / tr.STOP_REQUEST
+            marker.symlink_to(directory / "state.json")
+            with self.assertRaises(tr.Halt):
+                tr.request_stop(directory)
 
     def test_invalid_paths_are_rejected(self):
         for p in ("../x", "/x", "./x", "a//b", "a/../b", "a\\b", ".git/config", "a/.codex/config"):
