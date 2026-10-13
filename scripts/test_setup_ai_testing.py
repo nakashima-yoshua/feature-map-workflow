@@ -101,8 +101,9 @@ class InstallerTests(unittest.TestCase):
         with patch.object(setup.platform, "system", return_value="Windows"):
             commands = setup.install_plan(self.venv, with_xquery=True,
                                           windows_project=setup.validate_windows_project(project))
-        self.assertEqual(["dotnet", "add", str(project), "package", "FlaUI.UIA3",
-                          "--version", "5.0.0"], commands[-1])
+        self.assertEqual(["dotnet", "add"], commands[-1][:2])
+        self.assertTrue(Path(commands[-1][2]).samefile(project))
+        self.assertEqual(["package", "FlaUI.UIA3", "--version", "5.0.0"], commands[-1][3:])
         self.assertEqual("dotnet", commands[-2][0])
         self.assertNotIn("FlaUI.Core", str(commands))  # UIA3 supplies it transitively.
 
