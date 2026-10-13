@@ -72,6 +72,24 @@ Prefer idempotent setup and deterministic cleanup. Apply data prerequisites in d
 
 A runnable scenario can use files such as `tests/scenarios/SC1/seed.sql`, `stubs.json`, `run.ps1`, `assertions`, and `evidence/` **only if these fit the existing repository conventions**. These are test artifacts, not durable Feature Map XML sections.
 
+## Handoff to AI-assisted executable tests
+
+After path-specific preflight and fixture planning, expose the selected entry,
+known AND/OR/NOT conditions, source citations, concrete seed/stub setup,
+verified absence conditions, expected effect, reset/cleanup and unproven gates
+to the **existing project-native test runner**. See `ai-assisted-testing.md`.
+AI may generate fixture and UI/SQL test code, but it cannot declare expected
+business behavior solely from the current implementation. Store detailed
+scenario steps and before/after evidence alongside tests, not in Feature Map.
+
+For UI-to-DB tests, record the UI action **and** the observable DB effect. A
+successful button click or UI message does not establish that the target branch
+ran or that the DB transition is correct. If the environment lacks a real
+browser/Windows UI executor, mark UI verification `blocked` or `not-run`;
+an HTTP/service run is only evidence for its own execution boundary. Keep
+execution in authorized isolated environments, not the existing read-only
+bubblewrap Task Runner.
+
 ## Forward verification and blocking frontier
 
 1. Run only in the authorized boundary. Capture start arguments/version/config identity and checkpoints along the expected route.

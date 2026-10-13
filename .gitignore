@@ -6,3 +6,7 @@ feature-map.mermaid.min.js
 MERMAID-LICENSE.txt
 .DS_Store
 Thumbs.db
+
+# Local functional-test evidence (may contain screenshots, traces and DB snapshots)
+local-test-evidence/
+test-results/

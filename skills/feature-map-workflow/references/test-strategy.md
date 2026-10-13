@@ -158,6 +158,27 @@ An event handler containing UI, SQL, business rules, and file/process I/O is a v
 
 When an EXE, event, or job cannot reach a target BL because data/config/API prerequisites are unknown, use `target-reachability.md` for backwards/forwards path discovery, read-only preflight, isolated fixture setup, and blocking-frontier validation. A fixture or stub does not by itself prove real target execution.
 
+## AI-assisted execution and human review
+
+Use `ai-assisted-testing.md` for the optional AI-to-runner integration. Assign each
+step to the least costly reliable actor:
+
+- **AI:** inspect Feature Map/source/tests, select materially different scenarios,
+  discover reachability prerequisites and draft project-native tests/fixtures;
+  diagnose unexpected evidence from a bounded, sanitized context.
+- **Code:** perform repeatable UI/CLI/API/DB interactions, deterministic assertions,
+  reset/cleanup, log/trace/screenshot collection and result serialization.
+- **Human:** establish ambiguous business oracles, approve consequential fixture
+  writes/external boundaries, review changed assertions and accept residual risk.
+
+Treat AI-generated expected values inferred only from implementation as unverified.
+Never let automated UI-locator repair silently change business assertions. A
+browserless HTTP smoke test proves transport/DB effects, not real UI typing.
+Use Playwright for essential Web UI paths, FlaUI for automatable Windows UI, and
+visual AI selectively where stable identifiers are unavailable. Avoid forcing
+all branch/value combinations through a fragile UI test. Do not extend the
+existing Linux bubblewrap Task Runner to live UI or writable DB execution.
+
 ## Evidence
 
 A passing UI message is not enough for DB-heavy business systems. Prefer observable business effects such as:

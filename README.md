@@ -73,6 +73,11 @@ When a specific business-logic branch cannot be exercised from its real EXE/job/
 
 The AI traces backwards from the target and forwards from launch, builds the **minimum path-specific AND/OR/NOT prerequisites**, performs read-only preflight checks, prepares authorized test fixtures/stubs, and investigates the first blocking runtime gate. It reports **route discovered / target reached / behavior verified / reproducible** separately. Real execution requires an isolated and explicitly authorized environment; otherwise it produces a not-run plan. Detailed traces and fixture data stay with tests; Feature Map XML holds only durable findings and evidence references. No new schema, mode or mandatory runtime dependency is added.
 
+### AI-assisted functional testing and evidence
+
+An optional [AI-assisted testing workflow](skills/feature-map-workflow/references/ai-assisted-testing.md) connects Feature Map business scenarios to existing Playwright, Windows UI, CLI and DB tests without a new runtime or XML schema. AI explores and drafts scenarios and fixtures; deterministic code executes and compares approved expectations; humans review important business oracles. Screenshots, browser traces, application logs and DB before/after evidence remain test artifacts, with only durable references retained in Feature Map. The [fully fictional runnable example](examples/ai-assisted-testing/README.md) demonstrates HTTP-to-SQLite evidence with optional Playwright browser typing.
+
+
 For a YAGNI-based, whole-system approach to deciding whether and how to improve a workflow, see [YAGNI × whole-system optimization: design and phased plan](skills/feature-map-workflow/references/yagni-whole-system-optimization.md) ([tracking issue #8](https://github.com/nakashima-yoshua/feature-map-workflow/issues/8)). It does not mandate new analysis artifacts or techniques for every task.
 
 
