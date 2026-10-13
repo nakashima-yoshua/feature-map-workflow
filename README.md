@@ -74,6 +74,30 @@ When a specific business-logic branch cannot be exercised from its real EXE/job/
 
 The AI traces backwards from the target and forwards from launch, builds the **minimum path-specific AND/OR/NOT prerequisites**, performs read-only preflight checks, prepares authorized test fixtures/stubs, and investigates the first blocking runtime gate. It reports **route discovered / target reached / behavior verified / reproducible** separately. Real execution requires an isolated and explicitly authorized environment; otherwise it produces a not-run plan. Detailed traces and fixture data stay with tests; Feature Map XML holds only durable findings and evidence references. No new schema, mode or mandatory runtime dependency is added.
 
+### Optional AI test tool installer
+
+Install pinned Playwright Python and Chromium without changing system-wide Python packages. Requires Python 3.10+ installed first; an isolated `.venv-ai-testing` is created and excluded from Git and plugin archives.
+
+Windows PowerShell:
+
+```powershell
+./scripts/setup-ai-testing.ps1 -DryRun
+./scripts/setup-ai-testing.ps1
+./scripts/setup-ai-testing.ps1 -Check
+./scripts/setup-ai-testing.ps1 -Smoke
+```
+
+Linux / macOS:
+
+```sh
+bash ./scripts/setup-ai-testing.sh --dry-run
+bash ./scripts/setup-ai-testing.sh
+bash ./scripts/setup-ai-testing.sh --check
+bash ./scripts/setup-ai-testing.sh --smoke
+```
+
+Opt-in `-WithXQuery` / `--with-xquery` restores the existing pinned local .NET tool (.NET 10 SDK required). Windows `-WindowsUiProject <tests.csproj>` / `--windows-ui-project <tests.csproj>` adds FlaUI.UIA3 only to that explicitly selected project. Use `-SkipWeb` / `--skip-web` to avoid browser dependencies when installing only .NET test tools. These commands do not bootstrap Python/.NET SDK or Linux OS browser libraries. Offline dry-run and unit tests run in CI; real browser smoke requires an approved isolated environment.
+
 ### AI-assisted functional testing and evidence
 
 An optional [AI-assisted testing workflow](skills/feature-map-workflow/references/ai-assisted-testing.md) connects Feature Map business scenarios to existing Playwright, Windows UI, CLI and DB tests without a new runtime or XML schema. AI explores and drafts scenarios and fixtures; deterministic code executes and compares approved expectations; humans review important business oracles. Screenshots, browser traces, application logs and DB before/after evidence remain test artifacts, with only durable references retained in Feature Map. The [fully fictional runnable example](examples/ai-assisted-testing/README.md) demonstrates HTTP-to-SQLite evidence with optional Playwright browser typing.

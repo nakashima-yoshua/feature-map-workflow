@@ -24,5 +24,18 @@ jobs:
         env:
           REQUIRE_RUNNER_SANDBOX: "1"
       - run: python -m unittest discover -s examples/ai-assisted-testing -p test_demo.py -v
+      - run: python scripts/test_setup_ai_testing.py
+      - run: python scripts/setup-ai-testing.py --dry-run --with-xquery
       - run: python scripts/validate_repository.py
       - run: python scripts/package_plugin.py
+
+  installer-windows-dry-run:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - shell: pwsh
+        run: ./scripts/setup-ai-testing.ps1 -DryRun
+      - run: python scripts/test_setup_ai_testing.py

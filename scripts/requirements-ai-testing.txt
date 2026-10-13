@@ -1,0 +1,2 @@
+# Pinned browser test dependency; Chromium is installed via the matching Playwright CLI.
+playwright==1.63.0

@@ -40,6 +40,57 @@ changing the application or the previously approved default oracle:
 python examples/ai-assisted-testing/run_demo.py --engine http --expected-name WRONG
 ~~~
 
+## Installer (Windows, Linux and macOS)
+
+The optional installer creates a project-local `.venv-ai-testing` and installs
+pinned Playwright Python 1.63.0 plus its matching Chromium browser. Python 3.10+
+must already be installed. Chromium is stored in the Playwright-managed user
+browser cache, not in the venv. It does not install SDKs, elevate privileges, or
+silently modify other projects. The exact commands are shown by dry-run.
+
+Windows PowerShell (from the repository root):
+
+~~~powershell
+./scripts/setup-ai-testing.ps1 -DryRun
+./scripts/setup-ai-testing.ps1
+./scripts/setup-ai-testing.ps1 -Check
+./scripts/setup-ai-testing.ps1 -Smoke
+~~~
+
+Linux/macOS:
+
+~~~sh
+bash ./scripts/setup-ai-testing.sh --dry-run
+bash ./scripts/setup-ai-testing.sh
+bash ./scripts/setup-ai-testing.sh --check
+bash ./scripts/setup-ai-testing.sh --smoke
+~~~
+
+`--check` confirms the Python package and Chromium executable exist; it does
+**not** prove an actual GUI operation. `--smoke` performs real browser input,
+clicks, screenshots/trace and SQLite checks against this isolated fictional app.
+Missing OS browser libraries (common on Linux) need separate administrator
+action; no implicit `playwright install-deps` or `sudo` is run.
+
+Optional dependencies can be selected independently:
+
+~~~powershell
+./scripts/setup-ai-testing.ps1 -WithXQuery
+./scripts/setup-ai-testing.ps1 -SkipWeb -WithXQuery
+./scripts/setup-ai-testing.ps1 -SkipWeb -WindowsUiProject "C:/src/MyUiTests/MyUiTests.csproj"
+~~~
+
+`-WithXQuery` restores the repository's existing .NET local tool manifest
+(.NET 10 SDK required). `-WindowsUiProject` adds pinned `FlaUI.UIA3` 5.0.0
+to **only that explicit existing test project**; it requires Windows, .NET SDK,
+an authorized project to edit, and does not create a Windows UI test project.
+The Windows UI app must run in an interactive authorized Windows desktop session.
+A central NuGet package version management setup requires separate review.
+
+The installer does not install a general AI agent, Midscene.js, Codex, API keys,
+production DB drivers or Linux system packages. Such tools are not prerequisites
+of this example. Do not run browser automation against a production system.
+
 ## Optional real browser execution
 
 Requires the optional Playwright Python package and Chromium, installed in an

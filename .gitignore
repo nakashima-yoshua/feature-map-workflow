@@ -10,3 +10,6 @@ Thumbs.db
 # Local functional-test evidence (may contain screenshots, traces and DB snapshots)
 local-test-evidence/
 test-results/
+
+# Isolated optional AI testing environment
+.venv-ai-testing/
