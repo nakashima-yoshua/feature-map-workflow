@@ -764,6 +764,8 @@ def request_stop(directory: Path) -> bool:
         flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
         fd = os.open(marker, flags, 0o600)
     except FileExistsError:
+        if marker.is_symlink():
+            raise Halt("Operator stop control is invalid", "permission") from None
         return True  # A stop has already been requested.
     with os.fdopen(fd, "w", encoding="utf-8") as stream:
         stream.write(f"requested_at={time.time():.3f}\n")
