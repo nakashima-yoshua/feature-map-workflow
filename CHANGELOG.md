@@ -4,6 +4,7 @@ All notable user-visible changes are documented here.
 
 ## Unreleased
 
+- Exclude `local-test-evidence` and `test-results` directories at any depth from plugin ZIPs; verify archive contents with synthetic fixtures on Linux and Windows CI.
 - Add a provider-neutral DecisionProvider boundary while preserving legacy Jev configuration.
 - Implement the public-beta OpenAI Decisions API adapter with named predicate/choice normalization, default-off content controls, sanitized failures and legacy Jev compatibility.
 - Add an optional single-task runner with fixed paths/checks, Linux OS-isolated evaluation, bounded retries, durable checkpoints, local candidate evidence and independent revision-bound human review.

@@ -5,7 +5,10 @@ import argparse
 import shutil
 from pathlib import Path
 
-EXCLUDE_DIRS = {".git", ".plugin-data", "dist", "__pycache__", ".venv-ai-testing"}
+EXCLUDE_DIRS = {
+    ".git", ".plugin-data", "dist", "__pycache__", ".venv-ai-testing",
+    "local-test-evidence", "test-results",
+}
 EXCLUDE_NAMES = {"feature-map.mermaid.min.js", "MERMAID-LICENSE.txt"}
 
 

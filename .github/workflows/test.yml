@@ -25,6 +25,7 @@ jobs:
           REQUIRE_RUNNER_SANDBOX: "1"
       - run: python -m unittest discover -s examples/ai-assisted-testing -p test_demo.py -v
       - run: python scripts/test_setup_ai_testing.py
+      - run: python scripts/test_package_plugin.py
       - run: python scripts/setup-ai-testing.py --dry-run --with-xquery
       - run: python scripts/validate_repository.py
       - run: python scripts/package_plugin.py
@@ -39,3 +40,4 @@ jobs:
       - shell: pwsh
         run: ./scripts/setup-ai-testing.ps1 -DryRun
       - run: python scripts/test_setup_ai_testing.py
+      - run: python scripts/test_package_plugin.py
