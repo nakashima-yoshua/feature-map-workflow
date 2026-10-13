@@ -16,6 +16,7 @@ A Source-first development workflow that carries one compact Feature Map XML thr
 - Codex hooks: context gate, lifecycle timing, edit tracking, and completion gates
 - Decision Provider: optional bounded advice through OpenAI Decisions API or legacy Jev (default off)
 - Task Runner: opt-in bounded attempts, isolated evaluation, checkpoints and revision-bound human review
+- AI trust controls: [seven-principle acceptance matrix and independent stop/evidence checks](skills/feature-map-workflow/references/ai-trust-controls.md); no separate audit service or XML schema
 - Operable Japanese: meaning-first rendering rules aligned with `natural-japanese` principles
 
 ## Design principle
