@@ -16,6 +16,7 @@ Feature Map Workflow は、**ソースコードを正本にしたまま、1枚�
 - Codex Hooks: コンテキスト不足の確認、ライフサイクル制御、編集追跡、完了ゲート
 - Decision Provider: OpenAI Decisions APIと既存Jevに対応する任意の判断補助（既定off）
 - Task Runner: 試行の上限、隔離評価、checkpoint、人間レビューを扱う任意の実行器
+- AI信頼境界: [7原則の受入条件・運用者による停止・独立した証拠照合](skills/feature-map-workflow/references/ai-trust-controls.md)。新しい監査基盤やXML項目は増やしません。
 - Operable Japanese: `natural-japanese` の考え方を取り入れた、意味を保ったまま操作可能で自然な日本語
 
 ## 設計方針
