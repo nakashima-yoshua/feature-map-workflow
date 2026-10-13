@@ -182,6 +182,27 @@ class RunnerTests(unittest.TestCase):
         self.assertIn("return 1", (self.repo / "app.py").read_text())
         self.assertFalse(tr.request_stop(runner.directory))
 
+    def test_stop_during_successful_candidate_prevents_review(self):
+        class StopAfterCandidate(FixtureEvaluator):
+            def __init__(self):
+                super().__init__()
+                self.owner = None
+
+            def run(self, worktree, argv, timeout, empty_git, stop_requested=None):
+                result = super().run(worktree, argv, timeout, empty_git, stop_requested)
+                if self.calls == 2:
+                    tr.request_stop(self.owner.directory)
+                return result
+
+        evaluator = StopAfterCandidate()
+        runner = self.create(sandbox=evaluator)
+        evaluator.owner = runner
+        state = runner.execute(Proposals(GOOD))
+        self.assertEqual(state["status"], "HALT")
+        self.assertEqual(state["failure_category"], "operator_stop")
+        self.assertEqual(state["review_state"], "UNREVIEWED")
+        self.assertIsNone(state["candidate_revision"])
+
     def test_independent_evidence_anchor_detects_resealed_tampering(self):
         runner = self.create()
         runner.execute(Proposals(GOOD))
@@ -263,8 +284,8 @@ class RunnerTests(unittest.TestCase):
 
     def test_candidate_modified_during_evaluation_is_not_adopted(self):
         class ConcurrentWriter(FixtureEvaluator):
-            def run(self, worktree, argv, timeout, empty_git):
-                result = super().run(worktree, argv, timeout, empty_git)
+            def run(self, worktree, argv, timeout, empty_git, stop_requested=None):
+                result = super().run(worktree, argv, timeout, empty_git, stop_requested)
                 if self.calls > 1:
                     (worktree / "app.py").write_text("def value():\n    return 999\n")
                 return result
