@@ -374,7 +374,7 @@ class RunnerTests(unittest.TestCase):
         runner = self.create()
         calls = []
 
-        def fake_process(argv, cwd, timeout, env=None, stdin=None):
+        def fake_process(argv, cwd, timeout, env=None, stdin=None, stop_requested=None):
             calls.append((argv, cwd, env, stdin))
             if "--version" in argv:
                 return 0, tr.CodexProposer.VERSION + "\n"
