@@ -217,6 +217,23 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(runner.state["review_state"], "INVALIDATED")
         self.assertEqual(runner.state["status"], "HALT")
 
+    def test_host_stop_and_verify_cli_entrypoints(self):
+        runner = self.create()
+        with patch.object(sys, "argv", ["task_runner", "stop", str(runner.directory)]), \
+                patch("builtins.print") as written:
+            self.assertEqual(tr.main(), 0)
+            self.assertIn('"stop_requested": true', written.call_args[0][0])
+        self.assertEqual(runner.execute(Proposals(GOOD))["failure_category"], "operator_stop")
+
+        accepted = self.create()
+        accepted.execute(Proposals(GOOD))
+        anchor = accepted.evidence_anchor()
+        with patch.object(sys, "argv", ["task_runner", "verify", str(accepted.directory),
+                                        "--expected-anchor", anchor]), \
+                patch("builtins.print") as written:
+            self.assertEqual(tr.main(), 0)
+            self.assertIn('"evidence_valid": true', written.call_args[0][0])
+
     def test_operator_stop_prevents_human_review_until_new_run(self):
         runner = self.create()
         runner.execute(Proposals(GOOD))
