@@ -75,6 +75,11 @@ AIが対象処理から逆方向、起動点から順方向に経路を調べ、
 
 テストデータや詳細トレースをFeature Map XMLへ重複保存せず、テスト側を正本とします。XMLのスキーマやモード、新しい実行基盤は追加しません。
 
+### AIを利用した機能テストとエビデンス
+
+[AI支援テストの手順](skills/feature-map-workflow/references/ai-assisted-testing.md)を追加しました。Feature Mapの業務シナリオを既存のPlaywright・Windows UI・CLI・DBテストへ接続します。AIは必要十分なケース・前提データの探索とテストコード案の生成、コードはUI操作・DB照合・証跡保存、人は業務期待値の承認を担当します。スクリーンショット・トレース・ログ・DB差分はテスト側に保持し、Feature Mapには永続的な参照だけを記録します。[架空データで動かせるサンプル](examples/ai-assisted-testing/README.md)にはHTTPからSQLiteへの検証と任意のPlaywright打鍵を含めています。既存のXMLスキーマやTask Runnerは変更しません。
+
+
 全体最適を目的とし、制約を根拠に変更・変更不要を選ぶYAGNIの設計と段階導入計画は [YAGNI × 全体最適](skills/feature-map-workflow/references/yagni-whole-system-optimization.md) を参照してください（[開発計画 Issue #8](https://github.com/nakashima-yoshua/feature-map-workflow/issues/8)）。手法や分析文書を全タスクへ必須化しません。
 
 
