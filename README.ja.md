@@ -74,6 +74,23 @@ Context Sufficiency
 
 調査して理解できた業務目的・シナリオ・ルール・データへの影響は、移行しない場合もFeature Map XMLへ蓄積します。コードから確認した現行動作と業務上承認された仕様を区別し、未確認事項はそのまま残します。移行した部分は可能な範囲で新旧の動作とDBへの影響を比較し、検証できない事項を明示します。完了前にFeature Mapを見直し、必要な差分を更新するか、既存の記録で十分であることを報告します。新しいXMLスキーマ、実行基盤、大量のAIエージェントは必須としません。
 
+### 機能単位のHTML表示と軽量な一覧
+
+Feature Map XMLは、システム全体を1つへ追記するのではなく、**業務上まとまりのある機能ごとに1つ**持ちます。XSLTの表示は、業務目的・主要シナリオ・業務ルール・未解決事項を先に示し、ソース参照、テスト詳細、残りの項目、Mermaid図を折りたたみで閲覧します。Mermaidは図を開くまで読み込みません。折りたたみは閲覧・初期描画を改善しますが、XMLやHTMLのファイル容量そのものを削減する仕組みではありません。
+
+複数機能を一覧する場合、各XMLの本文や図を結合せず、**機能名・システム名・状態・業務目的の短い抜粋・相対リンクだけ**を含むHTML索引を生成します。
+
+```sh
+# 各機能のフォルダにfeature-map.xmlと、参照するXSLTファイルを配置する
+python skills/feature-map-workflow/scripts/build_feature_index.py --root path/to/maps
+# XMLの追加・変更後に一覧を再生成する
+python skills/feature-map-workflow/scripts/build_feature_index.py --root path/to/maps --force
+```
+
+`path/to/maps/feature-map-index.html` を開き、機能を選ぶと個別のXML/XSLT表示へ移動します。標準Pythonのみで動作し、DBやWebサーバーは不要です。XMLの初期化には従来どおり `init_feature_map.py` を使用でき、XSD/XSLTサポートファイルも既定で配置します。既存索引は `--force` なしで上書きしません。
+
+機能を分割する基準は、単純なファイル容量ではなく、業務の起動条件・データへの影響・責務・受入条件です。共通知識をコピーせず参照でつなぎます。索引にも機密情報が含まれ得るため、顧客案件のXMLやHTML索引を無断で公開しないでください。詳細は [Feature Map Contract](skills/feature-map-workflow/references/feature-map-contract.md) を参照してください。
+
 ### 仕様書のないシステムで対象BLに到達する
 
 EXEやジョブの起動点から特定のBL・分岐を実行したいのに、DBの関連マスタ、JOIN条件、外部API応答、設定値、処理順序などの前提が分からない場合は、[目標到達型の経路探索・テストデータ準備手順](skills/feature-map-workflow/references/target-reachability.md) を利用します。
