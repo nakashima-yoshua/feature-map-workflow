@@ -96,6 +96,19 @@ class FeatureIndexTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse((self.root.parent / "elsewhere.html").exists())
 
+    def test_rejects_output_symlink_even_with_force(self) -> None:
+        self.map("one/feature-map.xml")
+        actual = self.root / "actual.html"
+        actual.write_text("keep", encoding="utf-8")
+        link = self.root / "feature-map-index.html"
+        try:
+            link.symlink_to(actual)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlink unavailable")
+        result = self.build("--force")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual("keep", actual.read_text(encoding="utf-8"))
+
     def test_rejects_doctype(self) -> None:
         self.map("one/feature-map.xml")
         external = self.root / "two" / "feature-map.xml"
