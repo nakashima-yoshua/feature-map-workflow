@@ -1,6 +1,6 @@
 ---
 name: feature-map-workflow
-description: Maintain a Source-first Feature Map XML across system catch-up, requirements, design, implementation and verification. Use for unfamiliar or legacy code analysis, tracing a real EXE/job/UI entry point to a target business-logic branch, discovering DB/API/config prerequisites and minimal reproducible test fixtures, mapping behavior to source/data/tests, minimizing duplicate specifications, embedding Mermaid diagrams, validating XML with XSD and XPath/XQuery, or using Codex lifecycle hooks, optional bounded decisions and natural Japanese clarification.
+description: Maintain a Source-first Feature Map XML across system catch-up, requirements, design, implementation and verification. Use for unfamiliar or legacy code analysis, tracing a real EXE/job/UI entry point to a target business-logic branch, discovering DB/API/config prerequisites and minimal reproducible test fixtures, mapping behavior to source/data/tests, minimizing duplicate specifications, embedding Mermaid diagrams, validating XML with XSD and XPath/XQuery, or using Codex lifecycle hooks, optional bounded decisions and natural Japanese clarification. Apply also when evaluating low-cost incremental modernization of a legacy feature while preserving business knowledge.
 ---
 
 # Feature Map Workflow
