@@ -27,6 +27,8 @@ Context Sufficiency
 
 Feedback to an earlier phase is allowed whenever new evidence contradicts an assumption. Do not force work through a gate merely to preserve phase order.
 
+For changes to legacy functionality, apply [Change-Driven Incremental Modernization](incremental-modernization.md) across existing phases. Investigate enough of the surrounding business flow to document it accurately, but change or migrate only an approved, cohesive slice. Modernization is a choice in design, not a new mandatory lifecycle phase.
+
 ## Phase contract
 
 For every phase, distinguish:
@@ -59,7 +61,7 @@ For every phase, distinguish:
 
 **Input:** request, business context, current behavior, constraints.
 
-**Activity:** identify purpose, done condition, included/excluded scope, business rules, invariants, and material use cases.
+**Activity:** identify purpose, done condition, included/excluded scope, business rules, invariants, and material use cases. For an investigated legacy feature, record reusable business understanding even if no migration follows. Distinguish observed current behavior from business-confirmed desired behavior; unresolved intent is not silently promoted into a requirement.
 
 **Durable Feature Map delta:** `goal`, `useCase`, `knowledge/rule`, `knowledge/invariant`, `knowledge/constraint`, unresolved `open` items.
 
@@ -75,7 +77,7 @@ For every phase, distinguish:
 
 **Input:** bounded requirements and current architecture.
 
-**Activity:** identify entry points, responsibility boundaries, data/API direction, external systems, state transitions, and non-obvious design decisions.
+**Activity:** identify entry points, responsibility boundaries, data/API direction, external systems, state transitions, and non-obvious design decisions. If modernization is considered, distinguish the wider understanding boundary from the smallest safe migration boundary. Compare leaving code unchanged, modifying legacy code, and migrating one functional slice; justify the chosen option with coexistence, verification and operating costs.
 
 **Durable Feature Map delta:** `sourceMap`, compact `diagrams`, `decision`, `constraint`, `invariant`.
 
@@ -171,7 +173,7 @@ For every phase, distinguish:
 
 **Input:** implementable design and test plan.
 
-**Activity:** implement the smallest safe change and run build, static checks, and relevant tests.
+**Activity:** implement the smallest safe change and run build, static checks, and relevant tests. For a migrated slice, keep surrounding legacy contracts unchanged unless separately approved and verify old/new observable outputs and data effects with equivalent isolated inputs wherever feasible.
 
 **Durable Feature Map delta:** changed source/test references and newly confirmed durable knowledge only.
 
@@ -203,7 +205,7 @@ For every phase, distinguish:
 
 **Input:** current source/tests, Feature Map, verification evidence, release evidence.
 
-**Activity:** render role-specific views from existing truth rather than rewriting specifications from scratch.
+**Activity:** render role-specific views from existing truth rather than rewriting specifications from scratch. Check that the Feature Map already preserves newly understood business purpose, scenarios, rules, data/state effects and unresolved intent. If not, patch the durable knowledge now; document observed behavior separately from approved intent.
 
 **Durable Feature Map delta:** none merely for documentation appearance.
 
@@ -219,11 +221,11 @@ For every phase, distinguish:
 
 **Input:** release package, acceptance evidence, unresolved items.
 
-**Activity:** verify done condition, required deliverables, and responsibility boundary.
+**Activity:** verify done condition, required deliverables, and responsibility boundary. Confirm the investigated business flow is documented, the actual migrated/changed boundary is explicit, required evidence is available or honestly reported as not-run, and the Feature Map was updated or explicitly reviewed as already current.
 
 **Durable Feature Map delta:** final verification evidence and unresolved acceptance blockers.
 
-**Hard gate:** required verification is passed and required artifacts exist.
+**Hard gate:** required verification is passed and required artifacts exist. A changed Feature Map must pass the existing XSD check; do not require an XML edit when no durable knowledge changed.
 
 **Semantic gate:** no unresolved high-impact blocker remains.
 

@@ -11,7 +11,7 @@ Before writing any item, classify it:
 - Directly visible in code -> omit.
 - Discoverable immediately by symbol/file search -> store only a reference.
 - Requires tracing multiple files/data sources -> store a short rule or flow fact.
-- Requires business/domain knowledge -> store it.
+- Requires business/domain knowledge -> store it, including newly understood business scenarios, material decisions, state/data effects, and exceptions for the investigated feature.
 - Explains a non-obvious design choice -> store it with the reason.
 - Defines an external constraint or acceptance condition -> store it.
 - Not confirmed -> store it under `open`; do not infer it as fact.
@@ -56,7 +56,7 @@ The XSLT renders Mermaid automatically. It prefers a local `feature-map.mermaid.
 
 ### `knowledge`
 
-- `rule`: business behavior.
+- `rule`: business behavior. Say whether an important rule describes observed legacy behavior or an approved business expectation; do not infer approval from source code alone.
 - `invariant`: behavior/data property that must not be broken by changes.
 - `decision`: non-obvious implementation/design decision plus `reason`.
 - `constraint`: external, operational, contractual, compatibility, or environment limit.
@@ -83,6 +83,14 @@ Optional `type` values classify the missing durable context:
 
 Do not add an Open item only because a user prompt contains a vague word. First check whether source, tests, configuration, or existing Feature Map content resolves it.
 
+## Business knowledge and migration boundaries
+
+- Document the understood end-to-end business scenario and material dependencies; this can include more code than will be modified. Use `goal`, `useCase`, `knowledge`, `sourceMap`, `verify` and `open` rather than adding a second specification.
+- For proposed migration, `goal/scope` and `goal/exclude` describe the **authorized change** only. Referenced neighboring components may be understood but are not thereby approved for replacement.
+- Record a non-obvious selection between no change, a legacy fix, or a migrated slice under `knowledge/decision` with its reason. Do not add a decision merely to restate an obvious one-line fix.
+- Preserve material contradictions between current observed behavior and business-confirmed intent under `open` until resolved. The existing `open/item` and `verify/case` status express uncertainty and actual evidence; no new confidence or migration status attribute is required.
+- The human-facing documentation is the XSLT view of the existing Feature Map. Put test fixtures, traces and full old/new comparisons beside tests and link representative evidence only.
+
 ## Stable IDs
 
 `id` is optional but recommended when a node will be referenced or updated repeatedly. Keep IDs short (`UC1`, `R1`, `I1`, `D1`, `V1`, `O1`) and never renumber merely for appearance.
@@ -103,4 +111,4 @@ Do not add:
 
 ## Update rule
 
-Patch only the smallest durable knowledge delta. Internal refactoring that preserves externally meaningful behavior usually requires only source reference updates, or no Feature Map change at all.
+Patch only the smallest durable knowledge delta. When a feature is investigated, newly confirmed domain knowledge must be preserved even if code is left unchanged or only a small slice is migrated. At change completion, review the Feature Map; update new durable findings or explicitly report that the existing map remains accurate. Internal refactoring that preserves externally meaningful behavior usually requires only source reference updates, or no Feature Map change at all.

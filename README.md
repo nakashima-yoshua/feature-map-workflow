@@ -68,6 +68,12 @@ Detailed phase policy lives in:
 
 Source/tests, CI evidence, runtime traces, and release artifacts remain canonical in their native form. Feature Map stores only durable knowledge that is costly or ambiguous to reconstruct.
 
+### Change-driven incremental modernization
+
+Use [Change-Driven Incremental Modernization](skills/feature-map-workflow/references/incremental-modernization.md) when an existing legacy feature needs enhancement, repair, or a low-cost partial migration. **Understand and document the business flow and its material dependencies; migrate only the smallest safe and approved responsibility boundary.** Choose among no code change, a legacy fix, and migration of one slice based on overall delivery, coexistence, maintenance, and verification costs.
+
+The existing Feature Map is the durable business knowledge artifact: retain business scenarios, rules, important data effects, source/evidence references and unresolved intent even when no migration occurs. Distinguish observed legacy behavior from business-approved requirements. Compare old/new observable behavior when possible and report verification gaps honestly. Before completion, update the Feature Map or explicitly confirm it was reviewed and is already current. No extra XML schema, runner or agent fleet is required.
+
 ### Goal-directed reachability for undocumented systems
 
 When a specific business-logic branch cannot be exercised from its real EXE/job/UI entry point because DB records, JOINs, master tables, API replies, flags or setup order are missing, use the [target reachability and test fixture discovery workflow](skills/feature-map-workflow/references/target-reachability.md).
