@@ -85,6 +85,19 @@ If the `natural-japanese` skill is available in the runtime, use its quick-mode 
 7. If validation fails, fix only the smallest failing node and validate again.
 8. At completion, update only durable knowledge, references, verification results, or open items that actually changed. If none changed, leave the Feature Map untouched.
 
+## Per-feature documentation and HTML index
+
+Maintain one XML per cohesive business feature. Do not append every newly analyzed feature to a system-wide XML or duplicate rules across features; reference related knowledge instead. For viewing, keep the existing XSLT with business-first details and native collapsible technical sections. When there are multiple Feature Maps, create a lightweight *optional* index by running:
+
+```sh
+python skills/feature-map-workflow/scripts/build_feature_index.py --root path/to/maps
+# Open path/to/maps/feature-map-index.html in a browser.
+# After additions/updates, regenerate explicitly:
+python skills/feature-map-workflow/scripts/build_feature_index.py --root path/to/maps --force
+```
+
+The index stores only feature names, systems, status, purpose excerpts and links to individual XMLs. It is not a merged HTML specification and requires no schema change. Keep each map's XSLT and XSD support files accessible at the paths declared by its processing instructions; `scripts/init_feature_map.py` copies them for new feature files by default. See `references/feature-map-contract.md` for when to split.
+
 ## Change-driven incremental modernization
 
 For requested work in a legacy feature, use `references/incremental-modernization.md`. **Understand the business flow and its consequential dependencies, but migrate only the smallest safe, approved, independently verifiable responsibility boundary.** Do not interpret understanding an adjacent subsystem as authority to migrate it.
