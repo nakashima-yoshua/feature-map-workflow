@@ -93,10 +93,14 @@ def main() -> int:
     root = args.root.resolve()
     if not root.is_dir():
         parser.error(f"root directory not found: {root}")
-    output = (root / args.output).resolve() if not args.output.is_absolute() else args.output.resolve()
+    raw_output = root / args.output if not args.output.is_absolute() else args.output
+    # Refuse to follow a final-component symlink even when its target stays inside --root.
+    if raw_output.is_symlink():
+        parser.error("output must not be a symbolic link")
+    output = raw_output.resolve()
     if not output.is_relative_to(root) or output.suffix.lower() != ".html":
         parser.error("output must be an HTML file inside --root")
-    if output.exists() and (output.is_symlink() or not args.force):
+    if output.exists() and (not output.is_file() or not args.force):
         parser.error("output exists; specify --force to regenerate a regular HTML file")
 
     try:
