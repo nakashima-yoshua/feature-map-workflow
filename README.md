@@ -74,6 +74,21 @@ Use [Change-Driven Incremental Modernization](skills/feature-map-workflow/refere
 
 The existing Feature Map is the durable business knowledge artifact: retain business scenarios, rules, important data effects, source/evidence references and unresolved intent even when no migration occurs. Distinguish observed legacy behavior from business-approved requirements. Compare old/new observable behavior when possible and report verification gaps honestly. Before completion, update the Feature Map or explicitly confirm it was reviewed and is already current. No extra XML schema, runner or agent fleet is required.
 
+### Compact per-feature HTML and index
+
+Keep **one small Feature Map XML per cohesive business feature**, not one cumulative document for the whole system. Feature Map's XSLT now shows the business overview, leading scenarios/rules and open questions first, while source references, verification, extra entries and Mermaid diagrams can be expanded on demand. Mermaid loads when the diagrams section opens. Folding improves readability/startup, but does not shrink the underlying XML.
+
+For a directory of many features, generate an optional **metadata-only** index without embedding the individual reports:
+
+```sh
+# Existing folders contain their own feature-map.xml and its referenced XSLT.
+python skills/feature-map-workflow/scripts/build_feature_index.py --root path/to/maps
+# Refresh after XML changes; does not overwrite an existing index without --force.
+python skills/feature-map-workflow/scripts/build_feature_index.py --root path/to/maps --force
+```
+
+Open `path/to/maps/feature-map-index.html`; click a feature to view its own XML/XSLT page. The index only includes system, feature title, status, short purpose and a relative link, with no server or dependency installs. Files stay local; keep customer source/XML private and avoid publishing generated indexes containing confidential metadata. If a map grows overly broad, split at meaningful scenario/data/acceptance boundaries and link related maps rather than duplicating their contents. See [Feature Map Contract](skills/feature-map-workflow/references/feature-map-contract.md).
+
 ### Goal-directed reachability for undocumented systems
 
 When a specific business-logic branch cannot be exercised from its real EXE/job/UI entry point because DB records, JOINs, master tables, API replies, flags or setup order are missing, use the [target reachability and test fixture discovery workflow](skills/feature-map-workflow/references/target-reachability.md).
