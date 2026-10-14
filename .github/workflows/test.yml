@@ -26,6 +26,8 @@ jobs:
       - run: python -m unittest discover -s examples/ai-assisted-testing -p test_demo.py -v
       - run: python scripts/test_setup_ai_testing.py
       - run: python scripts/test_package_plugin.py
+      - run: python scripts/test_build_feature_index.py
+      - run: python scripts/test_feature_map_render.py
       - run: python scripts/setup-ai-testing.py --dry-run --with-xquery
       - run: python scripts/validate_repository.py
       - run: python scripts/package_plugin.py

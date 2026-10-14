@@ -4,6 +4,14 @@
 
 Feature Map XML is a compact navigation and decision artifact shared by a developer and AI during catch-up and development. It is not a second copy of source code.
 
+## Per-feature boundaries and HTML presentation
+
+- Keep **one Feature Map XML per cohesive business feature**, not one growing document per application. Split when independent business scenarios have different triggers, data effects, ownership, or acceptance conditions. Do not split merely because a file reaches a speculative size threshold.
+- Store the meaningful business rules for that feature completely. Refer to other Feature Maps or source objects rather than duplicating their knowledge; cross-feature understanding does **not** authorize unrelated code migration.
+- The existing `feature-map.xsl` displays purpose and primary scenarios/rules first. Additional scenarios/rules and technical source references, verification evidence, and diagrams are available in native HTML `details`; opening Diagrams triggers Mermaid loading. Collapsing content reduces visual load and startup work, **not the bytes in an individual XML/HTML document**.
+- For many features, generate a **metadata-only directory** with `scripts/build_feature_index.py`. It contains titles, systems, states, short purposes, and relative links to XML files; it does not concatenate full Feature Maps, diagrams or evidence. Refresh it when files change; it is a regenerable display artifact, not a new source of truth.
+- Existing XML/XSD v1.3, links to tests, and the XSLT file association remain unchanged. No new runtime server, database, JavaScript framework or mandatory external service.
+
 ## Information test
 
 Before writing any item, classify it:
