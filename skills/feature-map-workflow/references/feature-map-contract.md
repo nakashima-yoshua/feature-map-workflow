@@ -60,6 +60,8 @@ Optional Mermaid source for visual knowledge that is expensive to reconstruct me
 
 Use diagrams for cross-boundary interactions, meaningful state transitions, or compact structural relationships. Do not generate a complete class diagram, call graph, or branch map from code. Source remains canonical. A diagram that becomes stale or duplicates obvious code should be removed rather than expanded.
 
+For data-backed legacy features, follow [Three Complementary Views](three-view-understanding.md): `flowchart TD` for business decisions and exceptions; `flowchart LR` for payload movement, reads/writes and transaction boundaries; `erDiagram` for verified table keys/relationships. Each useful view has a stable diagram ID and a title naming the same `useCase` (for example, `UC-SUBMIT`), and uses consistent DB object names with `sourceMap`. Not every feature needs all three diagrams. A JOIN does not establish a physical FK; when key, cardinality or relationship status is uncertain, omit that ER edge and retain the open question rather than inventing it.
+
 The XSLT renders Mermaid automatically. It prefers a local `feature-map.mermaid.min.js` and otherwise loads pinned Mermaid `12.0.0` from jsDelivr.
 
 ### `knowledge`
