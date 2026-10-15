@@ -46,6 +46,10 @@ Test tools retain their native JUnit/TRX/Playwright reports. To connect them to 
 
 `passed` requires all required assertions in the **actual execution boundary**; `failed` means an observed assertion mismatch; `blocked` means a dependency, authorization, environment or expected-result issue stopped verification; `not-run` means execution was not attempted. A successful HTTP smoke is **not** evidence of UI typing or visual correctness.
 
+## Excel functional-test handoff
+
+For work that requires the standard Japanese functional-test workbook, see `functional-test-excel.md`. A `result.json` can be imported into the provided `test_template.xlsx` layout only when the revision and verify case match and a case step is associated with its actual evidence. Adding `stepNo` and step-specific `evidence` to applicable checks is optional: whole-run results remain in the original JSON and are not extrapolated to all Excel step cells. Keep Excel formulas and human judgments intact.
+
 ## Evidence/privacy/sandbox
 
 - PASS: save minimal checks, important DB differences and representative screenshots only when needed.

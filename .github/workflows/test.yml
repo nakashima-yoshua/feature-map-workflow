@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
-      - run: python -m pip install lxml
+      - run: python -m pip install lxml openpyxl
       - run: sudo apt-get update && sudo apt-get install -y bubblewrap
       - run: python scripts/test_decision_provider.py
       - run: python scripts/test_xquery_result.py
@@ -30,6 +30,7 @@ jobs:
       - run: python scripts/test_feature_map_render.py
       - run: python scripts/test_three_view_understanding.py
       - run: python scripts/test_verification_brief.py
+      - run: python scripts/test_functional_test_excel.py
       - run: python scripts/setup-ai-testing.py --dry-run --with-xquery
       - run: python scripts/validate_repository.py
       - run: python scripts/package_plugin.py

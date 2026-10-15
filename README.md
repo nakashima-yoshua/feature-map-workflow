@@ -68,6 +68,10 @@ Detailed phase policy lives in:
 
 Source/tests, CI evidence, runtime traces, and release artifacts remain canonical in their native form. Feature Map stores only durable knowledge that is costly or ambiguous to reconstruct.
 
+### Customer functional-test Excel workbook
+
+Use the user-supplied `test_template.xlsx` for formal functional-test reporting. The `scripts/build_functional_test_excel.py` CLI fills its cover, case index and detail sheets from Feature Map verification IDs, then optionally imports only step-specific results with a matching `sourceRevision` and inspectable evidence. It preserves built-in formulas, starts with no case approved or executed, and leaves customer/private workbook files outside the public repository. Pass the original workbook using `--template`; see [Functional Test Excel](skills/feature-map-workflow/references/functional-test-excel.md).
+
 ### Focused verification brief and Human Work Direction
 
 Use [Human Work Direction](skills/feature-map-workflow/references/human-work-direction.md) when a focused feature needs several human-operated or human-judged verifications. Select any number of **relevant existing diagrams**, including UML activity, use-case, sequence, state, class or architectural views, as well as DFD and ER. Selection uses verification types, source references, data effects and diagram labels; it is **not limited to the three data views**. The generator does not invent missing diagrams or prove that inferred relationships are correct.

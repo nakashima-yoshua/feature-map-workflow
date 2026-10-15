@@ -53,6 +53,10 @@ The plan is an optional JSON object with version=1, environment, sourceRevision,
 
 The generator only **reads** input data, escapes user-controlled text, rejects XML DTD, writes output atomically and never runs tests or connects to DB. Mermaid uses only a local feature-map.mermaid.min.js beside output by default; --allow-cdn opts into a pinned public CDN fallback. When no runtime is available, Mermaid source remains readable. No external library is needed to generate the HTML, and no new Feature Map mode, XSD element or service is introduced.
 
+## Excel evidence handoff
+
+When a customer or human reviewer needs the standard functional-test workbook, generate it with `scripts/build_functional_test_excel.py` and the locally provided `test_template.xlsx`, following `functional-test-excel.md`. Human Work Plan groups setup and manual actions; **FT-xx** sheets keep per-case plans and independent evidence. Keep `verifyCaseId` and sourceRevision links, and never infer approval from a draft session plan.
+
 ## Human efficiency metrics
 
 Measure human sessions, hands-on minutes, setup switches, interruptions/retries and end-to-end time alongside individually verified/blocked case counts. Optimize these jointly: a faster batch that destroys test independence or delays an urgent release is **not** a success. Do not save work plans or results as repeated XML prose, and do not commit customer screenshots or production data.
