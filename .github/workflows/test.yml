@@ -29,6 +29,7 @@ jobs:
       - run: python scripts/test_build_feature_index.py
       - run: python scripts/test_feature_map_render.py
       - run: python scripts/test_three_view_understanding.py
+      - run: python scripts/test_verification_brief.py
       - run: python scripts/setup-ai-testing.py --dry-run --with-xquery
       - run: python scripts/validate_repository.py
       - run: python scripts/package_plugin.py

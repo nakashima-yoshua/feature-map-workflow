@@ -29,6 +29,8 @@ Feedback to an earlier phase is allowed whenever new evidence contradicts an ass
 
 For changes to legacy functionality, apply [Change-Driven Incremental Modernization](incremental-modernization.md) across existing phases. Investigate enough of the surrounding business flow to document it accurately, but change or migrate only an approved, cohesive slice. Modernization is a choice in design, not a new mandatory lifecycle phase.
 
+Before a phase requests multiple manual inspections, UI actions or human business approvals, optionally apply [Human Work Direction](human-work-direction.md): preflight by code, select useful UML/DFD/ER views for the **focused feature**, and batch compatible human actions without merging the individual test oracles or statuses. It is a **conditional cross-phase gate**, not a thirteenth mandatory lifecycle stage.
+
 ## Phase contract
 
 For every phase, distinguish:
@@ -121,6 +123,8 @@ For every phase, distinguish:
 
 **Output:** executable test boundary.
 
+**Optional human-work direction input:** if several test boundaries require human action, inventory the shared environment, role, fixture/reset costs and evidence mechanisms now; group only after the separate test cases and oracles are established. See `human-work-direction.md`.
+
 ### 6. Detailed Design
 
 **Input:** basic design, scenarios, test boundaries.
@@ -185,6 +189,8 @@ For every phase, distinguish:
 
 **Output:** tested commit candidate.
 
+**Before manual verification:** run automated preflight first, then issue a short focused brief plus an explicitly reviewed human session plan. Without approved oracle, isolatable test state or authorized environment, report HALT instead of inventing runnable steps.
+
 ### 10. Release Package / CD
 
 **Input:** CI-approved commit.
@@ -232,6 +238,8 @@ For every phase, distinguish:
 **HALT:** failed/blocked verification, missing acceptance evidence, or unresolved high-impact `open` item.
 
 **Output:** accepted delivery; Feature Map may move to `closed`.
+
+**For human acceptance:** reuse the case-specific evidence and source revision from earlier runs. Batching manual work never turns an unexecuted or unapproved case into PASS.
 
 ## Responsibility split
 

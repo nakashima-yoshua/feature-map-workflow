@@ -68,6 +68,18 @@ Context Sufficiency
 
 ソース、テスト、CI証跡、Runtime Trace、Release Artifactは、それぞれの場所を正本とします。Feature Mapには、コード等から安価に再構築できない永続的な知識だけを残します。
 
+### 機能理解・検証ブリーフと作業ディレクション
+
+人の操作・業務判断が検証のボトルネックとなる場合は、[作業ディレクションと図の選定基準](skills/feature-map-workflow/references/human-work-direction.md)を使います。機能・ユースケース・検証IDを絞り、検証担当者の疑問に応じてアクティビティ図、ユースケース図、シーケンス図、状態遷移図、クラス図、構成図、DFD、ER図から**必要な図を選定**します。3図に限定せず、全図を無条件に表示することもしません。既存の根拠あるMermaid図のみをHTMLに表示し、足りない図はソース・DB情報を確認してからFeature Mapへ追加します。
+
+複数の手動検証は、共通の環境・ログイン・画面準備をまとめた **1つ以上の人向け作業セッション**へ集約できます。ただし、テストIDごとの初期化、期待結果、証跡、合否は独立させます。作業計画がない場合や環境が未確認の場合、実行可能と誤認させないよう警告・HALTを表示します。
+
+```sh
+python skills/feature-map-workflow/scripts/build_verification_brief.py --feature-map examples/fictional-stock-request/feature-map.xml --use-case UC-SUBMIT --plan examples/fictional-stock-request/human-work-plan.example.json --output verification-brief.html
+```
+
+実行すると、機能概要・選定図・ケース別期待結果・共通準備・操作順序・ケース間リセット・証跡取得・中止条件を含むHTMLを、Feature Mapのフォルダに生成します。**これは資料生成のみで、テスト実行や承認は行いません。** 再生成は `--force`、ケース指定は `--case`、図の明示指定は繰り返し可能な `--diagram` を使います。生成は標準Pythonのみで動作し、図の表示はローカルMermaid優先です。CDN経由の利用は明示的な `--allow-cdn` 指定が必要です。
+
 ### 業務フロー・データフロー・ER図を合わせたシステム理解
 
 仕様書のないデータ中心の業務機能では、[3視点での理解手順](skills/feature-map-workflow/references/three-view-understanding.md)に従い、**業務フロー（人の判断・結果）／データフロー（入力・DB更新・外部連携）／ER図（関連テーブルとキー）**を組み合わせます。3図は同じユースケースIDとテーブル名で対応付けます。
