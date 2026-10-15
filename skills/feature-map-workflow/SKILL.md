@@ -128,6 +128,10 @@ For an unfamiliar or legacy data-backed feature, use `references/three-view-unde
 
 A completely fictional test case is at `examples/fictional-stock-request/feature-map.xml`. Use it as syntax/workflow guidance, **never** as evidence about a real business or schema.
 
+## Functional test Excel deliverable
+
+When functional test evidence must be reviewed or shared with a customer, follow `references/functional-test-excel.md`. Use the user's existing `test_template.xlsx` layout for cover, list and per-case evidence: generate a planning workbook from selected Feature Map `verify/case` IDs using `scripts/build_functional_test_excel.py plan --template <local-xlsx> --feature-map ... --revision ... --output ...`. Preserve Excel formulas and leave execution outcomes and test adoption unapproved. Link optional Human Work Plan operations, and use `results` to import only revision-matched, separately evidenced step results; do not turn a run-level PASS into step-level PASS. Do not commit customer test data/screenshots or overwrite a completed workbook.
+
 ## Human Work Direction and Verification Brief
 
 Apply `references/human-work-direction.md` as an **optional planning gate before human verification**. Start from the focused feature/use-case, independent verification IDs, approved expectations, actual environment and source revision. First prepare every permitted deterministic prerequisite (build, isolated test data, evidence collectors). Ask a human only for the necessary business judgment, physical/legacy UI action or acceptance.
