@@ -27,6 +27,7 @@ AI explores and drafts; deterministic code executes and asserts; a human determi
 6. Capture observable effects, not just button clicks or exit codes. Retain before/after DB state, changed records, relevant logs, browser screenshots/traces, and an execution identity. Separate `route discovered`, `target reached`, `behavior verified`, and `reproducible`.
 7. On `failed` or `blocked`, AI may analyze the smallest sanitized evidence slice and propose fixes. **Never auto-rewrite an assertion or expected value to produce PASS.**
 8. Keep complete test catalogs and evidence outside Feature Map XML. Patch only confirmed durable rules, important representative `verify/case` references or blockers, and validate through the existing XSD/Hooks.
+9. For manual or hybrid steps, apply `human-work-direction.md`: have deterministic tools prepare fixtures and preflight first; use a focused UML/DFD/ER brief to orient the tester, and batch compatible manual actions by environment, role, setup and screen **without** combining case-specific initial state, expectations, status or evidence. Generate the derived HTML with `scripts/build_verification_brief.py`; an optional plan JSON lists per-case reset, human action, evidence capture and session-wide stop conditions. Human review remains mandatory for material oracles and authorization. Generating the brief itself proves nothing.
 
 ## Result contract (version 1)
 
