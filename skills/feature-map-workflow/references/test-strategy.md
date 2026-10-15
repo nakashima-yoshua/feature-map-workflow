@@ -69,6 +69,10 @@ Use only when automation cost is not justified or the behavior depends on human 
 
 When manual work is necessary for several independent cases, apply [Human Work Direction](human-work-direction.md) to reduce the number of human sessions and environment/screen switches. Group shared setup, but require an independently verified fixture/reset, oracle, evidence and status for **each verification ID**. Do not substitute one combined PASS for distinct case results. Prefer machine preflight and evidence capture before human interaction; split cases whose side effects or approvals cannot safely coexist.
 
+## Functional-test Excel deliverable
+
+For customer-facing, human-reviewed functional tests, use the original `test_template.xlsx` as the workbook format (cover/list/FT-xx). See `functional-test-excel.md` for the generator and mapping. Select materially relevant cases, keep expectations reviewable, and retain the unique Feature Map verification ID on each case sheet. Do not convert all unit tests to Excel, skip important cases because the template has ten initial slots, or mark a case passed merely because the workbook formula shows a summary. The workbook is a deliverable, not business-logic truth.
+
 ## Test boundary contract
 
 Every non-trivial test should make these boundaries explicit, either in test code/fixtures or in durable documentation when the boundary is expensive to reconstruct:
