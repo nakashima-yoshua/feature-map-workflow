@@ -37,9 +37,10 @@ flowchart TD
     ]]></diagram>
     <diagram id="DG-DFD" kind="flowchart" title="データフロー / UC-SUBMIT"><![CDATA[
 flowchart LR
-    USER["担当者"] -->|"商品ID・希望数量"| VALID["受付・入力検証"]
+    USER["担当者"] -->|"商品ID・希望数量・依頼者"| VALID["受付・入力検証"]
     ITEM[("ITEM / 商品マスタ")] -->|"商品状態の参照"| VALID
     VALID -->|"確認済みの依頼"| SAVE["登録処理（同一トランザクション）"]
+    VALID -->|"無効: エラー・書込なし"| USER
     SAVE -->|"ヘッダを書き込み"| REQUEST[("REQUEST")]
     SAVE -->|"明細を書き込み"| LINE[("REQUEST_LINE")]
     SAVE -->|"受付番号"| USER
