@@ -64,6 +64,8 @@ For data-backed legacy features, follow [Three Complementary Views](three-view-u
 
 The XSLT renders Mermaid automatically. It prefers a local `feature-map.mermaid.min.js` and otherwise loads pinned Mermaid `12.0.0` from jsDelivr.
 
+For human verification, the [focused brief and human-work direction](human-work-direction.md) may select **any number of relevant views**, including UML activity, use-case, state, sequence or class diagrams in addition to DFD, ER and architecture. No three-view quota or numeric diagram cap exists. Selection never grants authority to invent a missing fact or approve a DB relation. Render the brief from existing XML; keep human session plans and test results external and regenerable.
+
 ### `knowledge`
 
 - `rule`: business behavior. Say whether an important rule describes observed legacy behavior or an approved business expectation; do not infer approval from source code alone.
