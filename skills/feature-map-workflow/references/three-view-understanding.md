@@ -14,6 +14,8 @@ Use distinct titles and stable IDs such as `DG-BUSINESS`, `DG-DATA` and `DG-ER`.
 
 Three views are a *recommended set when they each explain a material question*, not a quota: omit an obvious or irrelevant view and say why. Do not draw every screen, class, column or schema table.
 
+**This is a data-backed baseline, not a required set or a diagram-count limit.** For a focused human verification, [Human Work Direction](human-work-direction.md) additionally selects UML state, sequence, activity, use-case, class or architecture views whenever they better answer the tester's question. The brief generator may select any number of relevant, already-evidenced diagrams; neither the feature map nor the brief must contain exactly three. DFD and ER are not UML notations.
+
 ## Procedure
 
 1. **Define the slice and basis of evidence.** Select one business feature and representative use case (`UC-...`). Read existing Feature Map first. Record the trigger, outcome, error path and in/out scope. Investigate connected dependencies only until the scenario can be explained and changed safely. The *understood* flow may be wider than any authorized *migration*.
