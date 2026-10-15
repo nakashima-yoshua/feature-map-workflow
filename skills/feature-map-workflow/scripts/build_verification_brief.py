@@ -19,7 +19,6 @@ from xml.etree import ElementTree as ET
 
 MAX_INPUT = 2 * 1024 * 1024
 MAX_PLAN = 128 * 1024
-CDN = "https://cdn.jsdelivr.net/npm/mermaid@12.0.0/dist/mermaid.min.js"
 
 
 def esc(value: object) -> str:
@@ -90,13 +89,15 @@ class Diagram:
 
 
 ROLE_INFO = {
-    "business": ("業務フロー", "担当者の操作・判断・例外を把握する"),
-    "data": ("データフロー", "入力、参照・更新先、外部への影響を確認する"),
-    "er": ("ER図", "テーブル、キー、保存データ間の関連を確認する"),
-    "state": ("状態遷移図", "状態と操作の可否、遷移条件を確認する"),
-    "sequence": ("シーケンス図", "モジュール間の順序と連携を確認する"),
-    "class": ("クラス図", "責務とオブジェクト構造を確認する"),
-    "other": ("補足図", "関連する構造・処理を補足する"),
+    "activity": ("アクティビティ図・業務フロー", "担当者の判断、分岐、正常・異常結果を確認する"),
+    "usecase": ("ユースケース図", "利用者・権限と機能の対象範囲を確認する"),
+    "data": ("データフロー図", "入力からDB・ファイル・外部システムまでの流れを追う"),
+    "er": ("ER図", "テーブル間の関係と更新対象、キーを確認する"),
+    "state": ("状態遷移図", "操作前後の状態と遷移条件を確認する"),
+    "sequence": ("シーケンス図", "モジュールや外部連携の呼出順序を確認する"),
+    "class": ("クラス図", "責務、型・オブジェクト間の構造を確認する"),
+    "architecture": ("構成図", "サービス・プロセスなどの境界を確認する"),
+    "other": ("補足図", "検証上重要な他の構造を確認する"),
 }
 
 
@@ -112,23 +113,60 @@ def classify_diagram(element: ET.Element) -> str:
         return "sequence"
     if kind == "class" or source.startswith("classDiagram"):
         return "class"
-    if "データフロー" in title or "data flow" in title or "dfd" in title:
+    if "データフロー" in title or "data flow" in title or re.search(r"\bdfd\b", title):
         return "data"
-    if kind in ("flowchart", "activity") or source.startswith("flowchart"):
-        return "business"
+    if kind == "usecase":
+        return "usecase"
+    if kind == "architecture":
+        return "architecture"
+    if kind in ("activity", "flowchart") or source.startswith(("flowchart", "graph ")):
+        return "activity"
     return "other"
 
 
+def need_roles(root: ET.Element, cases: list[ET.Element]) -> set[str]:
+    """Recommend diagram roles from declared test purposes, never inferred guarantees."""
+    types = {c.get("type", "") for c in cases}
+    words = " ".join(
+        text(c, "condition") + " " + text(c, "expect") for c in cases
+    ).lower()
+    refs = root.findall("./sourceMap/ref")
+    kinds = {ref.get("kind", "") for ref in refs}
+    touched_tables = {
+        ref.get("target", "") for ref in refs if ref.get("kind") in ("table", "view")
+    }
+    writes = any(ref.get("access") in ("write", "read-write") for ref in refs)
+    has_external = bool(kinds.intersection({"api", "external", "batch"}))
+    roles = {"activity"}  # Focused scenario/decision comes first.
+    if writes or has_external or kinds.intersection({"table", "view", "query"}):
+        roles.add("data")
+    if len(touched_tables) >= 2:
+        roles.add("er")
+    if types.intersection({"state", "duplicate"}) or re.search(
+        r"状態|遷移|status|state|有効|無効|完了済", words
+    ):
+        roles.add("state")
+    if types.intersection({"retry", "duplicate"}) or has_external or re.search(
+        r"再試行|リトライ|タイムアウト|timeout|retry|非同期|queue|連携|call order", words
+    ):
+        roles.add("sequence")
+    if "permission" in types or re.search(r"権限|ロール|actor|role|permission", words):
+        roles.add("usecase")
+    if re.search(r"クラス|継承|interface|class|object|オブジェクト|責務", words):
+        roles.add("class")
+    if len(kinds.intersection({"api", "external", "batch", "procedure"})) >= 2:
+        roles.add("architecture")
+    return roles
+
+
 def choose_diagrams(root: ET.Element, focus: ET.Element | None,
-                    selected: list[str]) -> list[Diagram]:
+                    selected: list[str], cases: list[ET.Element]) -> list[Diagram]:
     available = root.findall("./diagrams/diagram")
     ids = [d.get("id", "") for d in available]
     if len(set(ids)) != len(ids) or any(not i for i in ids):
         raise ValueError("Diagram IDs must be distinct and nonempty for a brief")
     if len(selected) != len(set(selected)):
         raise ValueError("Duplicate --diagram ID")
-    if len(selected) > 3:
-        raise ValueError("Select at most 3 diagrams")
     focus_id = focus.get("id", "") if focus is not None else ""
     eligible = []
     for d in available:
@@ -137,6 +175,8 @@ def choose_diagrams(root: ET.Element, focus: ET.Element | None,
         if focus_id and mentioned and focus_id not in mentioned:
             continue
         role = classify_diagram(d)
+        if not (d.text or "").strip():
+            continue
         label, reason = ROLE_INFO[role]
         eligible.append(Diagram(d.get("id", ""), title or label, role,
                                 (d.text or "").strip(), reason))
@@ -146,15 +186,18 @@ def choose_diagrams(root: ET.Element, focus: ET.Element | None,
         if missing:
             raise ValueError("Unknown or out-of-focus diagram ID: " + ", ".join(sorted(missing)))
         return [mapping[i] for i in selected]
-    # Distinct purposes, not a diagram dump. Priority follows what testers ask first.
-    priority = ("business", "data", "er", "state", "sequence", "class", "other")
-    picked = []
-    for role in priority:
-        if len(picked) == 3:
-            break
-        match = next((d for d in eligible if d.role == role), None)
-        if match is not None:
-            picked.append(match)
+    needed = need_roles(root, cases)
+    # Use every relevant documented view, regardless of count; do not fabricate diagrams.
+    # Avoid rendering identical Mermaid bodies several times.
+    used_sources: set[str] = set()
+    picked: list[Diagram] = []
+    for d in eligible:
+        if d.role in needed and d.source not in used_sources:
+            picked.append(d)
+            used_sources.add(d.source)
+    # A non-data feature may only supply a use-case diagram; retain a useful fallback.
+    if not picked and eligible:
+        picked.append(eligible[0])
     return picked
 
 
@@ -245,18 +288,22 @@ def render(root: ET.Element, focus: ET.Element | None,
                 f'<strong>対象外：</strong>{esc(text(root, "./goal/exclude"))}</p></section>')
 
     diagram_items = []
-    for d in diagrams:
+    for number, d in enumerate(diagrams):
+        # First selected diagram is visible; others are available without overwhelming the page.
+        opened = " open" if number == 0 else ""
         diagram_items.append(
-            f'<details class="diagram"><summary>{esc(ROLE_INFO[d.role][0])}：{esc(d.title)}</summary>'
-            f'<p class="muted">{esc(d.reason)} · {esc(d.id)}</p>'
+            f'<details class="diagram"{opened}><summary>{esc(ROLE_INFO[d.role][0])}：{esc(d.title)}</summary>'
+            f'<p class="muted">選定理由：{esc(d.reason)} · {esc(d.id)}</p>'
             f'<pre class="mermaid">{esc(d.source)}</pre></details>'
         )
     diagram_section = (f'<section><h2>2. 今回読む図 <small>({len(diagrams)}件)</small></h2>'
-                       '<p>対象機能と検証目的に関係する図を優先表示します。'
-                       '図は既存Feature Mapの記述であり、未検証の関連を自動的に確定するものではありません。</p>'
+                       '<p>件数の固定上限はありません。検証目的に関係する既存図を選定し、'
+                       '先頭の図を表示します。未確認の関係を自動確定・創作しません。</p>'
                        + (''.join(diagram_items) +
-                          '<p id="mermaid-status" class="muted">図を展開するとローカルのMermaidを読み込みます。</p>'
-                          if diagrams else '<p class="notice">該当する図がありません。推測による図は生成しません。</p>')
+                          '<p id="mermaid-status" class="muted">図を開くとMermaidを読み込みます。'
+                          'ライブラリを利用できない場合はソースを表示します。</p>'
+                          if diagrams else '<p class="notice">根拠のある関連図がありません。'
+                          '図の作成に必要なソース・DB情報の確認を検討してください。</p>')
                        + '</section>')
 
     case_rows = []
@@ -286,7 +333,7 @@ def render(root: ET.Element, focus: ET.Element | None,
         session_parts = []
         for session in plan["sessions"]:
             rows = []
-            for number, step in enumerate(session["steps"], 1):
+            for step in session["steps"]:
                 c = case_by_id[step["caseId"]]
                 rows.append(
                     f"<li><strong>{esc(step['caseId'])}</strong>：{esc(step['action'])}"
@@ -339,33 +386,50 @@ def render(root: ET.Element, focus: ET.Element | None,
 (function () {
   const fallback = """ + fallback + """;
   const status = document.getElementById('mermaid-status');
-  let started = false;
+  let ready = null;
+  let initialized = false;
   function fail() {
-    if (status) status.textContent = 'Mermaid未描画：図のソースを表示しています。ローカルのfeature-map.mermaid.min.jsを配置してください。';
+    if (status) status.textContent = 'Mermaid未描画：図のソースを表示しています。必要なら同じフォルダにfeature-map.mermaid.min.jsを配置してください。';
   }
-  async function run() {
-    try {
-      window.mermaid.initialize({startOnLoad:false,securityLevel:'strict',
-                                 layout:'dagre',theme:'default',look:'classic'});
-      await window.mermaid.run({querySelector:'.mermaid'});
-      if (status) status.textContent = 'Mermaid描画済み';
-    } catch (_) { fail(); }
-  }
-  function load(url, next) {
+  function library(url, next, resolve, reject) {
     const tag = document.createElement('script');
     tag.src = url;
-    tag.onload = run;
-    tag.onerror = () => next ? load(next, null) : fail();
+    tag.onload = resolve;
+    tag.onerror = function () {
+      if (next) library(next, null, resolve, reject);
+      else reject(new Error('Mermaid unavailable'));
+    };
     document.head.appendChild(tag);
   }
-  document.querySelectorAll('details.diagram').forEach(function (node) {
-    node.addEventListener('toggle', function () {
-      if (!node.open || started) return;
-      started = true;
-      if (window.mermaid) run();
-      else load('feature-map.mermaid.min.js', fallback ?
-                'https://cdn.jsdelivr.net/npm/mermaid@12.0.0/dist/mermaid.min.js' : null);
+  function ensure() {
+    if (ready) return ready;
+    ready = new Promise(function (resolve, reject) {
+      if (window.mermaid) { resolve(); return; }
+      library('feature-map.mermaid.min.js', fallback ?
+              'https://cdn.jsdelivr.net/npm/mermaid@12.0.0/dist/mermaid.min.js' : null,
+              resolve, reject);
     });
+    return ready;
+  }
+  async function renderPanel(panel) {
+    if (!panel.open) return;
+    const target = panel.querySelector('pre.mermaid');
+    if (!target || target.dataset.done) return;
+    try {
+      await ensure();
+      if (!initialized) {
+        window.mermaid.initialize({startOnLoad:false,securityLevel:'strict',
+                                   layout:'dagre',theme:'default',look:'classic'});
+        initialized = true;
+      }
+      await window.mermaid.run({nodes:[target]});
+      target.dataset.done = 'true';
+      if (status) status.textContent = '選択した図を描画しました。';
+    } catch (_) { fail(); }
+  }
+  document.querySelectorAll('details.diagram').forEach(function (panel) {
+    panel.addEventListener('toggle', function () { renderPanel(panel); });
+    if (panel.open) renderPanel(panel);
   });
 })();
 </script>"""
@@ -399,7 +463,7 @@ def main() -> int:
     parser.add_argument("--feature-map", required=True, type=Path)
     parser.add_argument("--use-case", help="Focus on a specific use case ID")
     parser.add_argument("--case", action="append", default=[], help="Include one verification ID; repeat as needed")
-    parser.add_argument("--diagram", action="append", default=[], help="Explicit diagram ID; max three")
+    parser.add_argument("--diagram", action="append", default=[], help="Select diagram IDs explicitly, repeat without count limit")
     parser.add_argument("--plan", type=Path, help="Optional, reviewable human-work session JSON")
     parser.add_argument("--output", type=Path, default=Path("verification-brief.html"))
     parser.add_argument("--force", action="store_true")
@@ -420,7 +484,7 @@ def main() -> int:
         root = read_xml(source)
         focus = choose_focus(root, args.use_case)
         cases = choose_cases(root, args.case, len(root.findall("./useCase")) > 1)
-        diagrams = choose_diagrams(root, focus, args.diagram)
+        diagrams = choose_diagrams(root, focus, args.diagram, cases)
         plan = read_plan(args.plan, [c.get("id", "") for c in cases])
         markup = render(root, focus, cases, diagrams, plan, args.allow_cdn)
     except (ValueError, OSError) as exc:
