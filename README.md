@@ -68,6 +68,18 @@ Detailed phase policy lives in:
 
 Source/tests, CI evidence, runtime traces, and release artifacts remain canonical in their native form. Feature Map stores only durable knowledge that is costly or ambiguous to reconstruct.
 
+### Focused verification brief and Human Work Direction
+
+Use [Human Work Direction](skills/feature-map-workflow/references/human-work-direction.md) when a focused feature needs several human-operated or human-judged verifications. Select any number of **relevant existing diagrams**, including UML activity, use-case, sequence, state, class or architectural views, as well as DFD and ER. Selection uses verification types, source references, data effects and diagram labels; it is **not limited to the three data views**. The generator does not invent missing diagrams or prove that inferred relationships are correct.
+
+Before a tester is asked to act, plan deterministic preflight, common setup, isolated per-case data reset, actions, individual evidence capture, stop conditions and cleanup. Group compatible cases to minimize human sessions and context switching **without merging test outcomes**. The optional session-plan JSON is reviewable, not canonical; without it, the generator produces an informational brief with a HALT notice rather than executable steps.
+
+```sh
+python skills/feature-map-workflow/scripts/build_verification_brief.py --feature-map examples/fictional-stock-request/feature-map.xml --use-case UC-SUBMIT --plan examples/fictional-stock-request/human-work-plan.example.json --output verification-brief.html
+```
+
+The resulting local HTML is a generated view of Feature Map XML and planned steps: feature context, selected diagrams and selection reasons, case-specific expected results, shared preparation, manual action order, evidence capture, blockers and cleanup. It **does not run tests, connect to a DB, record evidence or approve results**. Use repeatable `--case` and `--diagram` overrides and `--force` to explicitly regenerate. Standard Python is sufficient; local Mermaid loading is the default and `--allow-cdn` explicitly enables external fallback. See the [fictional example](examples/fictional-stock-request/README.md).
+
 ### Three complementary views: business flow, data flow and ER
 
 For understanding an unfamiliar data-backed business feature, follow [Three Complementary Views](skills/feature-map-workflow/references/three-view-understanding.md). Combine **business flow** (actor, decisions, outcomes), **data flow** (inputs, DB effects, payloads, interfaces) and **feature-scoped ER** (relevant entities, keys and evidenced relationships), connected by the same use-case ID and table names.
