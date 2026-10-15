@@ -68,6 +68,10 @@ Context Sufficiency
 
 ソース、テスト、CI証跡、Runtime Trace、Release Artifactは、それぞれの場所を正本とします。Feature Mapには、コード等から安価に再構築できない永続的な知識だけを残します。
 
+### 機能テストExcel（提供テンプレート準拠）
+
+機能テストの実施記録は添付済み `test_template.xlsx` の書式に統一できます。`scripts/build_functional_test_excel.py` の `plan` はFeature Mapの検証IDを、原本の表紙・検証リスト・個別シートへ展開します。`results` はリビジョンが一致し、手順単位で証跡のある `result.json` だけを反映します。数式、個別の手入力と採否は保護し、成果物には初期段階で合格を付けません。元のExcelファイルはローカルの `--template` で指定します。詳細は [機能テストExcel連携](skills/feature-map-workflow/references/functional-test-excel.md) を参照してください。
+
 ### 機能理解・検証ブリーフと作業ディレクション
 
 人の操作・業務判断が検証のボトルネックとなる場合は、[作業ディレクションと図の選定基準](skills/feature-map-workflow/references/human-work-direction.md)を使います。機能・ユースケース・検証IDを絞り、検証担当者の疑問に応じてアクティビティ図、ユースケース図、シーケンス図、状態遷移図、クラス図、構成図、DFD、ER図から**必要な図を選定**します。3図に限定せず、全図を無条件に表示することもしません。既存の根拠あるMermaid図のみをHTMLに表示し、足りない図はソース・DB情報を確認してからFeature Mapへ追加します。
