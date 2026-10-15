@@ -68,6 +68,14 @@ Detailed phase policy lives in:
 
 Source/tests, CI evidence, runtime traces, and release artifacts remain canonical in their native form. Feature Map stores only durable knowledge that is costly or ambiguous to reconstruct.
 
+### Three complementary views: business flow, data flow and ER
+
+For understanding an unfamiliar data-backed business feature, follow [Three Complementary Views](skills/feature-map-workflow/references/three-view-understanding.md). Combine **business flow** (actor, decisions, outcomes), **data flow** (inputs, DB effects, payloads, interfaces) and **feature-scoped ER** (relevant entities, keys and evidenced relationships), connected by the same use-case ID and table names.
+
+Use read-only schema/catalog metadata, DDL, application SQL and authorized observations as evidence. A SQL JOIN does not establish a declared FK; never invent unknown cardinality or label unconfirmed paths as verified. For Oracle, PostgreSQL and Db2, account for platform-specific catalogs, synonyms, stored procedures, views and runtime dispatch. Keep drawings compact; skip an unhelpful view rather than exhaustively documenting every table.
+
+Store the diagrams in the **existing** Feature Map v1.3 `diagrams/diagram` elements: `flowchart TD` for business flow, `flowchart LR` for data flow, and `erDiagram` for ER. They are displayed by the current collapsed XSLT/Mermaid viewer without any schema or runtime changes. See the [fully fictional stock-request example](examples/fictional-stock-request/README.md), whose relationships are illustrations rather than real database facts. CI checks its XML, diagram linkage and XSLT output, not real DB behavior or browser-side Mermaid rendering.
+
 ### Change-driven incremental modernization
 
 Use [Change-Driven Incremental Modernization](skills/feature-map-workflow/references/incremental-modernization.md) when an existing legacy feature needs enhancement, repair, or a low-cost partial migration. **Understand and document the business flow and its material dependencies; migrate only the smallest safe and approved responsibility boundary.** Choose among no code change, a legacy fix, and migration of one slice based on overall delivery, coexistence, maintenance, and verification costs.

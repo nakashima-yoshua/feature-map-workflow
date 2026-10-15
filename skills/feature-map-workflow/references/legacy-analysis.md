@@ -176,6 +176,18 @@ Trace **backwards** from the target through callers and branch gates, and **forw
 
 Prepare only the permitted isolated fixtures/stubs. Inspect the first failed gate in an observed run (the **blocking frontier**) and amend the smallest evidenced prerequisite; reset before rerunning. Confirm target entry, intended branch/data/effects, and repeatability as different proof levels. If the environment is unsafe or unavailable, supply a not-run plan and retain the blocker, never claim verification.
 
+## Business flow, data flow and ER diagram
+
+When business understanding depends materially on persisted data, combine three **feature-scoped** views using [Three Complementary Views](three-view-understanding.md):
+
+1. **Business flow**: actor, trigger, decision, normal/exception outcome, and the corresponding `useCase` and `knowledge/rule`.
+2. **Data flow**: named inputs, processes, DB reads/writes, external payloads, transactions and output effects. Start from actual source/SQL/API evidence, not architectural intuition.
+3. **ER**: relevant entity/table names, verified PK/FK/unique keys, meaningful columns and constrained relationships. Inspect authorized, read-only DB metadata or versioned DDL and joins; do not mislabel logical joins as enforced foreign keys or invent unknown cardinality.
+
+Reconcile the three by tracing each important scenario decision through its data effect to source/DB references and representative tests. An ER diagram alone cannot establish runtime writes, and a data-flow edge alone cannot establish a database constraint. Record observations, approved intent and unresolved assumptions separately.
+
+Place only small, decision-relevant Mermaid diagrams in the existing `diagrams` section. Diagrams are optional when a view adds no meaningful explanation. If DB access is unavailable, label relationships source-derived or unknown and HALT only claims that depend on unproven facts. The existing collapsed HTML/mermaid renderer and XML v1.3 are sufficient; do not scan or replicate the entire schema for one feature.
+
 ## Output into Feature Map
 
 Persist only the durable, expensive-to-reconstruct result:

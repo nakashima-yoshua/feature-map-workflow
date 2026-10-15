@@ -77,7 +77,7 @@ For every phase, distinguish:
 
 **Input:** bounded requirements and current architecture.
 
-**Activity:** identify entry points, responsibility boundaries, data/API direction, external systems, state transitions, and non-obvious design decisions. If modernization is considered, distinguish the wider understanding boundary from the smallest safe migration boundary. Compare leaving code unchanged, modifying legacy code, and migrating one functional slice; justify the chosen option with coexistence, verification and operating costs.
+**Activity:** identify entry points, responsibility boundaries, data/API direction, external systems, state transitions, and non-obvious design decisions. If modernization is considered, distinguish the wider understanding boundary from the smallest safe migration boundary. Compare leaving code unchanged, modifying legacy code, and migrating one functional slice; justify the chosen option with coexistence, verification and operating costs. For data-backed legacy features, use [Three Complementary Views](three-view-understanding.md) when useful: connect business flow, data flow and evidence-backed ER to the same scenario and source/data references; do not invent FK/cardinality facts or create a whole-schema diagram.
 
 **Durable Feature Map delta:** `sourceMap`, compact `diagrams`, `decision`, `constraint`, `invariant`.
 

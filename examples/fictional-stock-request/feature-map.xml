@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="../../skills/feature-map-workflow/assets/feature-map.xsl"?>
+<!-- Fully fictional exercise: no actual DB, source, account, or customer data. -->
+<featureMap version="1.3" mode="catchup" state="draft">
+  <meta>
+    <system>架空の在庫補充受付</system>
+    <feature>補充依頼の受付（UC-SUBMIT）</feature>
+    <environment>完全に架空の概念例。DB、プログラム、テストは存在しない。以下のER図は実DBから抽出したものではない。</environment>
+  </meta>
+  <goal>
+    <purpose>担当者が商品ごとの補充希望数量を登録し、受付番号を得る業務を理解する。</purpose>
+    <done>受付の判断、受け渡すデータ、保持するエンティティ、例外時の副作用を相互に説明できる。</done>
+    <scope>補充依頼の新規受付と入力不備による拒否。</scope>
+    <exclude>仕入れ発注、実在庫の増減、SAP連携、運用環境への接続。</exclude>
+  </goal>
+  <useCase id="UC-SUBMIT">
+    <scenario>担当者が1件以上の明細を持つ補充依頼を登録する。無効な商品または数量の場合は登録しない。</scenario>
+    <input>商品ID、希望数量、依頼者。</input>
+    <outcome>有効なら受付番号を返し、REQUESTとREQUEST_LINEを記録する。無効ならエラーを表示し、両方とも変更しない。</outcome>
+    <sample>ITEM-001を数量3で補充依頼する。すべて架空の識別子。</sample>
+  </useCase>
+  <sourceMap>
+    <!-- Illustrative names ONLY, never evidence of files/tables that actually exist. -->
+    <ref id="SRC-ENTRY" kind="entry" target="fictional:StockRequest.Submit" access="call"/>
+    <ref id="SRC-VALIDATE" kind="query" target="fictional:ValidateItemAndQuantity" access="read"/>
+    <ref id="SRC-ITEM" kind="table" target="fictional:ITEM" access="read"/>
+    <ref id="SRC-REQUEST" kind="table" target="fictional:REQUEST" access="write"/>
+    <ref id="SRC-LINE" kind="table" target="fictional:REQUEST_LINE" access="write"/>
+  </sourceMap>
+  <diagrams>
+    <diagram id="DG-FLOW" kind="flowchart" title="業務フロー / UC-SUBMIT"><![CDATA[
+flowchart TD
+    OP["担当者: 補充依頼を入力"] --> CHECK{"商品と希望数量は有効か"}
+    CHECK -->|"いいえ"| REJECT["入力エラーを表示（登録なし）"]
+    CHECK -->|"はい"| SAVE["依頼ヘッダと明細を登録"]
+    SAVE --> DONE["受付番号を通知"]
+    ]]></diagram>
+    <diagram id="DG-DFD" kind="flowchart" title="データフロー / UC-SUBMIT"><![CDATA[
+flowchart LR
+    USER["担当者"] -->|"商品ID・希望数量・依頼者"| VALID["受付・入力検証"]
+    ITEM[("ITEM / 商品マスタ")] -->|"商品状態の参照"| VALID
+    VALID -->|"確認済みの依頼"| SAVE["登録処理（同一トランザクション）"]
+    VALID -->|"無効: エラー・書込なし"| USER
+    SAVE -->|"ヘッダを書き込み"| REQUEST[("REQUEST")]
+    SAVE -->|"明細を書き込み"| LINE[("REQUEST_LINE")]
+    SAVE -->|"受付番号"| USER
+    ]]></diagram>
+    <diagram id="DG-ER" kind="er" title="ER図 / UC-SUBMIT（架空のスキーマ。実DBのFKは未確認）"><![CDATA[
+erDiagram
+    REQUEST ||--|{ REQUEST_LINE : "contains (hypothetical FK)"
+    ITEM ||--o{ REQUEST_LINE : "selected_by (hypothetical FK)"
+    REQUEST {
+        int REQUEST_ID PK
+        string REQUEST_STATUS
+    }
+    REQUEST_LINE {
+        int REQUEST_ID PK, FK
+        int LINE_NO PK
+        int ITEM_ID FK
+        decimal REQUEST_QTY
+    }
+    ITEM {
+        int ITEM_ID PK
+        string ITEM_STATUS
+    }
+    ]]></diagram>
+  </diagrams>
+  <knowledge>
+    <rule id="RULE-VALIDATION">架空の期待仕様：無効な商品IDまたは希望数量0以下の明細を含む依頼は登録しない。</rule>
+    <invariant id="INV-ATOMIC">架空の設計上の不変条件：REQUESTとREQUEST_LINEの登録は同一トランザクションとし、片方だけ登録しない。</invariant>
+    <constraint id="CON-FICTION">図中のPK、FK、多重度、業務ルールは架空の設計例であり、稼働DB・ソースから観測した事実ではない。</constraint>
+  </knowledge>
+  <verify>
+    <case id="V-SUBMIT" type="normal" status="not-run">
+      <condition>架空の有効な商品IDと希望数量3を登録する。</condition>
+      <expect>REQUESTが1件、REQUEST_LINEが1件作成され、受付番号が返る。</expect>
+    </case>
+    <case id="V-REJECT" type="error" status="not-run">
+      <condition>無効な商品IDを含む補充依頼を登録する。</condition>
+      <expect>エラーとなり、REQUESTとREQUEST_LINEのどちらも変更されない。</expect>
+    </case>
+  </verify>
+  <open>
+    <item id="O-METADATA" type="data" impact="high" next="実案件で承認済みの読取専用DBカタログとSQLを確認し、実際のキー・FK・多重度を確定する。">この例に実在のDBスキーマはなく、ER図の関連は実測・検証されていない。</item>
+  </open>
+</featureMap>
