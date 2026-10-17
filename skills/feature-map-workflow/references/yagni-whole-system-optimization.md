@@ -1,8 +1,12 @@
 # YAGNI × 全体最適：判断設計と段階的導入計画
 
-> 状態: **Proposed / 設計・計画のみ（未実装）**  
-> 対象: Feature Map Workflow と任意の Autonomous Task Runner  
-> 実行計画: [Issue #8 — Autonomous Task Runner](https://github.com/nakashima-yoshua/feature-map-workflow/issues/8)
+> 状態: **判断指針と段階導入計画**
+>
+> RunnerとOpenAI判断補助は任意機能として実装済み。実運用の効果とリリース受入は別途検証する。
+>
+> 対象: Feature Map Workflow と任意の Autonomous Task Runner
+>
+> 現行契約: [Task Runner](autonomous-task-runner.md)、[Decision Providers](decision-providers.md) / 追跡: [Issue #8](https://github.com/nakashima-yoshua/feature-map-workflow/issues/8)
 
 ## 1. 目的と原則
 
@@ -72,7 +76,7 @@ Purpose → Constraint（根拠/未確認）→ YAGNI判断
 | 目的、業務意味、受入・リスクの責任 | [System Understanding Architecture](https://github.com/nakashima-yoshua/system-understanding-architecture) の要件・設計・Change Contract・Human Review Request |
 | 永続するFeature知識、探索入口、未解決事項 | [Feature Map XML](feature-map-contract.md)（コード等から再構築しにくい事項だけ） |
 | 実装と期待動作の検証 | Source / tests / CI。事実と実行結果の正本 |
-| 実行制限、繰り返し試行、途中状態 | [Autonomous Task Runner計画（Issue #8）](https://github.com/nakashima-yoshua/feature-map-workflow/issues/8)。導入する場合も一時的な実行状態をFeature Mapに保存しない |
+| 実行制限、繰り返し試行、途中状態 | [任意のTask Runner](autonomous-task-runner.md)。一時的な実行状態はFeature Mapへ保存せず、実装済み機能と未検証の受入条件を区別する |
 | 承認された変更・履歴 | Git commit / PR / 人間レビュー。AIの自己評価は承認ではない |
 
 既存の [Development Lifecycle](development-lifecycle.md) の入力、Hard/Semantic Gate、HALTを利用する。最適化専用の新しい工程列、XMLモード、DB、ジョブキュー、必須の改善シートは追加しない。[Test Strategy](test-strategy.md) と [Coverage Model](coverage-model.md) の最小・実行可能な保証を維持する。
@@ -90,13 +94,13 @@ Purpose → Constraint（根拠/未確認）→ YAGNI判断
 | 保護条件と副作用 | Invariant、品質、権限、他工程の待機、顧客負担、復旧可能性。 |
 | 検証・採用・撤退条件 | 実験の観測範囲、比較対象、停止・撤退、人の判断が必要な点。 |
 
-複雑な変更でこれらが欠落し、結果・権限・重大リスクを左右する場合のみ質問・HALTする。独立した「最適化文書」を毎回作らない。
+複雑な変更でこれらが欠落し、結果・権限・重大リスクを左右する場合だけ、必要な確認を行い、解消するまで影響範囲の作業をHALTする。独立した「最適化文書」を毎回作らない。
 
 ### AIと自動処理の権限境界
 
 - **人間:** 目的の妥当性、業務上の価値・許容するトレードオフ、重要なInvariant、リスク受容、承認、リリースを決める。
 - **Codex/LLM:** 制約候補・因果仮説・最小案を説明し、許可範囲内で調査・実装・検証・証跡準備を行う。仮説を事実に昇格させない。
-- **OpenAI Decisions API（移行計画中）:** `DecisionProvider` 経由で文脈充足、変更後に残す知識、人レビューの必要性**などの限定的な助言**に使う。制約の実在判定、ROI認定、権限、HALT解除、テスト合否、承認には使わない。既定は`off`、外部送信は明示許可。Jev置換の詳細はIssue #8。
+- **OpenAI Decisions API（任意実装済み）:** `DecisionProvider` 経由で文脈充足、変更後に残す知識、人レビューの必要性について限定的な助言に使う。制約の実在判定、ROI認定、権限、HALT解除、テスト合否、承認には使わない。既定は `off`、外部送信は明示許可。[Provider契約](decision-providers.md)に従い、既存Jev設定は自動移行しない。
 - **決定的なツール/ルール:** テスト合否、XSD、Git revision、変更範囲、実行上限、権限、保護条件、承認の有無を確認する。
 - **人間レビュー:** 変更の目的から実装へ降りて確認する。証跡は `CONFIRMED / INFERRED / UNVERIFIED / HUMAN_DECISION` を区別し、AIの自己承認を認めない。
 
@@ -104,7 +108,7 @@ Purpose → Constraint（根拠/未確認）→ YAGNI判断
 
 ## 4. 測定設計：局所性能でなく流れを見る
 
-**主指標の候補:** 依頼を着手可能と判断してから、必要な検証と人間の受入判断が終わるまでのリードタイム。対象と開始・終了の定義を変えずに比較する。
+**主指標の候補:** 依頼に着手できると判断してから、必要な検証と人間の受入判断が終わるまでのリードタイム。対象と開始・終了の定義を変えずに比較する。
 
 **必要時の補助指標:** 実装/検証/レビューの待機、手戻り件数、欠陥流出、受入済み変更1件当たりの総作業時間・API費用・人件費、レビュー差し戻し率。AIの出力速度や単価だけでは評価しない。
 
@@ -141,7 +145,7 @@ Purpose → Constraint（根拠/未確認）→ YAGNI判断
 
 ## 6. YAGNIによる非目標と撤退条件
 
-今回の計画・設計追加では、実行エンジン、Hook、新しいDecision APIアダプター、Feature Map XSD、UI、Queue、SQLite、BaseX、複数Agent、専用メトリクス基盤は変更・追加しない。
+本ガイドは判断基準と段階導入の条件を定める。既存のRunner・Hooks・Decision Providerの利用可否は各契約に従い、XML/XSD、UI、Queue、DB、複数Agent、専用メトリクス基盤をこの手順のためだけに追加しない。
 
 将来の導入では、次のいずれかなら拡張を見送る。
 

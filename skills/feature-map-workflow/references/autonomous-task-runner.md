@@ -18,7 +18,7 @@ requirements into a second specification.
 | --- | --- |
 | Existing Change Contract / requirements / ADR | Human-defined purpose, scope, rules, risk and authorization |
 | Feature Map 1.3 | Durable goal, boundaries, navigation, knowledge and representative verification |
-| Source / existing tests | Implementation and executable expected behavior |
+| Source / existing tests | Implementation and executable observations/regression evidence; approved business expectations remain owned by the human contract and invariants above |
 | Git / CI | Exact revisions and shared validation evidence |
 | Runner config | Approved exact paths, argv arrays, budgets and references |
 | Run directory outside the repository | Checkpoints, failed attempts, logs, candidate patch and review request |
@@ -166,10 +166,13 @@ evaluation-unavailable, repository-conflict and budget categories.
 
 State is atomically saved before potentially interrupted work and after verified
 checkpoints. Completed attempts retain commands, results, logs and patch evidence.
-Candidate patch evidence is bounded independently of proposal content. A candidate
-revision is not exposed for human review until its patch has been persisted; if
-patch persistence fails, the runner restores its isolated worktree to the fixed
-baseline and HALTs.
+Candidate patch evidence preserves the raw Git patch bytes, including final
+whitespace, without text conversion or display formatting. Capture and persistence
+share an 8 MiB limit; ordinary command output retains its separate 1 MiB limit.
+Proposal content remains limited to 2 MiB. A candidate revision is not exposed for
+human review until its patch has been persisted; if patch capture exceeds its
+limit or persistence fails, the runner restores its isolated worktree to the
+fixed baseline and HALTs.
 Failed modifications are reset only inside the runner-owned worktree, never the
 source checkout. Resume checks config/implementation/XSD hashes, revisions,
 worktree cleanliness, evidence hashes and remaining budget. A safe checkpoint

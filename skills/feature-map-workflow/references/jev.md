@@ -1,7 +1,6 @@
 # Jev Decision Provider
 
-Jev is the currently implemented external provider behind the generic DecisionProvider boundary. See `decision-providers.md` for provider selection and generic environment variables.
-
+Jev is a legacy-compatible external provider behind the generic DecisionProvider boundary. The optional OpenAI adapter is documented separately; see [Decision Providers](decision-providers.md) for selection and generic environment variables.
 
 ## Role
 
