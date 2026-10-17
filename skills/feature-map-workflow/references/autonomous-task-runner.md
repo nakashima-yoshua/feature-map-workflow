@@ -170,9 +170,11 @@ Candidate patch evidence preserves the raw Git patch bytes, including final
 whitespace, without text conversion or display formatting. Capture and persistence
 share an 8 MiB limit; ordinary command output retains its separate 1 MiB limit.
 Proposal content remains limited to 2 MiB. A candidate revision is not exposed for
-human review until its patch has been persisted; if patch capture exceeds its
-limit or persistence fails, the runner restores its isolated worktree to the
-fixed baseline and HALTs.
+human review until its patch has been staged, flushed and atomically published
+in the run directory. If patch capture exceeds its limit or persistence fails,
+the runner removes temporary or unadopted patch evidence, restores its isolated
+worktree to the fixed baseline and HALTs. A report without a candidate revision
+does not advertise a candidate patch.
 Failed modifications are reset only inside the runner-owned worktree, never the
 source checkout. Resume checks config/implementation/XSD hashes, revisions,
 worktree cleanliness, evidence hashes and remaining budget. A safe checkpoint

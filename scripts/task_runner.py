@@ -210,7 +210,21 @@ def git_patch(repo: Path, base_revision: str, candidate_revision: str) -> bytes:
 def write_patch_evidence(path: Path, patch: bytes) -> None:
     if len(patch) > MAX_PATCH:
         raise Halt("Patch evidence exceeds the supported size boundary", "evaluation_unavailable")
-    path.write_bytes(patch)
+    temporary = path.with_name(path.name + ".tmp")
+    try:
+        with temporary.open("wb") as f:
+            os.chmod(temporary, 0o600)
+            f.write(patch)
+            f.flush()
+            os.fsync(f.fileno())
+        temporary.replace(path)
+        fd = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def config_validate(config: Any) -> dict[str, Any]:
@@ -616,7 +630,8 @@ class Runner:
                      "baseline": state.get("baseline"), "last_result": state.get("last_result"),
                      "attempts": len(state["attempts"]), "elapsed_seconds": state.get("elapsed_seconds"),
                      "human_interventions": state.get("human_interventions"), "usage": state.get("usage"),
-                     "patch": "candidate.patch" if (self.directory / "candidate.patch").exists() else None,
+                     "patch": "candidate.patch" if state.get("candidate_revision") and
+                         (self.directory / "candidate.patch").is_file() else None,
                      "evidence_anchor": self.evidence_anchor()}
         report = {"status": state["status"], "review_state": state["review_state"],
                   "business_purpose_and_exclusions": {"purpose": self.config["purpose"], "exclude": self.config["exclude"],
@@ -725,8 +740,9 @@ class Runner:
                         except (Halt, OSError) as exc:
                             try:
                                 git(self.worktree, "reset", "--hard", self.state["base_revision"])
-                            except Halt:
-                                raise Halt("Candidate evidence failed and worktree recovery also failed; inspect manually",
+                                (self.directory / "candidate.patch").unlink(missing_ok=True)
+                            except (Halt, OSError):
+                                raise Halt("Candidate evidence failed and worktree/evidence recovery also failed; inspect manually",
                                            "repository_conflict") from exc
                             self.state.update(candidate_revision=None, expected_revision=self.state["base_revision"])
                             if isinstance(exc, Halt):
