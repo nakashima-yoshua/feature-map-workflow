@@ -382,7 +382,8 @@ class RunnerTests(unittest.TestCase):
 
         def fail_candidate(path, patch):
             if path.name == "candidate.patch":
-                raise OSError("synthetic evidence failure")
+                path.write_bytes(patch[:16])
+                raise OSError("synthetic partial evidence failure")
             return real(path, patch)
 
         with patch("task_runner.write_patch_evidence", side_effect=fail_candidate):
@@ -393,6 +394,9 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(state["expected_revision"], state["base_revision"])
         self.assertEqual(tr.git(runner.worktree, "rev-parse", "HEAD"), state["base_revision"])
         self.assertIn("return 1", (runner.worktree / "app.py").read_text())
+        self.assertFalse((runner.directory / "candidate.patch").exists())
+        report = tr.read_json(runner.directory / "human-review-request.json")
+        self.assertIsNone(report["test_evidence_and_limits"]["CONFIRMED"]["patch"])
 
     def test_candidate_patch_replays_exact_file_bytes(self):
         self.config["allowed_paths"].append("zz-note.txt")
@@ -413,6 +417,14 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(actual, expected)
         for name in expected:
             self.assertEqual((replay / name).read_bytes(), (runner.worktree / name).read_bytes(), name)
+
+    def test_halt_report_does_not_advertise_a_patch_without_candidate_revision(self):
+        runner = self.create()
+        (runner.directory / "candidate.patch").write_bytes(b"unadopted partial patch")
+        runner.halt(tr.Halt("Synthetic retained partial evidence", "environment"))
+        report = tr.read_json(runner.directory / "human-review-request.json")
+        self.assertEqual(report["status"], "HALT")
+        self.assertIsNone(report["test_evidence_and_limits"]["CONFIRMED"]["patch"])
 
     def test_candidate_patch_larger_than_command_output_limit_is_saved(self):
         self.config["allowed_paths"].append("payload.txt")
@@ -566,6 +578,14 @@ class RunnerTests(unittest.TestCase):
 
 
 class ProcessAndContractTests(unittest.TestCase):
+    def test_patch_sync_failure_leaves_no_partial_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "candidate.patch"
+            with patch("task_runner.os.fsync", side_effect=OSError("synthetic sync failure")):
+                with self.assertRaises(OSError):
+                    tr.write_patch_evidence(path, b"partial patch")
+            self.assertEqual(list(Path(d).iterdir()), [])
+
     def test_patch_evidence_accepts_the_boundary_and_rejects_overflow(self):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "candidate.patch"
