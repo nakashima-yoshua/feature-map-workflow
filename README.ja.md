@@ -2,438 +2,133 @@
 
 # Feature Map Workflow Plugin
 
-Feature Map Workflow は、**ソースコードを正本にしたまま、1枚のFeature Map XMLを開発中ずっと持ち回る**ための開発ワークフローです。初見システムのキャッチアップから、要件定義、設計、テスト、実装、CI/CD、検証、As-Built文書、納品まで、後から再利用する価値がある情報だけをXMLに残します。
+業務上まとまりのある機能ごとに、小さなFeature Map XMLを1つ持ちます。調査、設計、実装、検証、納品を通じて、ソースやテストだけでは再構築しにくい業務ルール、判断、参照先、未解決事項を残すための開発ワークフローです。
 
-## 構成
+まずは既存のソース・テストとFeature Mapから始めます。Hooks、外部の判断補助、テスト支援、Task Runnerは任意です。複数人・AI向けのRepository Coordinationは設計案であり、実行サービスは同梱していません。
 
-- ソースコード: 実装の正本
-- テスト: 実行可能な振る舞いの根拠
-- Feature Map XML: 人間とAIが共有するナビゲーション、永続的なルール、不変条件、設計判断、検証証跡、スコープ境界、未解決事項
-- XSD: XML構造の契約
-- XSLT: 人間向けの1ページHTML表示
-- Git: 変更履歴
-- xquery-mcp: XPath/XQueryによる部分参照、XML整形、XSD検証
-- Codex Hooks: コンテキスト不足の確認、ライフサイクル制御、編集追跡、完了ゲート
-- Decision Provider: OpenAI Decisions APIと既存Jevに対応する任意の判断補助（既定off）
-- Task Runner: 試行の上限、隔離評価、checkpoint、人間レビューを扱う任意の実行器
-- AI信頼境界: [7原則の受入条件・運用者による停止・独立した証拠照合](skills/feature-map-workflow/references/ai-trust-controls.md)。新しい監査基盤やXML項目は増やしません。
-- Operable Japanese: `natural-japanese` の考え方を取り入れた、意味を保ったまま操作可能で自然な日本語
+## 1機能から始める
 
-## 設計方針
-
-内部で扱う意味と、人間に見せる文章を分離します。
-
-```text
-ユーザーの依頼
-  -> Context Sufficiency Gate
-  -> 意味契約（必要な項目だけ）
-  -> source / tests / Feature Map を調査
-  -> 実行、または確認を1問だけ返す
-  -> 自然な業務日本語として表示
-```
-
-優先順位は次の通りです。
-
-```text
-意味の保持 > 操作可能性 > 自然さ > 短さ
-```
-
-内部の意味契約では、必要に応じて `goal / actor / action / target / condition / scope / exclude / authority / doneWhen / certainty` を整理します。ただし、これを第2の仕様書として保存しません。Feature Map XMLに残すのは、後から再利用する価値がある永続的な知識だけです。
-
-## 開発ライフサイクル全体での利用
-
-Feature Mapを第2の仕様書にせず、開発工程を横断する索引として利用します。
-
-```text
-Context Sufficiency
-  -> 要件定義
-  -> 基本設計
-  -> 業務シナリオ / E2E設計
-  -> テスト境界設計
-  -> 詳細設計
-  -> 条件・状態・境界テスト
-  -> 不足分だけUnit Test
-  -> 実装 + CI
-  -> Release Package / CD
-  -> As-Built表示
-  -> 納品・検収
-```
-
-工程ごとの詳細は次のReferenceに分離しています。
-
-- `references/development-lifecycle.md`: 各工程の入力、作業、Feature Mapへ残す差分、Hard/Semantic Gate、HALT条件、出力
-- `references/test-strategy.md`: E2E / Integration / DB / Unitの配置とテスト境界
-- `references/coverage-model.md`: 要件、シナリオ、ルール、状態・境界、副作用、動的経路のカバレッジ
-- `references/legacy-analysis.md`: 静的解析だけでは見えないDB・設定・実行時経路を含むレガシー解析
-
-ソース、テスト、CI証跡、Runtime Trace、Release Artifactは、それぞれの場所を正本とします。Feature Mapには、コード等から安価に再構築できない永続的な知識だけを残します。
-
-### 独立AIコードレビューと人の承認ゲート
-
-変更実装後は [Code Review手順](skills/feature-map-workflow/references/code-review.md) とリポジトリの [REVIEW.md](REVIEW.md) に沿い、**実際のビルド・テスト結果 → 別コンテキストの読取専用AI差分レビュー → 根拠付き指摘の処理 → リスクに応じた人の承認**を実施します。AI指摘の再レビューは原則最大3回とし、収束しなければ人の判断へ戻します。PRテンプレートに Risk・Testing・AI Review・Human Decision・How to revert を記録します。
-
-業務ルール、DB副作用、認可、外部連携、CI・リリース設定などの重要な変更を優先し、根拠のないスタイル修正はしません。**AIレビューの完了はマージ承認ではなく、専用AIレビューツールの自動実行やGitHubの保護設定も今回のリポジトリ定義だけでは有効になりません。** 必要な人の承認、CI、復旧計画は従来どおり維持します。
-
-### 機能テストExcel（提供テンプレート準拠）
-
-機能テストの実施記録は添付済み `test_template.xlsx` の書式に統一できます。`scripts/build_functional_test_excel.py` の `plan` はFeature Mapの検証IDを、原本の表紙・検証リスト・個別シートへ展開します。`results` はリビジョンが一致し、手順単位で証跡のある `result.json` だけを反映します。数式、個別の手入力と採否は保護し、成果物には初期段階で合格を付けません。元のExcelファイルはローカルの `--template` で指定します。詳細は [機能テストExcel連携](skills/feature-map-workflow/references/functional-test-excel.md) を参照してください。
-
-### 機能理解・検証ブリーフと作業ディレクション
-
-人の操作・業務判断が検証のボトルネックとなる場合は、[作業ディレクションと図の選定基準](skills/feature-map-workflow/references/human-work-direction.md)を使います。機能・ユースケース・検証IDを絞り、検証担当者の疑問に応じてアクティビティ図、ユースケース図、シーケンス図、状態遷移図、クラス図、構成図、DFD、ER図から**必要な図を選定**します。3図に限定せず、全図を無条件に表示することもしません。既存の根拠あるMermaid図のみをHTMLに表示し、足りない図はソース・DB情報を確認してからFeature Mapへ追加します。
-
-複数の手動検証は、共通の環境・ログイン・画面準備をまとめた **1つ以上の人向け作業セッション**へ集約できます。ただし、テストIDごとの初期化、期待結果、証跡、合否は独立させます。作業計画がない場合や環境が未確認の場合、実行可能と誤認させないよう警告・HALTを表示します。
+Python 3.10以降を使い、リポジトリのルートで実行します。名前と出力先は、対象機能と許可された保存場所に置き換えてください。
 
 ```sh
-python skills/feature-map-workflow/scripts/build_verification_brief.py --feature-map examples/fictional-stock-request/feature-map.xml --use-case UC-SUBMIT --plan examples/fictional-stock-request/human-work-plan.example.json --output verification-brief.html
+python skills/feature-map-workflow/scripts/init_feature_map.py --system Demo --feature Sample --mode catchup --purpose "Understand one business scenario" --output path/to/feature/feature-map.xml
 ```
 
-実行すると、機能概要・選定図・ケース別期待結果・共通準備・操作順序・ケース間リセット・証跡取得・中止条件を含むHTMLを、Feature Mapのフォルダに生成します。**これは資料生成のみで、テスト実行や承認は行いません。** 再生成は `--force`、ケース指定は `--case`、図の明示指定は繰り返し可能な `--diagram` を使います。生成は標準Pythonのみで動作し、図の表示はローカルMermaid優先です。CDN経由の利用は明示的な `--allow-cdn` 指定が必要です。
+初期化スクリプトはXMLと表示・検証用のXSLT/XSDを配置します。既存XMLは `--force` を指定した場合だけ上書きします。現行機能の理解には `catchup`、合意した変更には `change` を使い、更新時は既存IDを保ちます。
 
-### 業務フロー・データフロー・ER図を合わせたシステム理解
+1. 実際の起動点、ソース、テスト、関係するデータ・設定を確認する。
+2. 再利用する知識と参照先をXMLへ残し、未確認事項は `open` で管理する。
+3. 必要なノードだけ変更し、現在のXMLをXSDで検証する。
+4. 必要なテストを別途実行し、実際の証跡を参照する。
+5. 完了前にFeature Mapを確認する。永続的な知識に差分がなければ、変更不要と報告する。
 
-仕様書のないデータ中心の業務機能では、[3視点での理解手順](skills/feature-map-workflow/references/three-view-understanding.md)に従い、**業務フロー（人の判断・結果）／データフロー（入力・DB更新・外部連携）／ER図（関連テーブルとキー）**を組み合わせます。3図は同じユースケースIDとテーブル名で対応付けます。
+[架空のパズル記録帳](examples/fictional-puzzle-log/README.md)と[架空の補充依頼](examples/fictional-stock-request/README.md)に一式の例があります。業務ルールやDBの関係は創作であり、実システムの根拠には使いません。パズル記録帳には、PowerShellでXMLをHTMLへ変換する手順もあります。
 
-実際に必要な機能の範囲だけを調査します。ER図は読取専用で確認したDBカタログ、DDL、SQLなどを根拠に作成し、**物理FK制約とコードから分かった論理結合を区別**します。JOINがあるだけでFK制約や多重度を断定しません。根拠が足りない場合は図を推測で埋めず、`open` に残します。特にOracle/DB2/PostgreSQLのDB製品・バージョンごとのメタデータ差を確認してください。
+## 目的に合う手順を選ぶ
 
-図を生成するための追加スキーマ・描画エンジンは不要です。既存のFeature Map XML 1.3に `kind="flowchart"` （業務・データフロー）と `kind="er"`（ER図）で記録し、HTMLの折りたたみ「Diagrams」で表示します。不要な図は作らず、最終HTMLの肥大化を防ぎます。
+今の作業に関係するガイドから読み始めます。
 
-完全に架空の[補充依頼サンプル](examples/fictional-stock-request/README.md)で3つの図とデータ参照を確認できます。CIではXML/XSD妥当性・3図の整合性・XSLT出力を検証します（実DB解析や実ブラウザ表示の保証ではありません）。
+| 目的 | ガイド |
+| --- | --- |
+| XMLに残す知識、機能の分割、HTML索引を決める | [Feature Map Contract](skills/feature-map-workflow/references/feature-map-contract.md) |
+| 要件、設計、テスト、実装、納品をつなぐ | [Development Lifecycle](skills/feature-map-workflow/references/development-lifecycle.md) |
+| 初見コード、動的呼出し、SQL、実行時依存を調べる | [Legacy Analysis](skills/feature-map-workflow/references/legacy-analysis.md) |
+| EXE・ジョブ・画面から対象BLへ到達する条件と最小データを探す | [Target Reachability](skills/feature-map-workflow/references/target-reachability.md) |
+| 現状維持、既存改修、機能の一部移行を比較する | [Incremental Modernization](skills/feature-map-workflow/references/incremental-modernization.md) |
+| 業務フロー、データフロー、根拠のあるER関係をつなぐ | [Three Complementary Views](skills/feature-map-workflow/references/three-view-understanding.md) |
+| テスト層と証明範囲を決める | [Test Strategy](skills/feature-map-workflow/references/test-strategy.md)、[Coverage Model](skills/feature-map-workflow/references/coverage-model.md) |
+| UI・CLI・DBテストを繰り返し実行して証跡を残す | [AI-assisted Testing](skills/feature-map-workflow/references/ai-assisted-testing.md) |
+| ケースごとの合否を保ち、人の準備・切替回数を減らす | [Human Work Direction](skills/feature-map-workflow/references/human-work-direction.md) |
+| 提供されたExcelへ計画と手順単位の実行結果を反映する | [機能テストExcel](skills/feature-map-workflow/references/functional-test-excel.md) |
+| 検証済みの変更をレビューし、人の承認へつなぐ | [Code Review](skills/feature-map-workflow/references/code-review.md)、[REVIEW.md](REVIEW.md) |
+| 明示的に依頼された保守負荷・工程効率の調査を行う | [保守改善トリアージ](skills/feature-map-workflow/references/maintenance-triage.md)、[YAGNIと全体最適](skills/feature-map-workflow/references/yagni-whole-system-optimization.md) |
 
-### 機能開発に合わせた段階的モダナイゼーション
+各ガイドは既存の開発工程で使います。毎回、新しい工程・報告書・ツールを増やす必要はありません。関係する業務全体を理解したうえで、変更は合意した範囲に絞ります。実装・検証・運用の負担に見合う価値がなければ、変更しない判断も選べます。
 
-レガシー機能を改修する際は、[変更駆動型・段階的モダナイゼーションの手順](skills/feature-map-workflow/references/incremental-modernization.md)を参照します。**対象業務は周辺の重要な依存関係まで理解・文書化し、コードの移行は今回必要な安全な最小責務境界に限定**します。「変更しない」「既存コードを改修する」「一部分を移行する」を、開発費・新旧共存費・保守運用費・検証費を踏まえて比較します。
+## 情報の保存先を分ける
 
-調査して理解できた業務目的・シナリオ・ルール・データへの影響は、移行しない場合もFeature Map XMLへ蓄積します。コードから確認した現行動作と業務上承認された仕様を区別し、未確認事項はそのまま残します。移行した部分は可能な範囲で新旧の動作とDBへの影響を比較し、検証できない事項を明示します。完了前にFeature Mapを見直し、必要な差分を更新するか、既存の記録で十分であることを報告します。新しいXMLスキーマ、実行基盤、大量のAIエージェントは必須としません。
+| 情報 | 正本・保存先 |
+| --- | --- |
+| 実装と実行可能な振る舞いの証拠 | ソース、テスト |
+| 業務上の期待結果と受入権限 | 承認済みの要求、不変条件、人の判断 |
+| 再利用する機能知識と重要な未確認事項 | Feature Map XML |
+| テストデータ、詳細手順、画像、ログ、DB観測、リリース成果物 | 既存のテスト・証跡・成果物の保存先。XMLからは参照する |
+| 変更履歴 | Git |
+| XML構造と人向け表示 | XSD、XSLT |
 
-### 機能単位のHTML表示と軽量な一覧
+現在のFeature Map形式は1.3で、XSDは1.1と1.2も受け付けます。変更履歴、クラス一覧、SQLの写し、実行トレース全文はXMLへ重複保存しません。既存コードから観測した動作と、業務として承認された期待結果を区別します。
 
-Feature Map XMLは、システム全体を1つへ追記するのではなく、**業務上まとまりのある機能ごとに1つ**持ちます。XSLTの表示は、業務目的・主要シナリオ・業務ルール・未解決事項を先に示し、ソース参照、テスト詳細、残りの項目、Mermaid図を折りたたみで閲覧します。Mermaidは図を開くまで読み込みません。折りたたみは閲覧・初期描画を改善しますが、XMLやHTMLのファイル容量そのものを削減する仕組みではありません。
+Mermaid図は、既存の `diagrams/diagram` にCDATAで記録します。順序、境界、状態、データの関係を理解する助けになる図を選びます。JOINだけで物理FKを確定せず、図を生成しただけで動作検証済みともしません。人向けブリーフでは、必要なUML・DFD・ER等を件数の上限なく選択できます。
 
-複数機能を一覧する場合、各XMLの本文や図を結合せず、**機能名・システム名・状態・業務目的の短い抜粋・相対リンクだけ**を含むHTML索引を生成します。
+XSLT表示は技術的な詳細と図を折りたたみます。複数機能の索引には、個別XMLへリンクするメタデータだけのHTMLを任意で生成できます。詳しくは[Feature Map Contract](skills/feature-map-workflow/references/feature-map-contract.md)を参照してください。顧客のXML、証跡、索引にも機密情報が含まれ得るため、許可された場所で保管します。
 
-```sh
-# 各機能のフォルダにfeature-map.xmlと、参照するXSLTファイルを配置する
-python skills/feature-map-workflow/scripts/build_feature_index.py --root path/to/maps
-# XMLの追加・変更後に一覧を再生成する
-python skills/feature-map-workflow/scripts/build_feature_index.py --root path/to/maps --force
-```
+## 任意ツールと実装状態
 
-`path/to/maps/feature-map-index.html` を開き、機能を選ぶと個別のXML/XSLT表示へ移動します。標準Pythonのみで動作し、DBやWebサーバーは不要です。XMLの初期化には従来どおり `init_feature_map.py` を使用でき、XSD/XSLTサポートファイルも既定で配置します。既存索引は `--force` なしで上書きしません。
+| 構成要素 | 利用できる範囲 | 詳細 |
+| --- | --- | --- |
+| xquery-mcp | 固定版のXML問い合わせ・整形・XSD検証との連携 | [ツールと結果の契約](skills/feature-map-workflow/references/xquery-mcp.md) |
+| Codex Hooks | コンテキスト確認、編集追跡、完了時検証。信頼したファイルを実行するホストが必要 | [イベントと制約](skills/feature-map-workflow/references/codex-hooks.md) |
+| Decision Providers | 限定した判断補助を実装済み。外部呼出しは既定off | [選択と送信条件](skills/feature-map-workflow/references/decision-providers.md)、[既存Jev設定](skills/feature-map-workflow/references/jev.md) |
+| テスト支援 | 任意インストーラー、合成データの実行例、HTMLブリーフ・Excel生成 | [導入と実行例](examples/ai-assisted-testing/README.md) |
+| Task Runner | 単一タスクの上限付き試行を任意で実行。評価にはLinuxのbubblewrapが必要 | [実行・再開の契約](skills/feature-map-workflow/references/autonomous-task-runner.md)、[オフライン例](examples/task-runner/README.md) |
+| Agents API | 読み取り担当と単一更新担当を分ける、任意のself-hosted PoC | [連携契約](skills/feature-map-workflow/references/agents-api.md)、[実行例](examples/agents-api/README.md) |
+| Repository Coordination | API・キュー・Projectionを扱う設計契約。実行サービスは未同梱 | [設計案とMVP境界](skills/feature-map-workflow/references/repository-coordination.md) |
 
-機能を分割する基準は、単純なファイル容量ではなく、業務の起動条件・データへの影響・責務・受入条件です。共通知識をコピーせず参照でつなぎます。索引にも機密情報が含まれ得るため、顧客案件のXMLやHTML索引を無断で公開しないでください。詳細は [Feature Map Contract](skills/feature-map-workflow/references/feature-map-contract.md) を参照してください。
+実装や合成テストの存在だけでは、本番運用への適合や納品までの時間短縮を証明できません。導入を検討する際は、[Runnerの未解決事項とAI信頼境界](skills/feature-map-workflow/references/ai-trust-controls.md)を確認します。Programmatic Tool Callingは、予測可能な読み取り・問い合わせ・集約に使います。書き込み、承認、外部への副作用は、それぞれの実行権限に従います。[呼出し方針](skills/feature-map-workflow/references/programmatic-tool-calling.md)に詳細があります。
 
-### 仕様書のないシステムで対象BLに到達する
+### XML問い合わせ・検証の準備
 
-EXEやジョブの起動点から特定のBL・分岐を実行したいのに、DBの関連マスタ、JOIN条件、外部API応答、設定値、処理順序などの前提が分からない場合は、[目標到達型の経路探索・テストデータ準備手順](skills/feature-map-workflow/references/target-reachability.md) を利用します。
-
-AIが対象処理から逆方向、起動点から順方向に経路を調べ、選択した経路に必要なAND/OR/NOT条件だけを抽出します。読取り中心の事前点検、許可された隔離環境でのデータ・APIスタブ準備、実行時に最初に通過できなかった条件の再調査を繰り返します。「経路候補の発見」「対象への到達」「期待動作の検証」「初期状態からの再現」を区別し、実行できない場合は未実行の計画として報告します。
-
-テストデータや詳細トレースをFeature Map XMLへ重複保存せず、テスト側を正本とします。XMLのスキーマやモード、新しい実行基盤は追加しません。
-
-### AI支援テスト用ツールの導入
-
-テスト用のPlaywright（Python）とChromiumは、[セットアップ手順](examples/ai-assisted-testing/README.md)に従い、リポジトリ内の専用仮想環境へ導入できます。インストール前にPython 3.10以降が必要です。
-
-Windows PowerShell:
-
-```powershell
-./scripts/setup-ai-testing.ps1 -DryRun
-./scripts/setup-ai-testing.ps1
-./scripts/setup-ai-testing.ps1 -Check
-./scripts/setup-ai-testing.ps1 -Smoke
-```
-
-Linux / macOS:
-
-```sh
-bash ./scripts/setup-ai-testing.sh --dry-run
-bash ./scripts/setup-ai-testing.sh
-bash ./scripts/setup-ai-testing.sh --check
-bash ./scripts/setup-ai-testing.sh --smoke
-```
-
-`-WithXQuery` / `--with-xquery` は既存xquery-mcpローカルツールの復元（.NET 10 SDK必須）。Windowsの `-WindowsUiProject <テスト用.csproj>` は指定されたプロジェクトにだけFlaUI.UIA3を追加します。`-SkipWeb` はWebテスト用ツールを導入しません。GitHub Actionsは非ネットワークのドライランとスクリプトの単体テストを確認し、実際のブラウザ打鍵は導入先の隔離環境で `-Smoke` を実行して確認します。Linuxの不足するOSライブラリやPython/.NET SDKの自動インストールはしません。
-
-### AIを利用した機能テストとエビデンス
-
-[AI支援テストの手順](skills/feature-map-workflow/references/ai-assisted-testing.md)を追加しました。Feature Mapの業務シナリオを既存のPlaywright・Windows UI・CLI・DBテストへ接続します。AIは必要十分なケース・前提データの探索とテストコード案の生成、コードはUI操作・DB照合・証跡保存、人は業務期待値の承認を担当します。スクリーンショット・トレース・ログ・DB差分はテスト側に保持し、Feature Mapには永続的な参照だけを記録します。[架空データで動かせるサンプル](examples/ai-assisted-testing/README.md)にはHTTPからSQLiteへの検証と任意のPlaywright打鍵を含めています。既存のXMLスキーマやTask Runnerは変更しません。
-
-
-全体最適を目的とし、制約を根拠に変更・変更不要を選ぶYAGNIの設計と段階導入計画は [YAGNI × 全体最適](skills/feature-map-workflow/references/yagni-whole-system-optimization.md) を参照してください（[開発計画 Issue #8](https://github.com/nakashima-yoshua/feature-map-workflow/issues/8)）。手法や分析文書を全タスクへ必須化しません。
-
-
-## Agents API / Programmatic Tool Calling
-
-OpenAI Agents APIは、Feature Map Workflowの任意実行基盤として利用できます。ワークフロー自体はAgents APIへ依存させず、複数Agentを使う場合もReaderはread-only、正本への変更はParent/Single Writerだけに限定します。
-
-Agents APIでは、XPath/XQueryなどの予測可能な読み取り・絞り込み・集計にProgrammatic Tool Callingを利用できます。書き込み、承認、Git公開、外部副作用はdirect tool callの境界に残します。
-
-- `references/agents-api.md`
-- `references/programmatic-tool-calling.md`
-- `examples/agents-api/`
-
-## Repository Coordination拡張
-
-複数AIや人間が同じリポジトリへ非同期に変更要求を出す場合は、Feature Map XMLへQueueやleaseを詰め込まず、別のCoordination Planeを追加します。
-
-~~~text
-Knowledge Plane
-  Feature Map XML / source / tests
-          |
-          | Query / durable knowledge
-          v
-Repository API
-          |
-          +--> Coordination Plane
-          |      Command / Operation / Dependency
-          |      SQLite Queue / Single Writer
-          |
-          +--> Projection Plane
-                 multi-document XML index
-                 role-specific AI context
-~~~
-
-責務は次のように分離します。
-
-- Feature Map XML: コードから再構築しにくい永続的な開発知識
-- Coordination XML: Task、Decision、Message、Dependencyなどの長期的なワークフロー状態
-- SQLite: Queue、retry、lock、実行ジャーナルなどの一時的なRuntime状態
-- Git: 変更履歴と共有済み状態
-- Projection Engine: 複数XMLの横断検索とAI向けContext生成
-- Repository API: AIと人間からの安全な読み書き境界
-
-AIへXML全体を渡すことは前提にしません。必要なFeature、Task、Dependency、DecisionだけをQueryしてContextを組み立てます。
-
-書き込みは、Command受付、Idempotency確認、競合予約、Queue投入、Dependency判定、Single Writer、XML検証、Git commit、Git push、Projection更新の順で非同期に処理します。人間はpush済みの結果をレビューし、修正は履歴を書き換えず新しいOperationとして追加します。
-
-詳細な責務、状態遷移、競合・依存関係、Crash Recovery、stateRevision、Projectionの鮮度管理、MVP境界は skills/feature-map-workflow/references/repository-coordination.md を参照してください。
-
-## 初回セットアップ
-
-`xquery-mcp` 2.5.1 をローカル.NET Toolとして固定しています。最初に1回だけNuGetから復元してください。
-
-Windows PowerShell:
+ローカル.NET Toolとして `xquery-mcp` **2.5.1** を固定しています。連携を使う場合は、.NET 10 SDKを用意して復元します。
 
 ```powershell
 ./scripts/setup-xquery-mcp.ps1
 ```
 
-macOS/Linux:
-
 ```sh
-./scripts/setup-xquery-mcp.sh
+bash ./scripts/setup-xquery-mcp.sh
 ```
 
-.NET 10 SDKが必要です。
+XPath/XQueryの実行結果は、構造化された `QueryResult` として返ります。同梱アダプターで正規化し、正常な空シーケンスと失敗を区別してから値を使います。`xml_validate_schema` は別のプレーンテキスト成功契約を維持しています。詳しくは[xquery-mcp Integration](skills/feature-map-workflow/references/xquery-mcp.md)を参照してください。
 
-## xquery-mcpのstructured JSON
+### テストツールと生成物
 
-xquery-mcp 2.5.1では、`xpath_evaluate`、`xquery_evaluate`、`xquery_validate` が、MCPのtext result内にJSON形式の `QueryResult` を返します。値を直接使わず、先に正規化します。
-
-```text
-MCP tool result
-  -> QueryResult Adapter
-  -> ok / value / count / elapsed_ms / errors[]
-  -> ワークフロー上の判断
-```
-
-同梱の `skills/feature-map-workflow/scripts/xquery_result.py` は、正常値、空シーケンス（`count=0`）、構造化エラーを区別します。Codex Hookが利用している `xml_validate_schema` は、互換性のため従来のプレーンテキスト成功契約を維持します。
-
-Codex PluginのHookはnon-managed hookです。有効化する前に `hooks/hooks.json` と `hooks/feature_map_hook.py` を確認し、信頼できる内容か判断してください。HookスクリプトはPluginファイルが実行環境に存在する場合だけ動作します。Web上でPluginを追加しただけでは、ローカル環境へスクリプトは配置されません。
-
-## Hookの動作
-
-同梱するHookは、役割を必要最小限に絞っています。
-
-1. `UserPromptSubmit`: 曖昧さの兆候を検出し、Feature Mapの必要部分だけを読み、コンテキスト充足度を確認する方針をCodexへ渡します。曖昧な単語があるだけでは止めません。ソースやテストなどを確認しても実行結果が変わる情報不足が残る場合だけ、対象操作の前に自然な日本語で1問確認します。
-2. `SessionStart`: Feature Mapを1つ特定し、XML全体ではなく必要な要約だけをコンテキストへ追加します。
-3. `PostToolUse`（`Edit|Write`）: 変更ファイルを追跡し、Feature Map XMLが壊れた場合だけ検出します。
-4. `PostToolUse`（`mcp__xquery__xml_validate_schema`）: xquery-mcpでXSD検証に成功したXMLのcanonical hashを記録します。
-5. `Stop`: XML状態の矛盾を確認し、Feature Map変更後のXSD検証を必須にします。必要に応じてJevへ、コードやテストの変更をFeature Mapへ残すべきか問い合わせます。
-
-プロンプト受信時のHookは、強制停止ではなく `additionalContext` を使います。コンテキスト不足は意味上の問題なので、regexの一致だけでは判断しません。Codexがsource / tests / config / Feature Mapを先に確認し、それでも不足が残る場合だけ質問します。
-
-Stopの再実行回数は `FEATURE_MAP_MAX_STOP_BLOCKS` で制限し、既定値は `2` です。
-
-## 操作可能で自然な日本語
-
-ユーザー向けの指示や確認文は、次の原則で作ります。
-
-- 文章を整える前に意味を確定する
-- 実行結果を変える情報不足だけ質問する
-- 確認するときは、現在の理解を先に示す
-- 可能なら `はい` または短い訂正だけで答えられる形にする
-- スコープ、対象外、確信度、数値、コード上の識別子を変えない
-- 条件が定義されていない `適宜`、`必要に応じて`、`関連箇所`、`全部` などを、そのまま実行条件として使わない
-- 明確さのために不自然な短文を並べず、普通の日本語で同じ意味を安全に表現する
-- 一文一義を意識しつつ、自然な「条件→操作」の関係まで機械的に分割しない
-
-実行環境で `natural-japanese` Skillを利用できる場合は、意味を確定した後の最終表現にクイックモードの考え方を使います。単独利用できる最小ルールも `references/operable-japanese.md` に同梱しています。
-
-## Mermaid図
-
-Feature Map 1.3では、MermaidソースをXML内へ直接保持できます。記号や改行を読みやすく保つため、CDATAで記述します。
-
-```xml
-<diagrams>
-  <diagram id="DG1" kind="sequence" title="Receiving flow"><![CDATA[
-sequenceDiagram
-    User->>ReceivingService: Import
-    ReceivingService->>InventoryService: GetStock
-    InventoryService-->>ReceivingService: Stock
-  ]]></diagram>
-</diagrams>
-```
-
-`feature-map.xsl` はこのブロックを自動描画します。生成HTMLは、まず同じフォルダの `feature-map.mermaid.min.js` を読み込みます。存在しない場合は、jsDelivr上のMermaid 12.0.0へフォールバックします。描画時の `securityLevel` は `strict` です。
-
-Mermaid 12はモダンブラウザ向けです。描画結果の変化を抑えるため、`layout: dagre`、`theme: default`、`look: classic` を固定しています。
-
-オフラインまたはローカルのMermaid runtimeを使う場合は、Feature Mapと同じ場所へ配置します。
-
-```sh
-./scripts/setup-mermaid.sh .
-```
+任意のインストーラーは専用の `.venv-ai-testing` を作り、固定版PlaywrightとChromiumを導入します。xquery-mcpの復元や、明示したテストプロジェクトへのFlaUI追加も選べます。最初に導入予定を確認してください。
 
 ```powershell
-./scripts/setup-mermaid.ps1 -Destination .
+./scripts/setup-ai-testing.ps1 -DryRun
 ```
-
-全クラスから機械的に図を作ることは想定していません。境界、システム間連携、状態遷移、データ関係など、**ソースコードを追うより図で見た方が理解コストが下がる場合だけ**残します。
-
-## OSS公開用ファイル
-
-リポジトリのルートとしてそのまま使えるよう、以下を同梱しています。
-
-- `LICENSE`
-- `CONTRIBUTING.md`
-- `SECURITY.md`
-- `.github/CODEOWNERS`
-- Issue / PRテンプレート
-- Dependabot設定
-- Release workflow
-- `docs/github-repository-settings.md`
-
-GitHub側で設定する推奨値は `docs/github-repository-settings.md` にまとめています。
-
-## Decision Provider（任意）
-
-閉じた判断は `DecisionProvider` 境界の後ろに置きます。既定は `off` のままです。`openai` は公開ベータのOpenAI Decisions APIに対応し、`jev` は既存利用者向けの互換実装として残します。旧設定を自動で切り替えることはありません。
 
 ```sh
-FEATURE_MAP_DECISION_PROVIDER=off|jev|openai
-FEATURE_MAP_DECISION_CONTEXT_MODE=off|metadata|prompt
-FEATURE_MAP_DECISION_COMPLETION_MODE=off|metadata|summary|diff
+bash ./scripts/setup-ai-testing.sh --dry-run
 ```
 
-既存の `FEATURE_MAP_JEV_*` は後方互換のため引き続き利用できます。詳細は `references/decision-providers.md` を参照してください。
+実際の導入、`--check` / `-Check`、smoke test、OSごとの前提は[導入ガイド](examples/ai-assisted-testing/README.md)に従います。Python・.NET SDKやLinuxのブラウザ用OSライブラリは自動導入しません。ドライランの成功と、ブラウザ・デスクトップの実操作は別の検証です。
 
-### OpenAI Decisions API
+[人向け検証ブリーフ](skills/feature-map-workflow/references/human-work-direction.md)は、既存の図・期待結果とレビュー済み作業計画を表示します。[Excel生成](skills/feature-map-workflow/references/functional-test-excel.md)には、対応レイアウトの `test_template.xlsx` をローカルで指定します。顧客原本は同梱していません。どちらも既存情報から作る成果物であり、テスト実行や業務期待値の承認は行いません。未実行ケースを合格にせず、実行全体のPASSを根拠のない手順別PASSへ転記しません。
 
-明示的に `FEATURE_MAP_DECISION_PROVIDER=openai` を選択し、既存の
-`OPENAI_API_KEY` と共通モードを設定します。既定モデルは `gpt-6-luna` です。
-`FEATURE_MAP_DECISION_MODEL` で変更できます。
+### Hooksの信頼と外部への判断問い合わせ
 
-`metadata` が送るのは件数、有無、固定カテゴリだけです。コード、名前、パス、
-プロンプト本文、diffは含めません。本文を送る `prompt`、`summary`、`diff` は
-明示的な選択が必要です。送信が契約上禁止される場合は `off` にしてください。
-既知の秘密情報やメールアドレスを伏せますが、すべての機密情報を検出する保証はありません。
+有効化前に[hooks/hooks.json](hooks/hooks.json)と[実装](hooks/feature_map_hook.py)を確認します。スクリプトはPluginファイルを持つホストで動作します。Web上でPluginを追加しただけでは、スクリプトはローカルに配置されません。プロンプト中の曖昧な語は調査の手掛かりとして使い、利用可能な情報を確認しても結果を左右する不足が残る場合だけ質問します。Stop時の検証は現在のXMLハッシュに結び付き、継続回数には上限があります。
 
-API障害、refusal、不正レスポンスは警告と未判断にします。Git、XSD、テスト、
-権限、HALT、人間の承認は別の必須ゲートです。APIの判断で解除しません。
-詳細は [provider契約](skills/feature-map-workflow/references/decision-providers.md) を参照してください。
+判断補助は `FEATURE_MAP_DECISION_PROVIDER=off|jev|openai` で選び、既存の `FEATURE_MAP_JEV_*` 設定も維持します。metadataや本文送信モードで送る内容はProviderごとに異なります。有効化前に[Decision Providers](skills/feature-map-workflow/references/decision-providers.md)と[Jev](skills/feature-map-workflow/references/jev.md)の送信条件を確認してください。判断補助で事実や権限を確定せず、必須検証を解除しません。APIの失敗は未判断とし、ローカルのゲートは維持します。
 
-## Autonomous Task Runner（任意）
+## 検証、レビュー、人の権限
 
-`python scripts/task_runner.py` は、LOWまたは事前承認済みのMEDIUMタスクを
-固定した変更パス・検証コマンド・実行予算で扱います。隔離Worktree、Linuxの
-bubblewrapによる評価、試行の証拠保存、checkpointからの再開に対応します。
-自己検証に合格すると `HUMAN_REVIEW_REQUIRED` になります。承認、push、merge、
-deployは自動で行いません。HIGH/CRITICALは人主導の工程で扱います。
-隔離できない場合や状態が古い場合、中断した処理の成否が不明な場合はHALTします。
+対象コミットに必要な決定的検証を実行し、[REVIEW.md](REVIEW.md)に沿って別コンテキストの読み取り専用差分レビューを依頼します。指摘は根拠と照合して処理し、AIによる修正・再レビューは原則3回までとします。人のレビューは現在のコミットに結び付けます。実行できなかった検証は `NOT_RUN` とし、ソース確認、モック、実行結果、業務受入を区別して報告します。
 
-まずはAPIキー不要の [オフライン例](examples/task-runner/README.md) を試してください。
-任意のCodex提案生成には、対応CLI版の確認とソース送信の明示許可が必要です。
-[責任・実行・再開の契約](skills/feature-map-workflow/references/autonomous-task-runner.md) に詳細をまとめています。
+Task RunnerはLOWと、事前承認の条件を満たすMEDIUMを扱います。HIGH/CRITICALは人主導です。検証に合格した候補は `HUMAN_REVIEW_REQUIRED` となり、自動承認・公開には進みません。AIの指摘が0件でも、PRテンプレートや方針文書があっても、GitHubの保護設定が有効である証明にはなりません。必要な人の承認、ホスト権限、復旧手段、実際のCIをそれぞれ確認します。
 
-## 既存Jev設定
+日本語は、短くする前に意味・範囲・確信度・識別子を保ちます。[Context Gate](skills/feature-map-workflow/references/context-gate.md)と[Operable Japanese](skills/feature-map-workflow/references/operable-japanese.md)に従い、既存情報で解決できることは再質問しません。
 
-### Jev連携
+## リポジトリ構成と参加方法
 
-Jevは既定では無効です。用途を2つに分けています。
+| 場所 | 内容 |
+| --- | --- |
+| [skills/feature-map-workflow/](skills/feature-map-workflow/) | Skill入口、作業別ガイド、XML/XSD/XSLT、機能単位の支援ツール |
+| [hooks/](hooks/) | ライフサイクルHooksと任意のDecision Provider実装 |
+| [scripts/](scripts/) | セットアップ、テスト、検証、梱包、Task Runner |
+| [examples/](examples/) | 架空のFeature Map、合成テスト、任意の実行基盤の例 |
+| [docs/](docs/) | リポジトリ設定ガイドと既存のRunner Feature Map |
+| [.github/](.github/) | CI・リリース定義と共同作業用テンプレート |
 
-### 完了時のJev判定
-
-`FEATURE_MAP_JEV_MODE` を設定します。
-
-- `off`: TypeSafeへ送信しない（既定）
-- `metadata`: Feature Mapの状態、変更ファイル名、git diff統計のみ
-- `summary`: metadataに加え、現在のCodex応答を最大3000文字送信
-- `diff`: summaryに加え、git diffを最大8000文字送信
-
-`update_required`、`update_section`、`human_review_required` のような閉じた判断だけを返します。
-
-### プロンプト受信時のJev判定
-
-`FEATURE_MAP_CONTEXT_JEV_MODE` を設定します。
-
-- `off`: TypeSafeへ送信しない（既定）
-- `metadata`: Feature Mapメタデータ、プロンプト長、ローカルで検出したカテゴリ、高影響Open件数を送信。プロンプト本文は送信しません
-- `prompt`: metadataに加え、プロンプト本文を最大3000文字送信
-
-`context_sufficient`、`question_required`、`missing_context_type` を参考値として返します。最終的に質問するかどうかは、Codexがローカル情報を確認して判断します。
-
-どちらも `TYPESAFE_API_KEY` が必要です。TypeSafe APIが利用できない場合はfail-openで処理を継続します。
-
-例:
-
-```sh
-export TYPESAFE_API_KEY='...'
-export FEATURE_MAP_JEV_MODE='summary'
-export FEATURE_MAP_CONTEXT_JEV_MODE='metadata'
-```
-
-PowerShell:
-
-```powershell
-$env:TYPESAFE_API_KEY = '...'
-$env:FEATURE_MAP_JEV_MODE = 'summary'
-$env:FEATURE_MAP_CONTEXT_JEV_MODE = 'metadata'
-```
-
-調整可能な環境変数:
-
-- `FEATURE_MAP_JEV_MODEL`（既定: `jev-latest`）
-- `FEATURE_MAP_JEV_UPDATE_THRESHOLD`（既定: `0.70`）
-- `FEATURE_MAP_JEV_REVIEW_THRESHOLD`（既定: `0.85`）
-- `FEATURE_MAP_CONTEXT_QUESTION_THRESHOLD`（既定: `0.75`）
-- `FEATURE_MAP_MAX_STOP_BLOCKS`（既定: `2`）
-- `FEATURE_MAP_PATH`（Feature Mapが複数ある場合に対象XMLを明示）
-
-JevはTypeSafeの外部APIです。ソースコードやプロンプトを外部サービスへ送信できない契約・ポリシーのプロジェクトでは、本文を送信するモードを有効にしないでください。両方のJevモードが `off` の場合、PluginからTypeSafeへリポジトリ内容やプロンプト本文は送信しません。
-
-## Feature Map 1.3
-
-1.3では、1.2のコンテキスト項目を維持したまま、Mermaid図を追加しました。
-
-- `goal/exclude`: 明示した方がスコープ誤認を防げる対象外境界
-- `open/item@type`: `scope`、`authority`、`business-rule`、`expected-behavior`、`acceptance`、`external-dependency`、`data`、`environment` など、永続的な不足情報の分類
-- `diagrams/diagram`: class、sequence、use-case、state、ER、flow、architectureなどのMermaidソース
-
-同梱XSDは、後方互換のためFeature Map `1.1` と `1.2` も受け付けます。
-
-## 通常の開発フロー
-
-1. ユーザーの依頼を受け取る。
-2. Context Sufficiency Gateで、会話やローカル情報を再利用してから質問要否を判断する。
-3. 実行結果を変える重大な不足が残る場合だけ、自然な日本語で1問確認する。解決するまで、曖昧さに依存する範囲は編集しない。
-4. 対象Featureの `feature-map.xml` を作成、または既存ファイルを特定する。
-5. XPathで必要なノードだけ読む。
-6. ソースコードとテストを直接確認する。
-7. 永続的な知識の差分だけXMLへ反映する。
-8. xquery-mcpで現在のXMLを `feature-map.xsd` に対して検証する。
-9. Stop Hookで、XSD検証漏れやFeature Mapへの反映漏れを検出する。
-10. 履歴はGitに任せ、XML内へ変更履歴セクションを作らない。
-
-再利用可能なワークフロー本体は `skills/feature-map-workflow/` にあります。
+変更時の検証とPRの書き方は[CONTRIBUTING.md](CONTRIBUTING.md)、非公開での脆弱性報告は[SECURITY.md](SECURITY.md)、管理者が行う保護設定は[GitHub repository settings](docs/github-repository-settings.md)を参照してください。ライセンスと依存関係の表記は[LICENSE](LICENSE)と[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)にあります。

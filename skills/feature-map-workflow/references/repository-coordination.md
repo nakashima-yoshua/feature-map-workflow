@@ -1,12 +1,14 @@
 # Repository Coordination
 
+> Status: **Architecture proposal; no Repository API, coordination queue or projection service is bundled.** Existing maps, hooks and the single-task Runner work without this extension.
+
 ## Purpose
 
-Use this extension when Feature Map Workflow grows beyond one coding session and multiple humans or agents need to issue asynchronous changes against the same repository.
+Use this contract when designing support for multiple humans or agents issuing asynchronous changes against the same repository. Adopt only components justified by an observed coordination need.
 
-The extension does not replace the Source-first contract. Source and tests remain implementation and behavior truth. Feature Map XML remains the durable knowledge index. Repository Coordination adds a safe execution boundary around workflow state, Git publication, and cross-document XML queries.
+The proposed extension preserves the Source-first contract. Source and tests remain implementation and behavior evidence; Feature Map XML remains the durable knowledge index. Repository Coordination would add an execution boundary around workflow state, Git publication and cross-document XML queries.
 
-This is an architecture contract for the extension. It does not require every component to be implemented before the basic Feature Map workflow can be used.
+The service names, state machines, commands and recovery procedures below are design requirements, not instructions for an existing CLI or proof of enforcement. Implementation and its acceptance evidence are separate work.
 
 ## Three-plane model
 
