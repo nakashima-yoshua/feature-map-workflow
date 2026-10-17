@@ -57,6 +57,14 @@ The generator only **reads** input data, escapes user-controlled text, rejects X
 
 When a customer or human reviewer needs the standard functional-test workbook, generate it with `scripts/build_functional_test_excel.py` and the locally provided `test_template.xlsx`, following `functional-test-excel.md`. Human Work Plan groups setup and manual actions; **FT-xx** sheets keep per-case plans and independent evidence. Keep `verifyCaseId` and sourceRevision links, and never infer approval from a draft session plan.
 
+## Code-review handoff: one focused decision package
+
+In addition to functional testing, apply the same human-time optimization to the [risk-tiered code review](code-review.md): **machine evidence first, human judgment on the smallest consequential scope**. Collect actual CI/build/test evidence, the exact PR/head SHA and the fresh-context AI review's Important findings and dispositions before calling on a human. For a multi-feature PR, group common environmental/revision checks, not business acceptance or domain-specific judgments.
+
+Give the reviewer a compact PR brief: (1) accepted purpose and unchanged behavior; (2) actual changes and risk tier; (3) tests run and what they cannot prove; (4) unresolved findings and decisions; (5) the minimum helpful UML/DFD/ER diagrams, if any; (6) a separate code/config revert path and DB/external-effect recovery requirements. Use existing Feature Map/PR/test evidence links rather than copying new specifications or raw logs.
+
+The reviewer must explicitly authorize the **current revision** under the repository's host policy. An advisory AI review cannot approve it. If a required security or business decision has no owner, or an Important finding is unresolved, report **HALT** rather than drafting a favorable approval. Measure hands-on review time, wait time and correction loops alongside real regressions and reverts.
+
 ## Human efficiency metrics
 
 Measure human sessions, hands-on minutes, setup switches, interruptions/retries and end-to-end time alongside individually verified/blocked case counts. Optimize these jointly: a faster batch that destroys test independence or delays an urgent release is **not** a success. Do not save work plans or results as repeated XML prose, and do not commit customer screenshots or production data.
