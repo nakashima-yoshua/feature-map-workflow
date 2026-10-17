@@ -31,6 +31,28 @@ Before writing any item, classify it:
 - `mode`: `catchup` or `change`.
 - `state`: `draft`, `investigating`, `ready`, `verified`, `closed`.
 
+Use `catchup` to understand existing business scenarios, entry points, data flow and blockers; use `change` for the accepted change, its impact, invariants and verification. Neither mode authorizes changing neighboring features.
+
+| State | Meaning |
+| --- | --- |
+| `draft` | A shell exists; important knowledge may still be missing. |
+| `investigating` | Source/evidence tracing is in progress. |
+| `ready` | Enough information exists to implement or explain safely. |
+| `verified` | Required verification has evidence and no unresolved high-impact blocker remains. |
+| `closed` | The agreed work is complete and the map remains as its durable index. |
+
+Do not mark a map `verified` or `closed` while a high-impact `open/item` or a failed/blocked verification case remains. These states describe evidence and work; they grant no business acceptance, merge or release authority.
+
+From the repository root, generate an optional index for a directory of maps:
+
+```sh
+python skills/feature-map-workflow/scripts/build_feature_index.py --root path/to/maps
+# Refresh explicitly after map changes:
+python skills/feature-map-workflow/scripts/build_feature_index.py --root path/to/maps --force
+```
+
+The output is `path/to/maps/feature-map-index.html`. Keep each map's XSD/XSLT support files at its declared paths. The index is a derived local view and may contain confidential feature names or purpose excerpts.
+
 ## Sections
 
 ### `meta`

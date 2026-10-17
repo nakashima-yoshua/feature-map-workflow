@@ -18,7 +18,7 @@ requirements into a second specification.
 | --- | --- |
 | Existing Change Contract / requirements / ADR | Human-defined purpose, scope, rules, risk and authorization |
 | Feature Map 1.3 | Durable goal, boundaries, navigation, knowledge and representative verification |
-| Source / existing tests | Implementation and executable expected behavior |
+| Source / existing tests | Implementation and executable observations/regression evidence; approved business expectations remain owned by the human contract and invariants above |
 | Git / CI | Exact revisions and shared validation evidence |
 | Runner config | Approved exact paths, argv arrays, budgets and references |
 | Run directory outside the repository | Checkpoints, failed attempts, logs, candidate patch and review request |

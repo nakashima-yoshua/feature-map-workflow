@@ -103,7 +103,8 @@ host environment before enabling use. Keep synthetic or approved test data in CI
 
 ## Release boundary and known gaps
 
-A merged feature is **not a release approval**. Existing open work remains relevant:
+A merged feature is **not a release approval**. These tracking records describe
+acceptance concerns; an Issue's closure is not evidence that its checks passed:
 - #13–#17: independent approval, evidence coverage, input/runtime budgets and OS permissions;
 - #18: actual Codex-to-Runner end-to-end evidence;
 - #20: HALT/recovery and evidence-retention drill;
@@ -111,6 +112,8 @@ A merged feature is **not a release approval**. Existing open work remains relev
 
 In particular, #14's candidate-diff completeness / NO_CHANGE problems and #16's
 runtime fingerprint concerns are not fixed by an emergency stop or evidence anchor.
-Treat these as release blockers until separately tested and accepted. Follow
+Treat these as release blockers until separately tested and accepted on the
+actual release candidate. Check linked changes and evidence rather than inferring
+readiness from Issue status. Follow
 `SECURITY.md` for private incident handling; never put sensitive exploits or
 real customer information in a public review or CI log.
