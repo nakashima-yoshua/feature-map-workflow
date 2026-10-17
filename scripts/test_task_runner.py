@@ -348,6 +348,41 @@ class RunnerTests(unittest.TestCase):
         runner = self.create()
         self.assertEqual(runner.execute(Proposals({"status": "no_change", "changes": []}))["status"], "NO_CHANGE")
 
+    def test_no_change_cannot_hide_failed_baseline(self):
+        runner = self.create()
+        state = runner.execute(Proposals({"status": "no_change", "changes": []}))
+        self.assertEqual(state["status"], "HALT")
+        self.assertEqual(state["failure_category"], "budget")
+        self.assertEqual(state["attempts"][0]["comparison"], "no_change_requires_passing_baseline")
+        self.assertIsNone(state["candidate_revision"])
+
+    def test_git_ignored_allowed_path_is_rejected_before_run_creation(self):
+        (self.repo / ".gitignore").write_text("generated.txt\n")
+        tr.git(self.repo, "add", ".gitignore")
+        tr.git(self.repo, "-c", "user.name=Fixture", "-c", "user.email=fixture@localhost", "commit", "-qm", "ignore generated")
+        self.config["allowed_paths"] = ["generated.txt"]
+        self.config["read_paths"] = ["app.py"]
+        with self.assertRaisesRegex(tr.Halt, "Git-ignored allowed paths"):
+            self.create()
+
+    def test_candidate_patch_persistence_failure_restores_baseline(self):
+        runner = self.create()
+        real = tr.write_patch_evidence
+
+        def fail_candidate(path, patch):
+            if path.name == "candidate.patch":
+                raise OSError("synthetic evidence failure")
+            return real(path, patch)
+
+        with patch("task_runner.write_patch_evidence", side_effect=fail_candidate):
+            state = runner.execute(Proposals(GOOD))
+        self.assertEqual(state["status"], "HALT")
+        self.assertEqual(state["failure_category"], "environment")
+        self.assertIsNone(state["candidate_revision"])
+        self.assertEqual(state["expected_revision"], state["base_revision"])
+        self.assertEqual(tr.git(runner.worktree, "rev-parse", "HEAD"), state["base_revision"])
+        self.assertIn("return 1", (runner.worktree / "app.py").read_text())
+
     def test_xsd_invalid_high_open_and_failed_acceptance_halt(self):
         cases = [("<wrong/>", "XSD"),
                  (MAP.replace("</featureMap>", '<open><item id="O1" impact="high" next="Ask human">unknown</item></open></featureMap>'), "High-impact"),
