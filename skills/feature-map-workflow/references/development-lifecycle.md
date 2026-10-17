@@ -33,6 +33,8 @@ Before a phase requests multiple manual inspections, UI actions or human busines
 
 For code-changing work, apply [Evidence-based Code Review](code-review.md) **within Phase 9 and its handoff to Phase 10**: independent, fresh-context diff review after deterministic verification; bounded correction and re-review; risk-tiered human approval tied to the current revision. This is not a separate mandatory phase or a replacement for GitHub host protections.
 
+For an **explicit maintenance or efficiency investigation**, optionally use [Evidence-based Maintenance Triage](maintenance-triage.md) to produce a read-only, evidence-backed shortlist (maximum three candidates) and choose one small experiment or `NO_CHANGE`. It does not create another lifecycle phase, grant permission to delete code/change live settings, or bypass Phase 9 tests and revision-bound human approval. Do not claim an A/B or CI performance gain when the required measurements were not run.
+
 ## Phase contract
 
 For every phase, distinguish:
