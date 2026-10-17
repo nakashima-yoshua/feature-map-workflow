@@ -109,7 +109,8 @@ def redact(text: str) -> str:
 
 def process(argv: list[str], cwd: Path, timeout: float,
             env: dict[str, str] | None = None, stdin: str | None = None,
-            stop_requested: Callable[[], bool] | None = None) -> tuple[int, str]:
+            stop_requested: Callable[[], bool] | None = None, *,
+            max_output: int = MAX_OUTPUT, raw_output: bool = False) -> tuple[int, str | bytes]:
     """Bound output and kill the entire process group, including descendants."""
     if stop_requested and stop_requested():
         raise Halt("Operator stop requested", "operator_stop")
@@ -151,7 +152,7 @@ def process(argv: list[str], cwd: Path, timeout: float,
                         selector.unregister(p.stdout)
                     else:
                         output.extend(block)
-                        if len(output) > MAX_OUTPUT:
+                        if len(output) > max_output:
                             raise Halt("Approved command exceeded output limit", "environment")
         # Streams may close while a child is still running. Keep stop/timeout responsive.
         while p.poll() is None:
@@ -161,7 +162,7 @@ def process(argv: list[str], cwd: Path, timeout: float,
             if remaining <= 0:
                 raise Halt("Approved command timed out", "environment")
             time.sleep(min(remaining, .1))
-        return p.returncode, output.decode("utf-8", errors="replace")
+        return p.returncode, bytes(output) if raw_output else output.decode("utf-8", errors="replace")
     finally:
         selector.close()
         # Also terminate children that closed their stdout before the parent exited.
@@ -193,11 +194,23 @@ def git_ignored(repo: Path, path: str) -> bool:
     raise Halt("Git ignore rules could not be evaluated", "repository_conflict")
 
 
-def write_patch_evidence(path: Path, patch: str) -> None:
-    data = patch.encode("utf-8")
-    if len(data) > MAX_PATCH:
+def git_patch(repo: Path, base_revision: str, candidate_revision: str) -> bytes:
+    """Capture a bounded, directly applicable Git patch without text conversion."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    code, output = process(["git", "-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false",
+                            "-c", "core.quotePath=false", "diff", "--binary", "--no-ext-diff",
+                            "--no-textconv", "--no-color", "--src-prefix=a/", "--dst-prefix=b/",
+                            base_revision, candidate_revision, "--"], repo, 20, env,
+                           max_output=MAX_PATCH, raw_output=True)
+    if code:
+        raise Halt("Git patch capture failed; inspect repository state", "repository_conflict")
+    return output
+
+
+def write_patch_evidence(path: Path, patch: bytes) -> None:
+    if len(patch) > MAX_PATCH:
         raise Halt("Patch evidence exceeds the supported size boundary", "evaluation_unavailable")
-    path.write_bytes(data)
+    path.write_bytes(patch)
 
 
 def config_validate(config: Any) -> dict[str, Any]:
@@ -707,8 +720,7 @@ class Runner:
                             "commit", "-m", f"Candidate for {self.config['task_id']}")
                         revision = git(self.worktree, "rev-parse", "HEAD")
                         try:
-                            patch = git(self.worktree, "diff", "--binary", "--no-ext-diff",
-                                        self.state["base_revision"], revision, "--") + "\n"
+                            patch = git_patch(self.worktree, self.state["base_revision"], revision)
                             write_patch_evidence(self.directory / "candidate.patch", patch)
                         except (Halt, OSError) as exc:
                             try:

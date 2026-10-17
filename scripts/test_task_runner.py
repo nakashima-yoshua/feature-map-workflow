@@ -349,11 +349,22 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(runner.execute(Proposals({"status": "no_change", "changes": []}))["status"], "NO_CHANGE")
 
     def test_no_change_cannot_hide_failed_baseline(self):
+        self.config["max_attempts"] = 1
         runner = self.create()
         state = runner.execute(Proposals({"status": "no_change", "changes": []}))
         self.assertEqual(state["status"], "HALT")
         self.assertEqual(state["failure_category"], "budget")
         self.assertEqual(state["attempts"][0]["comparison"], "no_change_requires_passing_baseline")
+        self.assertIsNone(state["candidate_revision"])
+
+    def test_no_change_rejects_a_flaky_pass_after_failed_baseline(self):
+        self.config["max_attempts"] = 1
+        runner = self.create()
+        with patch.object(self.evaluator, "run", side_effect=[(1, "baseline failed"), (0, "flaky pass")]):
+            state = runner.execute(Proposals({"status": "no_change", "changes": []}))
+        self.assertEqual(state["baseline"]["status"], "failed")
+        self.assertEqual(state["last_result"]["status"], "passed")
+        self.assertEqual(state["status"], "HALT")
         self.assertIsNone(state["candidate_revision"])
 
     def test_git_ignored_allowed_path_is_rejected_before_run_creation(self):
@@ -382,6 +393,60 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(state["expected_revision"], state["base_revision"])
         self.assertEqual(tr.git(runner.worktree, "rev-parse", "HEAD"), state["base_revision"])
         self.assertIn("return 1", (runner.worktree / "app.py").read_text())
+
+    def test_candidate_patch_replays_exact_file_bytes(self):
+        self.config["allowed_paths"].append("zz-note.txt")
+        (self.repo / "zz-note.txt").write_bytes(b"before \xff\n")
+        tr.git(self.repo, "add", "zz-note.txt")
+        tr.git(self.repo, "-c", "user.name=Fixture", "-c", "user.email=fixture@localhost",
+               "commit", "-qm", "non-UTF-8 fixed source")
+        runner = self.create()
+        proposal = copy.deepcopy(GOOD)
+        proposal["changes"].append({"path": "zz-note.txt", "content": "memo   \n"})
+        state = runner.execute(Proposals(proposal))
+        self.assertEqual(state["status"], "HUMAN_REVIEW_REQUIRED")
+        replay = self.root / "patch-replay"
+        tr.git(self.repo, "clone", "--quiet", "--no-hardlinks", str(self.repo), str(replay))
+        tr.git(replay, "apply", "--index", "--whitespace=nowarn", str(runner.directory / "candidate.patch"))
+        expected = set(tr.git(runner.worktree, "ls-files", "-z").split("\x00")) - {""}
+        actual = set(tr.git(replay, "ls-files", "-z").split("\x00")) - {""}
+        self.assertEqual(actual, expected)
+        for name in expected:
+            self.assertEqual((replay / name).read_bytes(), (runner.worktree / name).read_bytes(), name)
+
+    def test_candidate_patch_larger_than_command_output_limit_is_saved(self):
+        self.config["allowed_paths"].append("payload.txt")
+        payload = "fixture payload line\n" * 60000
+        self.assertGreater(len(payload.encode()), tr.MAX_OUTPUT)
+        self.assertLess(len(payload.encode()) + len(GOOD["changes"][0]["content"].encode()), tr.MAX_CONTENT)
+        runner = self.create()
+        proposal = copy.deepcopy(GOOD)
+        proposal["changes"].append({"path": "payload.txt", "content": payload})
+        state = runner.execute(Proposals(proposal))
+        self.assertEqual(state["status"], "HUMAN_REVIEW_REQUIRED")
+        evidence = runner.directory / "candidate.patch"
+        self.assertGreater(evidence.stat().st_size, tr.MAX_OUTPUT)
+        self.assertLessEqual(evidence.stat().st_size, tr.MAX_PATCH)
+        self.assertTrue(runner.verify_evidence())
+
+    def test_patch_capture_limit_restores_baseline_without_review_candidate(self):
+        self.config["allowed_paths"].append("payload.txt")
+        line = b"fixture payload line\n"
+        payload = line * (tr.MAX_PATCH // len(line) + 1)
+        (self.repo / "payload.txt").write_bytes(payload)
+        tr.git(self.repo, "add", "payload.txt")
+        tr.git(self.repo, "-c", "user.name=Fixture", "-c", "user.email=fixture@localhost",
+               "commit", "-qm", "large fixed baseline")
+        runner = self.create()
+        proposal = copy.deepcopy(GOOD)
+        proposal["changes"].append({"path": "payload.txt", "content": None})
+        state = runner.execute(Proposals(proposal))
+        self.assertEqual(state["status"], "HALT")
+        self.assertIsNone(state["candidate_revision"])
+        self.assertEqual(state["expected_revision"], state["base_revision"])
+        self.assertEqual(tr.git(runner.worktree, "rev-parse", "HEAD"), state["base_revision"])
+        self.assertEqual((runner.worktree / "payload.txt").read_bytes(), payload)
+        self.assertFalse((runner.directory / "candidate.patch").exists())
 
     def test_xsd_invalid_high_open_and_failed_acceptance_halt(self):
         cases = [("<wrong/>", "XSD"),
@@ -501,6 +566,19 @@ class RunnerTests(unittest.TestCase):
 
 
 class ProcessAndContractTests(unittest.TestCase):
+    def test_patch_evidence_accepts_the_boundary_and_rejects_overflow(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "candidate.patch"
+            data = b"x" * tr.MAX_PATCH
+            for size in (tr.MAX_PATCH - 1, tr.MAX_PATCH):
+                with self.subTest(size=size):
+                    tr.write_patch_evidence(path, data[:size])
+                    self.assertEqual(path.read_bytes(), data[:size])
+            overflow = Path(d) / "overflow.patch"
+            with self.assertRaises(tr.Halt):
+                tr.write_patch_evidence(overflow, data + b"x")
+            self.assertFalse(overflow.exists())
+
     def test_timeout_and_output_limit_are_enforced(self):
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(tr.Halt):
