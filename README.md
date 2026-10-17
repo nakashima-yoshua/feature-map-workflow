@@ -2,418 +2,133 @@
 
 # Feature Map Workflow Plugin
 
-A Source-first development workflow that carries one compact Feature Map XML through catch-up, requirements, design, testing, implementation, CI/CD, verification, documentation, and delivery.
+Carry one compact Feature Map XML per business feature through investigation, design, implementation, verification and delivery. Source and tests remain implementation evidence; the map preserves business rules, decisions, navigation and unresolved questions that are expensive to reconstruct.
 
-## Architecture
+Start with the map and your existing tools. Hooks, external advice, test helpers and the bounded Task Runner are optional. The repository-coordination service is an architecture proposal, not a bundled runtime.
 
-- Source code: implementation truth
-- Tests: executable behavior evidence
-- Feature Map XML: human/AI navigation, durable rules, invariants, decisions, verification evidence, scope boundaries, and open blockers
-- XSD: structural contract
-- XSLT: one-page human view
-- Git: change history
-- xquery-mcp: narrow XPath/XQuery reads, XML formatting, and XSD validation
-- Codex hooks: context gate, lifecycle timing, edit tracking, and completion gates
-- Decision Provider: optional bounded advice through OpenAI Decisions API or legacy Jev (default off)
-- Task Runner: opt-in bounded attempts, isolated evaluation, checkpoints and revision-bound human review
-- AI trust controls: [seven-principle acceptance matrix and independent stop/evidence checks](skills/feature-map-workflow/references/ai-trust-controls.md); no separate audit service or XML schema
-- Operable Japanese: meaning-first rendering rules aligned with `natural-japanese` principles
+## Start with one feature
 
-## Design principle
-
-The plugin separates internal meaning from human-facing prose.
-
-```text
-User request
-  -> Context Sufficiency Gate
-  -> meaning contract (only needed slots)
-  -> source / tests / Feature Map investigation
-  -> action or one clarification
-  -> natural professional Japanese rendering
-```
-
-Priority:
-
-```text
-meaning preservation > operability > naturalness > brevity
-```
-
-The internal meaning contract may use `goal / actor / action / target / condition / scope / exclude / authority / doneWhen / certainty`. These are not persisted as a second specification. Only durable feature knowledge belongs in Feature Map XML.
-
-## Full lifecycle use cases
-
-The same Feature Map can act as the durable index across the full development lifecycle without becoming a second specification.
-
-```text
-Context sufficiency
-  -> requirements
-  -> basic design
-  -> business scenarios / E2E
-  -> test-boundary design
-  -> detailed design
-  -> condition/state/boundary tests
-  -> residual unit tests
-  -> implementation + CI
-  -> release package / CD
-  -> As-Built view
-  -> delivery / acceptance
-```
-
-Detailed phase policy lives in:
-
-- `references/development-lifecycle.md`: inputs, activities, durable deltas, hard/semantic gates, HALT conditions, outputs;
-- `references/test-strategy.md`: E2E/integration/DB/unit placement and explicit test boundaries;
-- `references/coverage-model.md`: requirement/scenario/rule/state/effect/dynamic-route coverage;
-- `references/legacy-analysis.md`: static + dynamic + DB/config/runtime evidence for unfamiliar and legacy systems.
-
-Source/tests, CI evidence, runtime traces, and release artifacts remain canonical in their native form. Feature Map stores only durable knowledge that is costly or ambiguous to reconstruct.
-
-### Independent AI code review and human approval
-
-After implementation and real build/test checks, follow [Code Review](skills/feature-map-workflow/references/code-review.md) and the short repository-root [REVIEW.md](REVIEW.md): **fresh-context read-only diff review → evidenced finding triage → bounded correction (maximum three AI review passes) → risk-tiered human review on the exact commit**. The PR template now requests Risk, Testing, independent AI review, human decisions, and separate code/data recovery details.
-
-Prioritize business invariants, DB side effects, authorization, external integrations, CI/release changes and unproven guarantees; omit speculative style fixes. If independent AI review is unavailable, record NOT_RUN and escalate. **No automatic AI reviewer, zero-human merge exemption or enforced GitHub Rulesets are provisioned here**; actual human sign-off and deterministic CI remain required.
-
-### Customer functional-test Excel workbook
-
-Use the user-supplied `test_template.xlsx` for formal functional-test reporting. The `scripts/build_functional_test_excel.py` CLI fills its cover, case index and detail sheets from Feature Map verification IDs, then optionally imports only step-specific results with a matching `sourceRevision` and inspectable evidence. It preserves built-in formulas, starts with no case approved or executed, and leaves customer/private workbook files outside the public repository. Pass the original workbook using `--template`; see [Functional Test Excel](skills/feature-map-workflow/references/functional-test-excel.md).
-
-### Focused verification brief and Human Work Direction
-
-Use [Human Work Direction](skills/feature-map-workflow/references/human-work-direction.md) when a focused feature needs several human-operated or human-judged verifications. Select any number of **relevant existing diagrams**, including UML activity, use-case, sequence, state, class or architectural views, as well as DFD and ER. Selection uses verification types, source references, data effects and diagram labels; it is **not limited to the three data views**. The generator does not invent missing diagrams or prove that inferred relationships are correct.
-
-Before a tester is asked to act, plan deterministic preflight, common setup, isolated per-case data reset, actions, individual evidence capture, stop conditions and cleanup. Group compatible cases to minimize human sessions and context switching **without merging test outcomes**. The optional session-plan JSON is reviewable, not canonical; without it, the generator produces an informational brief with a HALT notice rather than executable steps.
+Run commands from the repository root with Python 3.10 or later. Replace the sample names and output path with your feature's authorized location:
 
 ```sh
-python skills/feature-map-workflow/scripts/build_verification_brief.py --feature-map examples/fictional-stock-request/feature-map.xml --use-case UC-SUBMIT --plan examples/fictional-stock-request/human-work-plan.example.json --output verification-brief.html
+python skills/feature-map-workflow/scripts/init_feature_map.py --system Demo --feature Sample --mode catchup --purpose "Understand one business scenario" --output path/to/feature/feature-map.xml
 ```
 
-The resulting local HTML is a generated view of Feature Map XML and planned steps: feature context, selected diagrams and selection reasons, case-specific expected results, shared preparation, manual action order, evidence capture, blockers and cleanup. It **does not run tests, connect to a DB, record evidence or approve results**. Use repeatable `--case` and `--diagram` overrides and `--force` to explicitly regenerate. Standard Python is sufficient; local Mermaid loading is the default and `--allow-cdn` explicitly enables external fallback. See the [fictional example](examples/fictional-stock-request/README.md).
+The initializer creates a map and copies its XSD/XSLT support files. It refuses to overwrite an existing map unless `--force` is supplied. Use `catchup` for understanding an existing feature and `change` for an accepted change; keep stable IDs when updating either.
 
-### Three complementary views: business flow, data flow and ER
+1. Read the real entry point, source, tests and relevant data/configuration.
+2. Keep only durable knowledge and references in the map; preserve unknowns under `open`.
+3. Patch the smallest changed nodes and validate the current XML against its XSD.
+4. Run the required tests separately and link their actual evidence.
+5. Review the map before completion; leave it unchanged when its durable knowledge is already current.
 
-For understanding an unfamiliar data-backed business feature, follow [Three Complementary Views](skills/feature-map-workflow/references/three-view-understanding.md). Combine **business flow** (actor, decisions, outcomes), **data flow** (inputs, DB effects, payloads, interfaces) and **feature-scoped ER** (relevant entities, keys and evidenced relationships), connected by the same use-case ID and table names.
+For a complete starting example, see the [fictional puzzle log](examples/fictional-puzzle-log/README.md) or [fictional stock request](examples/fictional-stock-request/README.md). Their invented rules and relationships are examples, not evidence about a real system. The puzzle-log example includes a PowerShell XML-to-HTML renderer.
 
-Use read-only schema/catalog metadata, DDL, application SQL and authorized observations as evidence. A SQL JOIN does not establish a declared FK; never invent unknown cardinality or label unconfirmed paths as verified. For Oracle, PostgreSQL and Db2, account for platform-specific catalogs, synonyms, stored procedures, views and runtime dispatch. Keep drawings compact; skip an unhelpful view rather than exhaustively documenting every table.
+## Choose a workflow
 
-Store the diagrams in the **existing** Feature Map v1.3 `diagrams/diagram` elements: `flowchart TD` for business flow, `flowchart LR` for data flow, and `erDiagram` for ER. They are displayed by the current collapsed XSLT/Mermaid viewer without any schema or runtime changes. See the [fully fictional stock-request example](examples/fictional-stock-request/README.md), whose relationships are illustrations rather than real database facts. CI checks its XML, diagram linkage and XSLT output, not real DB behavior or browser-side Mermaid rendering.
+Read the guide for the current task rather than loading every reference.
 
-### Change-driven incremental modernization
+| Goal | Guide |
+| --- | --- |
+| Decide what belongs in a map, split feature boundaries or create an HTML index | [Feature Map Contract](skills/feature-map-workflow/references/feature-map-contract.md) |
+| Work across requirements, design, tests, implementation and delivery | [Development Lifecycle](skills/feature-map-workflow/references/development-lifecycle.md) |
+| Understand unfamiliar code, dynamic dispatch, SQL and runtime dependencies | [Legacy Analysis](skills/feature-map-workflow/references/legacy-analysis.md) |
+| Reach a selected EXE/job/UI-to-BL path and discover minimal fixtures | [Target Reachability](skills/feature-map-workflow/references/target-reachability.md) |
+| Compare keeping, repairing or migrating a legacy slice | [Incremental Modernization](skills/feature-map-workflow/references/incremental-modernization.md) |
+| Connect business flow, data flow and evidenced ER relationships | [Three Complementary Views](skills/feature-map-workflow/references/three-view-understanding.md) |
+| Choose test layers and state what the evidence covers | [Test Strategy](skills/feature-map-workflow/references/test-strategy.md) and [Coverage Model](skills/feature-map-workflow/references/coverage-model.md) |
+| Execute repeatable UI/CLI/DB tests and retain evidence | [AI-assisted Testing](skills/feature-map-workflow/references/ai-assisted-testing.md) |
+| Reduce human setup and context switching without combining test outcomes | [Human Work Direction](skills/feature-map-workflow/references/human-work-direction.md) |
+| Fill a supplied customer workbook from planned cases and step evidence | [Functional Test Excel](skills/feature-map-workflow/references/functional-test-excel.md) |
+| Review a tested candidate and prepare human approval | [Code Review](skills/feature-map-workflow/references/code-review.md) and [REVIEW.md](REVIEW.md) |
+| Investigate explicitly requested maintenance or workflow inefficiency | [Maintenance Triage](skills/feature-map-workflow/references/maintenance-triage.md), using the [YAGNI / whole-system principles](skills/feature-map-workflow/references/yagni-whole-system-optimization.md) |
 
-Use [Change-Driven Incremental Modernization](skills/feature-map-workflow/references/incremental-modernization.md) when an existing legacy feature needs enhancement, repair, or a low-cost partial migration. **Understand and document the business flow and its material dependencies; migrate only the smallest safe and approved responsibility boundary.** Choose among no code change, a legacy fix, and migration of one slice based on overall delivery, coexistence, maintenance, and verification costs.
+These guides use the existing development phases; they do not require a new phase, report or tool for every task. Trace the relevant business scenario, then change only the approved boundary. Consider no change when its value is lower than the implementation, verification or operational cost.
 
-The existing Feature Map is the durable business knowledge artifact: retain business scenarios, rules, important data effects, source/evidence references and unresolved intent even when no migration occurs. Distinguish observed legacy behavior from business-approved requirements. Compare old/new observable behavior when possible and report verification gaps honestly. Before completion, update the Feature Map or explicitly confirm it was reviewed and is already current. No extra XML schema, runner or agent fleet is required.
+## Where information belongs
 
-### Compact per-feature HTML and index
+| Information | Owner |
+| --- | --- |
+| Implementation and executable behavior evidence | Source and tests |
+| Business expectations and authority to accept them | Approved requirements, invariants and human decisions |
+| Durable feature knowledge and material unknowns | Feature Map XML |
+| Fixtures, detailed test plans, screenshots, logs, DB observations and release artifacts | Their existing test/evidence/artifact stores, referenced by the map |
+| Change history | Git |
+| XML structure and human presentation | XSD and XSLT |
 
-Keep **one small Feature Map XML per cohesive business feature**, not one cumulative document for the whole system. Feature Map's XSLT now shows the business overview, leading scenarios/rules and open questions first, while source references, verification, extra entries and Mermaid diagrams can be expanded on demand. Mermaid loads when the diagrams section opens. Folding improves readability/startup, but does not shrink the underlying XML.
+The current Feature Map format is 1.3; the XSD also accepts 1.1 and 1.2. History, class catalogs, copied SQL and full execution traces do not belong in the map. Distinguish observed legacy behavior from approved business intent.
 
-For a directory of many features, generate an optional **metadata-only** index without embedding the individual reports:
+Mermaid diagrams live in existing `diagrams/diagram` nodes as CDATA. Use them when a sequence, boundary, state or data relationship is easier to understand visually. A SQL JOIN does not prove a physical FK, and generating a diagram does not verify behavior. Human briefs may select any number of relevant UML/DFD/ER views.
 
-```sh
-# Existing folders contain their own feature-map.xml and its referenced XSLT.
-python skills/feature-map-workflow/scripts/build_feature_index.py --root path/to/maps
-# Refresh after XML changes; does not overwrite an existing index without --force.
-python skills/feature-map-workflow/scripts/build_feature_index.py --root path/to/maps --force
-```
+The XSLT keeps technical detail and diagrams collapsible. An optional metadata-only feature index links individual maps without merging their contents; see [the map contract](skills/feature-map-workflow/references/feature-map-contract.md). Customer XML, evidence and generated indexes can contain confidential information; keep them in authorized storage.
 
-Open `path/to/maps/feature-map-index.html`; click a feature to view its own XML/XSLT page. The index only includes system, feature title, status, short purpose and a relative link, with no server or dependency installs. Files stay local; keep customer source/XML private and avoid publishing generated indexes containing confidential metadata. If a map grows overly broad, split at meaningful scenario/data/acceptance boundaries and link related maps rather than duplicating their contents. See [Feature Map Contract](skills/feature-map-workflow/references/feature-map-contract.md).
+## Optional tools and their status
 
-### Goal-directed reachability for undocumented systems
+| Component | Available scope | Start here |
+| --- | --- | --- |
+| xquery-mcp | Pinned XML query, formatting and XSD-validation integration | [Tool/result contract](skills/feature-map-workflow/references/xquery-mcp.md) |
+| Codex hooks | Bundled context, edit-tracking and completion checks; requires a host that runs the trusted files | [Hook events and limits](skills/feature-map-workflow/references/codex-hooks.md) |
+| Decision Providers | Implemented bounded advice; external calls default off | [Selection and privacy](skills/feature-map-workflow/references/decision-providers.md), [legacy Jev](skills/feature-map-workflow/references/jev.md) |
+| AI test helpers | Optional installer, executable synthetic example, brief and workbook generators | [Installer and example](examples/ai-assisted-testing/README.md) |
+| Task Runner | Implemented opt-in single-task attempts; Linux bubblewrap is required for evaluation | [Execution/restart contract](skills/feature-map-workflow/references/autonomous-task-runner.md), [offline example](examples/task-runner/README.md) |
+| Agents API | Optional self-hosted proof of concept with read-only readers and one canonical writer | [Integration](skills/feature-map-workflow/references/agents-api.md), [example](examples/agents-api/README.md) |
+| Repository Coordination | Architecture contract for a future API/queue/projection service; no such service is bundled | [Proposal and MVP boundary](skills/feature-map-workflow/references/repository-coordination.md) |
 
-When a specific business-logic branch cannot be exercised from its real EXE/job/UI entry point because DB records, JOINs, master tables, API replies, flags or setup order are missing, use the [target reachability and test fixture discovery workflow](skills/feature-map-workflow/references/target-reachability.md).
+Implementation and synthetic tests do not establish production readiness or measured delivery savings. Keep the [Runner release gaps and AI trust controls](skills/feature-map-workflow/references/ai-trust-controls.md) visible when considering adoption. Programmatic Tool Calling is limited to predictable reads, queries and reduction; writes, approval and external effects keep their direct authority boundary. See the [calling policy](skills/feature-map-workflow/references/programmatic-tool-calling.md).
 
-The AI traces backwards from the target and forwards from launch, builds the **minimum path-specific AND/OR/NOT prerequisites**, performs read-only preflight checks, prepares authorized test fixtures/stubs, and investigates the first blocking runtime gate. It reports **route discovered / target reached / behavior verified / reproducible** separately. Real execution requires an isolated and explicitly authorized environment; otherwise it produces a not-run plan. Detailed traces and fixture data stay with tests; Feature Map XML holds only durable findings and evidence references. No new schema, mode or mandatory runtime dependency is added.
+### XML query and validation setup
 
-### Optional AI test tool installer
-
-Install pinned Playwright Python and Chromium without changing system-wide Python packages. Requires Python 3.10+ installed first; an isolated `.venv-ai-testing` is created and excluded from Git and plugin archives.
-
-Windows PowerShell:
-
-```powershell
-./scripts/setup-ai-testing.ps1 -DryRun
-./scripts/setup-ai-testing.ps1
-./scripts/setup-ai-testing.ps1 -Check
-./scripts/setup-ai-testing.ps1 -Smoke
-```
-
-Linux / macOS:
-
-```sh
-bash ./scripts/setup-ai-testing.sh --dry-run
-bash ./scripts/setup-ai-testing.sh
-bash ./scripts/setup-ai-testing.sh --check
-bash ./scripts/setup-ai-testing.sh --smoke
-```
-
-Opt-in `-WithXQuery` / `--with-xquery` restores the existing pinned local .NET tool (.NET 10 SDK required). Windows `-WindowsUiProject <tests.csproj>` / `--windows-ui-project <tests.csproj>` adds FlaUI.UIA3 only to that explicitly selected project. Use `-SkipWeb` / `--skip-web` to avoid browser dependencies when installing only .NET test tools. These commands do not bootstrap Python/.NET SDK or Linux OS browser libraries. Offline dry-run and unit tests run in CI; real browser smoke requires an approved isolated environment.
-
-### AI-assisted functional testing and evidence
-
-An optional [AI-assisted testing workflow](skills/feature-map-workflow/references/ai-assisted-testing.md) connects Feature Map business scenarios to existing Playwright, Windows UI, CLI and DB tests without a new runtime or XML schema. AI explores and drafts scenarios and fixtures; deterministic code executes and compares approved expectations; humans review important business oracles. Screenshots, browser traces, application logs and DB before/after evidence remain test artifacts, with only durable references retained in Feature Map. The [fully fictional runnable example](examples/ai-assisted-testing/README.md) demonstrates HTTP-to-SQLite evidence with optional Playwright browser typing.
-
-
-For a YAGNI-based, whole-system approach to deciding whether and how to improve a workflow, see [YAGNI × whole-system optimization: design and phased plan](skills/feature-map-workflow/references/yagni-whole-system-optimization.md) ([tracking issue #8](https://github.com/nakashima-yoshua/feature-map-workflow/issues/8)). It does not mandate new analysis artifacts or techniques for every task.
-
-
-## Agents API and Programmatic Tool Calling
-
-OpenAI Agents API can be used as an optional runtime for Feature Map Workflow without making the workflow runtime-dependent. With multiple agents, reader subagents stay read-only and only the parent/Single Writer may mutate canonical repository state.
-
-Programmatic Tool Calling is suited to predictable XPath/XQuery/filter/aggregate stages that can reduce intermediate output before model reasoning. Keep writes, approvals, Git publication, and external side effects on direct tool-call boundaries.
-
-See:
-
-- `references/agents-api.md`
-- `references/programmatic-tool-calling.md`
-- `examples/agents-api/`
-
-## Repository coordination extension
-
-When multiple agents or humans submit asynchronous changes to the same repository, do not turn Feature Map XML into a queue or lease store. Add a separate coordination plane.
-
-~~~text
-Knowledge Plane
-  Feature Map XML / source / tests
-          |
-          | query / durable knowledge
-          v
-Repository API
-          |
-          +--> Coordination Plane
-          |      Command / Operation / Dependency
-          |      SQLite queue / Single Writer
-          |
-          +--> Projection Plane
-                 multi-document XML index
-                 role-specific AI context
-~~~
-
-Keep responsibilities separate:
-
-- Feature Map XML: durable development knowledge that is costly to reconstruct from code;
-- Coordination XML: durable workflow state such as Task, Decision, Message, and Dependency;
-- SQLite: transient queue, retry, lock, and operation-journal state;
-- Git: history and shared published state;
-- Projection Engine: cross-document XML search and AI-context projection;
-- Repository API: the safe read/write boundary for humans and agents.
-
-Do not send all XML to the model. Query only the Feature, Task, Dependency, Decision, and evidence needed for the current role.
-
-Writes are asynchronous: accept a command, enforce idempotency, reserve conflicts, enqueue, resolve dependencies, serialize through a Single Writer, validate XML, commit, push, then update the projection. Humans review pushed results; corrections are new operations and commits rather than history rewrites.
-
-See skills/feature-map-workflow/references/repository-coordination.md for the responsibility model, state machines, dependency/conflict rules, crash recovery, stateRevision semantics, projection freshness, and MVP boundary.
-
-## First-time setup
-
-This plugin pins `xquery-mcp` 2.5.1 as a local .NET tool. Restore it once from NuGet.
-
-Windows PowerShell:
+The local .NET tool manifest pins `xquery-mcp` **2.5.1** and requires .NET 10 SDK. Restore it only when that integration is needed:
 
 ```powershell
 ./scripts/setup-xquery-mcp.ps1
 ```
 
-macOS/Linux:
-
 ```sh
-./scripts/setup-xquery-mcp.sh
+bash ./scripts/setup-xquery-mcp.sh
 ```
 
-Requires .NET 10 SDK.
+XPath/XQuery execution tools return a structured `QueryResult`; normalize it with the bundled adapter before using its value. An empty sequence is distinct from failure. `xml_validate_schema` retains its separate plain-text success contract; details belong in [xquery-mcp Integration](skills/feature-map-workflow/references/xquery-mcp.md).
 
-## Structured xquery-mcp results
+### Test tools and generated outputs
 
-In xquery-mcp 2.5.1, `xpath_evaluate`, `xquery_evaluate`, and `xquery_validate` return a JSON `QueryResult` encoded in the MCP text result. Normalize that payload before using it:
-
-```text
-MCP tool result
-  -> QueryResult adapter
-  -> ok / value / count / elapsed_ms / errors[]
-  -> workflow decision
-```
-
-The bundled `skills/feature-map-workflow/scripts/xquery_result.py` adapter distinguishes a successful value, an empty sequence (`count=0`), and a structured error. `xml_validate_schema` intentionally keeps its existing plain-text success contract because the Codex validation hook depends on it.
-
-Codex plugin hooks are non-managed hooks. Review and trust `hooks/hooks.json` and `hooks/feature_map_hook.py` before enabling them. Hook scripts run only where the execution environment contains the plugin files; a web-only install does not deploy local scripts.
-
-## Hook behavior
-
-The bundled hooks are intentionally narrow:
-
-1. `UserPromptSubmit`: scan for advisory ambiguity signals, read compact Feature Map context, and inject a context-sufficiency policy. It does not block merely because a vague word was detected. If a material gap remains after local investigation, Codex asks one precise natural-Japanese question before the affected action.
-2. `SessionStart`: find one Feature Map, parse it locally, and add only a compact context slice.
-3. `PostToolUse` on `Edit|Write`: track changed files and detect malformed Feature Map XML without emitting routine context.
-4. `PostToolUse` on `mcp__xquery__xml_validate_schema`: remember the canonical hash of an XML payload that xquery-mcp confirmed as valid.
-5. `Stop`: enforce local consistency checks, require XSD validation after a Feature Map change, and optionally ask the configured Decision Provider whether code/test changes likely require a durable Feature Map delta.
-
-The prompt-time hook uses `additionalContext`, not a hard prompt block. Context sufficiency is semantic; regex matches are only signals. This lets Codex inspect source/tests/config/Feature Map before deciding whether a question is actually required.
-
-Stop continuation is capped by `FEATURE_MAP_MAX_STOP_BLOCKS` (default `2`) to prevent loops.
-
-## Operable Japanese
-
-User-facing instructions and clarification questions follow these rules:
-
-- fix meaning before wording;
-- ask only for material gaps;
-- state the current interpretation before a clarification;
-- make `はい` or a short correction sufficient where practical;
-- preserve scope, exclusions, certainty, numbers, and code identifiers;
-- avoid undefined `適宜`, `必要に応じて`, `関連箇所`, `全部`, and similar execution words;
-- avoid telegraphic controlled-language fragments when ordinary Japanese can express the same meaning safely;
-- use one semantic claim per sentence without mechanically splitting a natural condition-action pair.
-
-If the `natural-japanese` skill is available, its quick-mode principles should be used for the final rendering after the meaning is fixed. The plugin also bundles a compact standalone version of the required principles in `references/operable-japanese.md`.
-
-## Mermaid diagrams
-
-Feature Map 1.3 can carry Mermaid source directly in XML. Use CDATA so Mermaid symbols stay readable.
-
-```xml
-<diagrams>
-  <diagram id="DG1" kind="sequence" title="Receiving flow"><![CDATA[
-sequenceDiagram
-    User->>ReceivingService: Import
-    ReceivingService->>InventoryService: GetStock
-    InventoryService-->>ReceivingService: Stock
-  ]]></diagram>
-</diagrams>
-```
-
-`feature-map.xsl` renders these blocks automatically. The generated HTML first loads `feature-map.mermaid.min.js` from the same directory. If that file is absent, it falls back to pinned Mermaid 12.0.0 on jsDelivr. Rendering uses Mermaid `securityLevel: strict`.
-Mermaid 12 targets modern browsers (including Safari 17.4+). The renderer pins `layout: dagre`, `theme: default`, and `look: classic` so diagrams keep a conventional UML-like appearance across the v12 default-style change.
-
-For an offline/local runtime, copy Mermaid beside the Feature Map:
-
-```sh
-./scripts/setup-mermaid.sh .
-```
+The optional installer creates `.venv-ai-testing`, installs pinned Playwright/Chromium and can restore xquery-mcp or add FlaUI only to an explicitly selected test project. Inspect the plan first:
 
 ```powershell
-./scripts/setup-mermaid.ps1 -Destination .
+./scripts/setup-ai-testing.ps1 -DryRun
 ```
-
-Do not generate diagrams mechanically from every class. Keep them only when they reduce the cost of understanding a boundary, interaction, state transition, or data relationship.
-
-## OSS repository files
-
-This distribution is ready to become the repository root. It includes `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, `.github/CODEOWNERS`, Issue/PR templates, Dependabot configuration, a release workflow, and `docs/github-repository-settings.md`. Review the owner-specific placeholders before publishing.
-
-## Decision Provider (optional)
-
-Bounded semantic judgments sit behind a `DecisionProvider` boundary. The default remains `off`. `openai` implements the public-beta OpenAI Decisions API; `jev` remains a legacy-compatible provider. Nothing switches existing users automatically.
 
 ```sh
-FEATURE_MAP_DECISION_PROVIDER=off|jev|openai
-FEATURE_MAP_DECISION_CONTEXT_MODE=off|metadata|prompt
-FEATURE_MAP_DECISION_COMPLETION_MODE=off|metadata|summary|diff
+bash ./scripts/setup-ai-testing.sh --dry-run
 ```
 
-Legacy `FEATURE_MAP_JEV_*` variables remain supported. See `references/decision-providers.md`.
+Use the [installer guide](examples/ai-assisted-testing/README.md) for installation, `--check`/`-Check`, smoke tests and platform prerequisites. Python/.NET SDKs and Linux browser OS libraries are not installed automatically. A dry-run is not a real browser or desktop test.
 
-### OpenAI Decisions API
+The [focused verification brief](skills/feature-map-workflow/references/human-work-direction.md) selects existing diagrams, expectations and a reviewed session plan. The [Excel generator](skills/feature-map-workflow/references/functional-test-excel.md) needs a locally supplied compatible `test_template.xlsx`; no customer original is bundled. Both outputs are derived artifacts. They do not execute tests or approve business expectations; an unperformed case stays unperformed, and a run-level PASS cannot fill unsupported step results.
 
-Explicitly select `FEATURE_MAP_DECISION_PROVIDER=openai`, use an existing
-`OPENAI_API_KEY`, and set one or both generic modes. The default model is
-`gpt-6-luna` (`FEATURE_MAP_DECISION_MODEL` can override it). Metadata sends counts,
-presence flags and fixed categories, not source, names, paths, prompt text or diffs.
-`prompt`, `summary` and `diff` are explicit content opt-ins; review data policies
-before enabling them. Known secrets and emails are redacted, but that is not a
-complete DLP guarantee. Errors/refusals/malformed responses yield warning plus
-undetermined advice. Git/XSD/test/permission/HALT and human approval gates remain
-independent. See the [provider contract](skills/feature-map-workflow/references/decision-providers.md).
+### Hook trust and external advice
 
-## Autonomous Task Runner (optional)
+Review [hooks/hooks.json](hooks/hooks.json) and [the hook implementation](hooks/feature_map_hook.py) before enabling them. Scripts run only where the host has the plugin files; a web-only installation does not deploy them locally. Prompt-time ambiguity signals guide investigation; material missing context, not a matching word alone, determines whether to ask one question. Stop validation is tied to the current XML hash and has bounded continuations.
 
-`python scripts/task_runner.py` runs one LOW or explicitly approved MEDIUM task
-with fixed paths/checks, budgets, a detached worktree, mandatory Linux bubblewrap
-evaluation, evidence and safe checkpoint resume. Successful self-check produces
-`HUMAN_REVIEW_REQUIRED`, never automatic approval/push/merge/deploy. HIGH/CRITICAL
-tasks remain human-led. Missing isolation or stale/in-flight state HALTs.
+Decision Providers are optional advice, with `FEATURE_MAP_DECISION_PROVIDER=off|jev|openai`. Existing `FEATURE_MAP_JEV_*` settings remain compatible. Each provider's metadata/content modes have their own payload contract; check [Decision Providers](skills/feature-map-workflow/references/decision-providers.md) and [Jev](skills/feature-map-workflow/references/jev.md) before enabling transmission. Advice cannot establish facts, override required checks or grant authority. API failures remain undetermined advice; local gates continue to apply.
 
-Start with the [offline example](examples/task-runner/README.md), which needs no
-API key. The optional version-checked Codex proposal broker requires explicit
-source-transmission opt-in. See [accountability, execution and restart contract](skills/feature-map-workflow/references/autonomous-task-runner.md).
+## Verification, review and human authority
 
-## Legacy Jev configuration
+Run required deterministic checks on the exact candidate, then request a fresh-context read-only diff review using [REVIEW.md](REVIEW.md). Resolve concrete findings with source/evidence, cap AI review/fix passes at three, and bind human review to the current commit. Record unavailable checks as `NOT_RUN` and separate source, mocked, runtime and business-acceptance evidence.
 
-### Jev integration
+The bounded Runner accepts LOW and appropriately pre-approved MEDIUM work; HIGH/CRITICAL work stays human-led. Passing checks lead to `HUMAN_REVIEW_REQUIRED`, never automatic approval or publication. A clean AI review, a PR template or a policy document does not enforce GitHub Rulesets. Required human approval, host permissions, recovery and actual CI remain independent.
 
-Jev is disabled by default and split into two independent call sites.
+For user-facing Japanese, preserve meaning, scope, certainty and identifiers before shortening prose. Use the [context gate](skills/feature-map-workflow/references/context-gate.md) and [Operable Japanese](skills/feature-map-workflow/references/operable-japanese.md); reuse available facts before asking a consequential clarification.
 
-### Completion-time Jev
+## Repository layout and contribution
 
-Set `FEATURE_MAP_JEV_MODE`:
+| Location | Content |
+| --- | --- |
+| [skills/feature-map-workflow/](skills/feature-map-workflow/) | Reusable Skill entry point, task guides, XML/XSD/XSLT assets and feature tools |
+| [hooks/](hooks/) | Local lifecycle hooks and optional Decision Provider adapters |
+| [scripts/](scripts/) | Setup, tests, validation, packaging and the bounded Runner |
+| [examples/](examples/) | Fictional maps, synthetic tests and optional runtime examples |
+| [docs/](docs/) | Repository settings guidance and the existing Runner Feature Map |
+| [.github/](.github/) | CI/release definitions and collaboration templates |
 
-- `off`: no TypeSafe completion call (default).
-- `metadata`: Feature Map state, changed file names, and git diff statistics.
-- `summary`: metadata plus the current Codex assistant message, capped at 3000 characters.
-- `diff`: summary plus a git diff, capped at 8000 characters.
-
-It returns bounded judgments such as `update_required`, `update_section`, and `human_review_required`.
-
-### Prompt-time context Jev
-
-Set `FEATURE_MAP_CONTEXT_JEV_MODE`:
-
-- `off`: no TypeSafe prompt-time call (default).
-- `metadata`: Feature Map metadata, prompt length, local signal categories, and high-impact-open counts. No prompt text is sent.
-- `prompt`: metadata plus the submitted prompt, capped at 3000 characters.
-
-It returns advisory `context_sufficient`, `question_required`, and `missing_context_type` judgments. Codex still checks local evidence and writes the final question.
-
-Both Jev paths require `TYPESAFE_API_KEY` and are fail-open. TypeSafe outages never stop development.
-
-Example:
-
-```sh
-export TYPESAFE_API_KEY='...'
-export FEATURE_MAP_JEV_MODE='summary'
-export FEATURE_MAP_CONTEXT_JEV_MODE='metadata'
-```
-
-PowerShell:
-
-```powershell
-$env:TYPESAFE_API_KEY = '...'
-$env:FEATURE_MAP_JEV_MODE = 'summary'
-$env:FEATURE_MAP_CONTEXT_JEV_MODE = 'metadata'
-```
-
-Optional tuning:
-
-- `FEATURE_MAP_JEV_MODEL` (default `jev-latest`)
-- `FEATURE_MAP_JEV_UPDATE_THRESHOLD` (default `0.70`)
-- `FEATURE_MAP_JEV_REVIEW_THRESHOLD` (default `0.85`)
-- `FEATURE_MAP_CONTEXT_QUESTION_THRESHOLD` (default `0.75`)
-- `FEATURE_MAP_MAX_STOP_BLOCKS` (default `2`)
-- `FEATURE_MAP_PATH` (explicit Feature Map path when a repository has multiple maps)
-
-Important: Jev is an external TypeSafe API. Do not enable content-bearing modes for source or prompt material that policy or contract forbids sending to that service. The plugin sends no repository or prompt content to TypeSafe while both Jev modes are `off`.
-
-## Feature Map 1.3
-
-Version 1.3 retains the 1.2 context fields and adds optional Mermaid diagrams:
-
-- `goal/exclude`: explicit out-of-scope boundary when needed.
-- `open/item@type`: classifies durable missing context such as `scope`, `authority`, `business-rule`, `expected-behavior`, `acceptance`, `external-dependency`, `data`, or `environment`.
-- `diagrams/diagram`: Mermaid source for compact class, sequence, use-case, state, ER, flow, or architecture diagrams.
-
-The bundled XSD still accepts Feature Map `1.1` and `1.2` for compatibility.
-
-## Normal workflow
-
-1. Receive the user's request.
-2. Let the context gate reuse conversation and local evidence before deciding whether a question is needed.
-3. If a critical gap remains, ask one natural-Japanese clarification. Do not edit the affected scope until resolved.
-4. Create or locate the feature's `feature-map.xml`.
-5. Use XPath to read only relevant nodes.
-6. Inspect source/tests directly.
-7. Patch only durable knowledge deltas into the XML.
-8. Validate the current XML against `feature-map.xsd` with xquery-mcp.
-9. Let the Stop hook catch missing validation or a likely missing durable update.
-10. Keep history in Git; do not add a change-log section to the XML.
-
-The reusable workflow lives in `skills/feature-map-workflow/`.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for focused checks and PR expectations, [SECURITY.md](SECURITY.md) for private vulnerability reporting, and [GitHub repository settings](docs/github-repository-settings.md) for administrator-owned protection settings. License and dependency notices are in [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

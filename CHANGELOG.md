@@ -4,6 +4,7 @@ All notable user-visible changes are documented here.
 
 ## Unreleased
 
+- Consolidate README and Skill entry points into task-based routes; clarify implemented optional tools, the coordination proposal, human-owned business expectations and local workbook requirements without changing runtime behavior.
 - Exclude `local-test-evidence` and `test-results` directories at any depth from plugin ZIPs; verify archive contents with synthetic fixtures on Linux and Windows CI.
 - Add a provider-neutral DecisionProvider boundary while preserving legacy Jev configuration.
 - Implement the public-beta OpenAI Decisions API adapter with named predicate/choice normalization, default-off content controls, sanitized failures and legacy Jev compatibility.

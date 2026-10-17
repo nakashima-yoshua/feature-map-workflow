@@ -93,13 +93,19 @@ of this example. Do not run browser automation against a production system.
 
 ## Optional real browser execution
 
-Requires the optional Playwright Python package and Chromium, installed in an
-**approved test environment**:
+Use the pinned Playwright/Chromium installer above in an **approved test
+environment**, then run the demo with that same virtual environment.
+
+Linux / macOS:
 
 ~~~sh
-python -m pip install playwright
-python -m playwright install chromium
-python examples/ai-assisted-testing/run_demo.py --engine browser
+.venv-ai-testing/bin/python examples/ai-assisted-testing/run_demo.py --engine browser
+~~~
+
+Windows PowerShell:
+
+~~~powershell
+.\.venv-ai-testing\Scripts\python.exe examples/ai-assisted-testing/run_demo.py --engine browser
 ~~~
 
 An existing approved Chromium installation may be selected through
