@@ -15,6 +15,18 @@ Business scenario
 
 Do not maximize test count. Minimize duplicated guarantees and untested behavior.
 
+## Choose the next guide
+
+| Current question | Guide |
+| --- | --- |
+| Which test layer proves the behavior? | Continue with this strategy and [Coverage Model](coverage-model.md). |
+| Why can the real entry point not reach the selected branch? | [Target Reachability](target-reachability.md) |
+| How should UI/CLI/DB execution capture evidence? | [AI-assisted Testing](ai-assisted-testing.md) |
+| Which checks need a human, and which setup can be shared? | [Human Work Direction](human-work-direction.md) |
+| How should a supplied customer workbook receive case/step evidence? | [Functional Test Excel](functional-test-excel.md) |
+
+Use only the route needed for the current question. Each guide keeps its own execution, evidence and HALT conditions.
+
 ## Test layers
 
 ### E2E
