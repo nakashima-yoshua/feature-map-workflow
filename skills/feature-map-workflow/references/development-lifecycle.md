@@ -31,6 +31,8 @@ For changes to legacy functionality, apply [Change-Driven Incremental Modernizat
 
 Before a phase requests multiple manual inspections, UI actions or human business approvals, optionally apply [Human Work Direction](human-work-direction.md): preflight by code, select useful UML/DFD/ER views for the **focused feature**, and batch compatible human actions without merging the individual test oracles or statuses. It is a **conditional cross-phase gate**, not a thirteenth mandatory lifecycle stage.
 
+For code-changing work, apply [Evidence-based Code Review](code-review.md) **within Phase 9 and its handoff to Phase 10**: independent, fresh-context diff review after deterministic verification; bounded correction and re-review; risk-tiered human approval tied to the current revision. This is not a separate mandatory phase or a replacement for GitHub host protections.
+
 ## Phase contract
 
 For every phase, distinguish:
@@ -177,23 +179,23 @@ For every phase, distinguish:
 
 **Input:** implementable design and test plan.
 
-**Activity:** implement the smallest safe change and run build, static checks, and relevant tests. For a migrated slice, keep surrounding legacy contracts unchanged unless separately approved and verify old/new observable outputs and data effects with equivalent isolated inputs wherever feasible.
+**Activity:** implement the smallest safe change and run build, static checks, and relevant tests. For a migrated slice, keep surrounding legacy contracts unchanged unless separately approved and verify old/new observable outputs and data effects with equivalent isolated inputs wherever feasible. Before requesting human review, conduct a **separate-context, read-only AI diff review** using `REVIEW.md` and `code-review.md` when available, checking the accepted change, important invariants and actual evidence. Triage concrete Important findings and cap AI review/fix passes at **three**; if review is unavailable, record NOT_RUN and hand the risk to a human rather than claiming AI approval.
 
 **Durable Feature Map delta:** changed source/test references and newly confirmed durable knowledge only.
 
 **Hard gate:** build and required deterministic checks pass.
 
-**Semantic gate:** failures are correctly routed to implementation, test, environment, specification, or human review.
+**Semantic gate:** failures are correctly routed to implementation, test, environment, specification, or human review. Findings have actual path:line, triggering case, consequences and disposition; risk tier comes from changed behavior/paths, not author identity.
 
-**HALT:** required CI fails, or a discovered behavior contradicts accepted knowledge.
+**HALT:** required CI fails; a discovered behavior contradicts accepted knowledge; an unresolved material/security finding exists; or three AI passes have not converged and the human has not decided how to proceed.
 
-**Output:** tested commit candidate.
+**Output:** tested commit candidate with revision-bound review summary and unresolved human decisions (no machine-generated approval).
 
 **Before manual verification:** run automated preflight first, then issue a short focused brief plus an explicitly reviewed human session plan. Without approved oracle, isolatable test state or authorized environment, report HALT instead of inventing runnable steps.
 
 ### 10. Release Package / CD
 
-**Input:** CI-approved commit.
+**Input:** CI-verified candidate, risk-tiered review summary, and the human approval/authority required by repository policy for the exact candidate revision.
 
 **Activity:** produce one immutable deployment artifact, migration/config contract, manifest, checksums, and release evidence as appropriate.
 
@@ -201,9 +203,9 @@ For every phase, distinguish:
 
 **Hard gate:** package is reproducible and the exact artifact can be identified.
 
-**Semantic gate:** deployment risk or human approval requirement.
+**Semantic gate:** deployment risk or human approval requirement; any `HIGH`/`CRITICAL` change affecting authorization, DB migrations, secrets, CI/release or irreversible effects receives appropriately authorized expert review and a realistic recovery plan.
 
-**HALT:** artifact cannot be reproduced, migration is ambiguous, or environment-specific changes are unreviewed.
+**HALT:** artifact cannot be reproduced, migration is ambiguous, environment-specific changes are unreviewed, required human approval is missing/stale, or an Important/security finding remains unaddressed. CI and advisory AI review do **not** authorize merge or deployment.
 
 **Output:** release package ready for the authorized deployment process.
 

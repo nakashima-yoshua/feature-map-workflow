@@ -68,6 +68,12 @@ Context Sufficiency
 
 ソース、テスト、CI証跡、Runtime Trace、Release Artifactは、それぞれの場所を正本とします。Feature Mapには、コード等から安価に再構築できない永続的な知識だけを残します。
 
+### 独立AIコードレビューと人の承認ゲート
+
+変更実装後は [Code Review手順](skills/feature-map-workflow/references/code-review.md) とリポジトリの [REVIEW.md](REVIEW.md) に沿い、**実際のビルド・テスト結果 → 別コンテキストの読取専用AI差分レビュー → 根拠付き指摘の処理 → リスクに応じた人の承認**を実施します。AI指摘の再レビューは原則最大3回とし、収束しなければ人の判断へ戻します。PRテンプレートに Risk・Testing・AI Review・Human Decision・How to revert を記録します。
+
+業務ルール、DB副作用、認可、外部連携、CI・リリース設定などの重要な変更を優先し、根拠のないスタイル修正はしません。**AIレビューの完了はマージ承認ではなく、専用AIレビューツールの自動実行やGitHubの保護設定も今回のリポジトリ定義だけでは有効になりません。** 必要な人の承認、CI、復旧計画は従来どおり維持します。
+
 ### 機能テストExcel（提供テンプレート準拠）
 
 機能テストの実施記録は添付済み `test_template.xlsx` の書式に統一できます。`scripts/build_functional_test_excel.py` の `plan` はFeature Mapの検証IDを、原本の表紙・検証リスト・個別シートへ展開します。`results` はリビジョンが一致し、手順単位で証跡のある `result.json` だけを反映します。数式、個別の手入力と採否は保護し、成果物には初期段階で合格を付けません。元のExcelファイルはローカルの `--template` で指定します。詳細は [機能テストExcel連携](skills/feature-map-workflow/references/functional-test-excel.md) を参照してください。
