@@ -110,13 +110,17 @@ justify coordination or additional infrastructure.
 6. Evaluate with a read-only worktree, private temporary directory, isolated
    processes/network, cleared environment, no host HOME and hidden Git metadata.
 7. Accept only a passing candidate (and a strictly improved numeric metric if
-   configured); preserve its local commit and patch for review. A passing unchanged
-   baseline may produce `NO_CHANGE`. There is no automatic publication.
+   configured); preserve its local commit and patch for review. `NO_CHANGE` is
+   valid only when the fixed baseline itself already passed and the proposal
+   introduced no filesystem changes. There is no automatic publication.
 
 The configured commands are human-approved executable code. Do not allow changes
 to helpers, fixtures, configuration or dependencies that define expected results;
 identify them in `protected_paths` and omit them from `allowed_paths`. All test-like
-paths and the referenced Feature Map are protected. This MVP freezes Feature Map
+paths, `.gitignore`, and the referenced Feature Map are protected. An
+`allowed_paths` entry that is hidden by the baseline Git ignore rules is rejected
+before a run starts, because an evaluated edit that cannot be represented in the
+candidate revision is not reviewable evidence. This MVP freezes Feature Map
 updates during attempts; apply any durable knowledge delta afterwards through the
 existing Skill/Hooks/xquery-mcp workflow. Hooks are not replaced or weakened.
 Tests may still have blind spots: a passed candidate always needs human review.
@@ -162,6 +166,15 @@ evaluation-unavailable, repository-conflict and budget categories.
 
 State is atomically saved before potentially interrupted work and after verified
 checkpoints. Completed attempts retain commands, results, logs and patch evidence.
+Candidate patch evidence preserves the raw Git patch bytes, including final
+whitespace, without text conversion or display formatting. Capture and persistence
+share an 8 MiB limit; ordinary command output retains its separate 1 MiB limit.
+Proposal content remains limited to 2 MiB. A candidate revision is not exposed for
+human review until its patch has been staged, flushed and atomically published
+in the run directory. If patch capture exceeds its limit or persistence fails,
+the runner removes temporary or unadopted patch evidence, restores its isolated
+worktree to the fixed baseline and HALTs. A report without a candidate revision
+does not advertise a candidate patch.
 Failed modifications are reset only inside the runner-owned worktree, never the
 source checkout. Resume checks config/implementation/XSD hashes, revisions,
 worktree cleanliness, evidence hashes and remaining budget. A safe checkpoint
