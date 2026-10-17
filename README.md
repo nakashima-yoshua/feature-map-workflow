@@ -68,6 +68,12 @@ Detailed phase policy lives in:
 
 Source/tests, CI evidence, runtime traces, and release artifacts remain canonical in their native form. Feature Map stores only durable knowledge that is costly or ambiguous to reconstruct.
 
+### Independent AI code review and human approval
+
+After implementation and real build/test checks, follow [Code Review](skills/feature-map-workflow/references/code-review.md) and the short repository-root [REVIEW.md](REVIEW.md): **fresh-context read-only diff review → evidenced finding triage → bounded correction (maximum three AI review passes) → risk-tiered human review on the exact commit**. The PR template now requests Risk, Testing, independent AI review, human decisions, and separate code/data recovery details.
+
+Prioritize business invariants, DB side effects, authorization, external integrations, CI/release changes and unproven guarantees; omit speculative style fixes. If independent AI review is unavailable, record NOT_RUN and escalate. **No automatic AI reviewer, zero-human merge exemption or enforced GitHub Rulesets are provisioned here**; actual human sign-off and deterministic CI remain required.
+
 ### Customer functional-test Excel workbook
 
 Use the user-supplied `test_template.xlsx` for formal functional-test reporting. The `scripts/build_functional_test_excel.py` CLI fills its cover, case index and detail sheets from Feature Map verification IDs, then optionally imports only step-specific results with a matching `sourceRevision` and inspectable evidence. It preserves built-in formulas, starts with no case approved or executed, and leaves customer/private workbook files outside the public repository. Pass the original workbook using `--template`; see [Functional Test Excel](skills/feature-map-workflow/references/functional-test-excel.md).
