@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 XSD = ROOT / "skills/feature-map-workflow/assets/feature-map.xsd"
 MAX_OUTPUT = 1024 * 1024
 MAX_CONTENT = 2 * 1024 * 1024
+MAX_PATCH = 4 * MAX_CONTENT
 TERMINAL = {"HUMAN_REVIEW_REQUIRED", "NO_CHANGE", "HALT"}
 STOP_REQUEST = "stop.request"
 
@@ -180,6 +181,25 @@ def git(repo: Path, *args: str) -> str:
     return output.strip()
 
 
+def git_ignored(repo: Path, path: str) -> bool:
+    """Return whether an untracked path is hidden by repository ignore rules."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    code, _ = process(["git", "-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false",
+                       "check-ignore", "-q", "--", path], repo, 20, env)
+    if code == 0:
+        return True
+    if code == 1:
+        return False
+    raise Halt("Git ignore rules could not be evaluated", "repository_conflict")
+
+
+def write_patch_evidence(path: Path, patch: str) -> None:
+    data = patch.encode("utf-8")
+    if len(data) > MAX_PATCH:
+        raise Halt("Patch evidence exceeds the supported size boundary", "evaluation_unavailable")
+    path.write_bytes(data)
+
+
 def config_validate(config: Any) -> dict[str, Any]:
     if not isinstance(config, dict) or config.get("version") != 1:
         raise Halt("Unsupported task configuration", "specification")
@@ -210,9 +230,10 @@ def config_validate(config: Any) -> dict[str, Any]:
     config["feature_map"] = relative(config["feature_map"])
     protected = set(config["protected_paths"]) | {config["feature_map"]}
     for path in config["allowed_paths"]:
-        if path in protected or any(re.search(r"(^|[_.-])(test|tests|spec|specs)([_.-]|$)", part, re.I)
-                                    for part in PurePosixPath(path).parts):
-            raise Halt("Evaluation criteria and test paths cannot be edited", "permission")
+        if path in protected or PurePosixPath(path).name == ".gitignore" or any(
+                re.search(r"(^|[_.-])(test|tests|spec|specs)([_.-]|$)", part, re.I)
+                for part in PurePosixPath(path).parts):
+            raise Halt("Evaluation criteria, ignore rules, and test paths cannot be edited", "permission")
     for command in config["checks"]:
         if not isinstance(command, list) or not command or not all(isinstance(x, str) and x and "\x00" not in x for x in command):
             raise Halt("Checks must be explicit argv arrays", "specification")
@@ -380,6 +401,9 @@ class Runner:
         base = git(repo, "rev-parse", "HEAD")
         if git(repo, "status", "--porcelain", "--untracked-files=all"):
             raise Halt("Source checkout must be clean", "repository_conflict")
+        ignored = [path for path in config["allowed_paths"] if git_ignored(repo, path)]
+        if ignored:
+            raise Halt("Git-ignored allowed paths cannot be evaluated reproducibly", "specification")
         directory = store / uuid.uuid4().hex
         directory.mkdir(parents=True, mode=0o700)
         state = {"version": 1, "run_id": directory.name, "task_id": config["task_id"], "repo": str(repo),
@@ -662,10 +686,19 @@ class Runner:
                 improved = True
                 if self.config.get("metric") and baseline["status"] == "passed":
                     improved = result["metric"] < baseline["metric"] if self.config["metric"] == "minimize" else result["metric"] > baseline["metric"]
-                attempt["comparison"] = "improved_or_not_required" if improved else "not_improved"
-                if result["status"] == "passed" and (improved or proposal["status"] == "no_change"):
+                if proposal["status"] == "no_change" and baseline["status"] != "passed":
+                    improved = False
+                    attempt["comparison"] = "no_change_requires_passing_baseline"
+                else:
+                    attempt["comparison"] = "improved_or_not_required" if improved else "not_improved"
+                has_changes = bool(git(self.worktree, "status", "--porcelain", "--untracked-files=all"))
+                adoptable = result["status"] == "passed" and (
+                    (proposal["status"] == "no_change" and baseline["status"] == "passed" and not has_changes)
+                    or (proposal["status"] == "change" and improved)
+                )
+                if adoptable:
                     self.timeout()  # An operator stop must invalidate even a passing candidate.
-                    if git(self.worktree, "status", "--porcelain", "--untracked-files=all"):
+                    if has_changes:
                         changed = self.changed_paths()
                         if not changed or not changed <= set(self.config["allowed_paths"]):
                             raise Halt("Candidate staging exceeds the approved scope", "permission")
@@ -673,11 +706,26 @@ class Runner:
                         git(self.worktree, "-c", "user.name=Task Runner", "-c", "user.email=task-runner@localhost",
                             "commit", "-m", f"Candidate for {self.config['task_id']}")
                         revision = git(self.worktree, "rev-parse", "HEAD")
+                        try:
+                            patch = git(self.worktree, "diff", "--binary", "--no-ext-diff",
+                                        self.state["base_revision"], revision, "--") + "\n"
+                            write_patch_evidence(self.directory / "candidate.patch", patch)
+                        except (Halt, OSError) as exc:
+                            try:
+                                git(self.worktree, "reset", "--hard", self.state["base_revision"])
+                            except Halt:
+                                raise Halt("Candidate evidence failed and worktree recovery also failed; inspect manually",
+                                           "repository_conflict") from exc
+                            self.state.update(candidate_revision=None, expected_revision=self.state["base_revision"])
+                            if isinstance(exc, Halt):
+                                raise
+                            raise Halt("Candidate evidence could not be persisted; worktree restored to baseline",
+                                       "environment") from None
                         self.state.update(candidate_revision=revision, expected_revision=revision)
-                        patch = git(self.worktree, "diff", "--binary", "--no-ext-diff", self.state["base_revision"], revision, "--")
-                        (self.directory / "candidate.patch").write_text(patch + "\n", encoding="utf-8")
                         self.state["status"] = "HUMAN_REVIEW_REQUIRED"
                     else:
+                        if baseline["status"] != "passed":
+                            raise Halt("NO_CHANGE requires the fixed baseline itself to pass", "implementation")
                         self.state["status"] = "NO_CHANGE"
                     self.timeout()
                     self.state["next_action"] = "human_review"
