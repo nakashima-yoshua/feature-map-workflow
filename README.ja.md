@@ -42,6 +42,9 @@ python skills/feature-map-workflow/scripts/init_feature_map.py --system Demo --f
 | 提供されたExcelへ計画と手順単位の実行結果を反映する | [機能テストExcel](skills/feature-map-workflow/references/functional-test-excel.md) |
 | 検証済みの変更をレビューし、人の承認へつなぐ | [Code Review](skills/feature-map-workflow/references/code-review.md)、[REVIEW.md](REVIEW.md) |
 | 明示的に依頼された保守負荷・工程効率の調査を行う | [保守改善トリアージ](skills/feature-map-workflow/references/maintenance-triage.md)、[YAGNIと全体最適](skills/feature-map-workflow/references/yagni-whole-system-optimization.md) |
+| 新しいタスクから共通手順を学習し、Harnessを棚卸し・校正する | [タスク横断型Harness保守](skills/feature-map-workflow/references/cross-task-harness-maintenance.md) |
+
+GitHub Actionsで月次の読み取り専用構造監査を行います。意味の校正・統合・変更の採否は人間のレビューに委ね、Skillの自動書き換えは行いません。
 
 各ガイドは既存の開発工程で使います。毎回、新しい工程・報告書・ツールを増やす必要はありません。関係する業務全体を理解したうえで、変更は合意した範囲に絞ります。実装・検証・運用の負担に見合う価値がなければ、変更しない判断も選べます。
 

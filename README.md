@@ -42,6 +42,9 @@ Read the guide for the current task rather than loading every reference.
 | Fill a supplied customer workbook from planned cases and step evidence | [Functional Test Excel](skills/feature-map-workflow/references/functional-test-excel.md) |
 | Review a tested candidate and prepare human approval | [Code Review](skills/feature-map-workflow/references/code-review.md) and [REVIEW.md](REVIEW.md) |
 | Investigate explicitly requested maintenance or workflow inefficiency | [Maintenance Triage](skills/feature-map-workflow/references/maintenance-triage.md), using the [YAGNI / whole-system principles](skills/feature-map-workflow/references/yagni-whole-system-optimization.md) |
+| Learn reusable methods across new tasks; audit and calibrate harness guidance | [Cross-task Harness Maintenance](skills/feature-map-workflow/references/cross-task-harness-maintenance.md) |
+
+Monthly read-only GitHub Actions inventories structural drift; semantic proofreading, consolidation and adoption remain human-reviewed and optional. No automatic Skill rewrites are triggered.
 
 These guides use the existing development phases; they do not require a new phase, report or tool for every task. Trace the relevant business scenario, then change only the approved boundary. Consider no change when its value is lower than the implementation, verification or operational cost.
 
