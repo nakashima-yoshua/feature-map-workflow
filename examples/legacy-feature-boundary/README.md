@@ -40,13 +40,13 @@ C becomes relevant only for a separately justified replacement: use Strangler Fi
 
 ```mermaid
 flowchart LR
-    Entry[Existing screen / batch entry] --> App[Application: PlanSubmission]
+    Entry["Existing screen / batch entry: transaction owner"] --> App[Application: PlanSubmission]
     Entry --> Adapter[Infrastructure: LegacyItemReader]
     App --> Rule[Domain: ReviewPolicy]
     App --> Port[Application: IItemReader]
     Adapter -. implements .-> Port
     Adapter --> DB[Existing DB lookup]
-    Entry --> Save[Existing save procedure and transaction owner]
+    Entry --> Save[Existing save procedure]
 ```
 
 Arrows show source dependencies; the runtime port call is fulfilled by the adapter. Application/Domain do not import the legacy DB, SQL/ORM types or UI. The existing entry composes the adapter and application directly; no DI container or new library is necessary.
