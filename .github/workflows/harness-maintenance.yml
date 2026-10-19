@@ -1,0 +1,23 @@
+name: Harness maintenance
+
+on:
+  schedule:
+    - cron: '17 0 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Read-only harness inventory
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/audit_harness.py --format markdown | tee "$GITHUB_STEP_SUMMARY"
