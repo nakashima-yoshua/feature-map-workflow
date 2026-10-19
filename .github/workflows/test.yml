@@ -28,7 +28,6 @@ jobs:
       - run: python -m unittest discover -s examples/ai-assisted-testing -p test_demo.py -v
       - run: python scripts/test_setup_ai_testing.py
       - run: python scripts/test_package_plugin.py
-      - run: python scripts/test_audit_harness.py
       - run: python scripts/test_build_feature_index.py
       - run: python scripts/test_feature_map_render.py
       - run: python scripts/test_three_view_understanding.py
@@ -49,3 +48,4 @@ jobs:
         run: ./scripts/setup-ai-testing.ps1 -DryRun
       - run: python scripts/test_setup_ai_testing.py
       - run: python scripts/test_package_plugin.py
+      - run: python scripts/test_audit_harness.py
