@@ -43,11 +43,42 @@ Prefer the cheapest option that meets the requested acceptance criteria and long
 
 Escalate for approval before changes to production data, public APIs, authentication, data ownership, external contracts, or irreversible operations. Do not equate permission to plan modernization with permission to deploy.
 
+### Optional A/B/C decision for a legacy feature addition
+
+Use this comparison inside existing basic/detailed design when a new rule may justify a responsibility boundary. **A is the first candidate**; if A meets acceptance safely at lower total cost, do not recommend B/C. If no software change is needed, retain the keep-as-is outcome above; choosing A also permits leaving the architecture unchanged. This is a design aid, not another gate or required report.
+
+Reuse Step 1 evidence rather than starting a second investigation:
+
+| Needed for this decision | Existing investigation owner |
+| --- | --- |
+| Actual UI/API/batch/EXE entry to the selected rule, dispatch, DB/PL/SQL and external I/O | [Legacy analysis](legacy-analysis.md#analysis-model) and its [hidden dependencies](legacy-analysis.md#hidden-dependency-checklist); use [target reachability](target-reachability.md#two-direction-route-discovery) only when the route/prerequisites are unclear |
+| Data lineage, writes, side effects, locks, transaction ownership, retries and operator recovery | Legacy analysis: [data semantics](legacy-analysis.md#data-semantics) and [concurrency/recovery](legacy-analysis.md#concurrency-and-recovery) |
+| Implicit configuration, permissions, deployment assumptions and existing tests/logs | Legacy analysis: [evidence sources](legacy-analysis.md#evidence-sources) and [runtime verification](legacy-analysis.md#runtime-verification) |
+
+Keep important references in `sourceMap`, proven constraints in `knowledge`, and unknowns in `open` with a next action. An unobserved transaction or entry route stays unknown; source analysis alone does not prove runtime behavior.
+
+| Option | Applicable condition | Cost or reason to reject |
+| --- | --- | --- |
+| **A. Local change in the current structure** | The rule is cohesive in an existing method/procedure and its tests can protect the change without a new boundary. | First choice. Reject only with concrete evidence of scattered changes, unsafe coupling or excessive verification/maintenance cost. |
+| **B. Extract only the new Application/Domain responsibility** | A distinct business rule can avoid Infrastructure dependencies; a small port and thin legacy adapter remove demonstrated coupling or make important combinations testable. | Keep the entry and existing DB transaction owner. Reject if adapters duplicate shared rules, add round trips, split transactions or cost more than A. No prescribed DI/ORM/framework or project count. |
+| **C. Replace one slice gradually** | An existing entry can safely route an authorized subset to old/new implementations (**Strangler Fig**). For replacement *inside the same entry*, consider **Branch by Abstraction** through one shared contract. | Requires controlled routing, equivalent contract/state effects and a practical switchback. Reject when traffic, data ownership, coexistence, performance or recovery cannot be controlled. Do not add routing just to justify C. |
+
+For A/B/C, record a short comparison in the existing change plan or `knowledge/decision @reason`. Cover these dimensions with evidence, estimates or explicit unknowns:
+
+- **Change spread and rules:** affected callers/DB objects, independent new rules versus rules shared with legacy callers, and who owns each rule. Avoid two authoritative implementations of the same rule.
+- **Dependencies and tests:** compile-time dependency direction, the concrete coupling a port removes, and the cheapest characterization/functional/DB tests. Domain must not depend on SQL/ORM/UI/legacy implementations; an Application-owned port may be implemented by Infrastructure.
+- **Runtime and recovery:** query/round-trip count, latency/throughput, transaction/isolation/locking and retry/duplicate semantics, deployment/coexistence and rollback cost. Preserve existing DB/PL/SQL ownership; do not mechanically move stored logic into Domain.
+- **Total cost and operation:** implementation, test, migration and cutback effort, future maintenance, team skills/support capacity and who can operate the result. Label estimated costs; do not invent measured savings or require numeric scoring.
+
+For a small C#/.NET + DB adoption and rejection walkthrough, see the [fictional request-review example](../../../examples/legacy-feature-boundary/README.md). Its sketches are a **design proposal**, not a bundled business implementation or real-system verification. The conceptual sources are [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html), [Strangler Fig](https://martinfowler.com/bliki/StranglerFigApplication.html) and [Branch by Abstraction](https://martinfowler.com/bliki/BranchByAbstraction.html); none makes extraction mandatory.
+
 ## Step 3: Establish observable legacy behavior
 
 For each materially affected business rule, choose the **lowest-cost reliable** verification layer (existing integration/DB tests, CLI, UI automation, or manual evidence). Cover normal flow, important boundary and failure cases, DB before/after state, transaction/retry effects and downstream outputs where applicable. Preserve input fixtures and evidence beside the tests; Feature Map keeps compact references.
 
 When both old and new versions can execute, run them against equivalent isolated initial state and inputs; compare externally meaningful outputs and data effects. Normalize only explicitly approved nondeterministic fields (e.g. generated IDs and timestamps). Record accepted intentional differences and their business reason; never silently accept discrepancies or assert equivalence based on AI judgment.
+
+Connect this evidence to the existing [test boundary contract](test-strategy.md#test-boundary-contract), not a separate architecture test stage. Characterization tests describe observed behavior; functional expectations still need their existing business authority. For A/B/C, check caller/API and error contracts, data/schema and role/permission compatibility, rollback after partial failure, retry/duplicates, representative performance and operator logs. Pure-rule tests cannot prove these DB/entry effects. If automation is unavailable, name the human check, expected observation, evidence location and owner; retain `not-run` until performed. A code switchback does not undo committed data or external effects: require an authorized recovery path for those separately.
 
 If the old version is not runnable, use trustworthy recorded evidence and mark what remains **not verified**. An observed single scenario is not proof of all behavior; avoid claiming universal equivalence. Keep tests and comparisons limited to the replaced slice and its material contracts.
 

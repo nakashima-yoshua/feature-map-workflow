@@ -34,7 +34,7 @@ python skills/feature-map-workflow/scripts/init_feature_map.py --system Demo --f
 | 要件、設計、テスト、実装、納品をつなぐ | [Development Lifecycle](skills/feature-map-workflow/references/development-lifecycle.md) |
 | 初見コード、動的呼出し、SQL、実行時依存を調べる | [Legacy Analysis](skills/feature-map-workflow/references/legacy-analysis.md) |
 | EXE・ジョブ・画面から対象BLへ到達する条件と最小データを探す | [Target Reachability](skills/feature-map-workflow/references/target-reachability.md) |
-| 現状維持、既存改修、機能の一部移行を比較する | [Incremental Modernization](skills/feature-map-workflow/references/incremental-modernization.md) |
+| レガシー機能追加で局所改修・最小限の責務分離・段階的置換を比較する | [Incremental Modernization](skills/feature-map-workflow/references/incremental-modernization.md) |
 | 業務フロー、データフロー、根拠のあるER関係をつなぐ | [Three Complementary Views](skills/feature-map-workflow/references/three-view-understanding.md) |
 | テスト層と証明範囲を決める | [Test Strategy](skills/feature-map-workflow/references/test-strategy.md)、[Coverage Model](skills/feature-map-workflow/references/coverage-model.md) |
 | UI・CLI・DBテストを繰り返し実行して証跡を残す | [AI-assisted Testing](skills/feature-map-workflow/references/ai-assisted-testing.md) |

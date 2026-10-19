@@ -4,6 +4,7 @@ All notable user-visible changes are documented here.
 
 ## Unreleased
 
+- Add an optional A/B/C decision aid for legacy feature additions, with minimal Clean Architecture boundaries, a fictional C#/.NET + DB walkthrough and existing compatibility/recovery test links.
 - Add cross-task Harness learning guidance and monthly read-only size/link/repetition audits, with scoped improvement proposals, periodic semantic calibration and no automatic Skill rewrites.
 - Consolidate README and Skill entry points into task-based routes; clarify implemented optional tools, the coordination proposal, human-owned business expectations and local workbook requirements without changing runtime behavior.
 - Exclude `local-test-evidence` and `test-results` directories at any depth from plugin ZIPs; verify archive contents with synthetic fixtures on Linux and Windows CI.
