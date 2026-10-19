@@ -39,7 +39,7 @@ Paths in this table are relative to this Skill. Root-level tools and examples ar
 | Plan across development phases | [Development Lifecycle](references/development-lifecycle.md) |
 | Investigate unfamiliar or dynamic legacy behavior | [Legacy Analysis](references/legacy-analysis.md) |
 | Reach a selected BL branch and discover minimal fixtures | [Target Reachability](references/target-reachability.md) |
-| Compare keeping, repairing or migrating one approved slice | [Incremental Modernization](references/incremental-modernization.md) |
+| Compare keeping, repairing or migrating a slice; optionally choose minimal boundaries for a legacy feature addition | [Incremental Modernization](references/incremental-modernization.md) |
 | Understand business flow, data flow and evidenced ER relationships | [Three Complementary Views](references/three-view-understanding.md) |
 | Choose E2E, integration, DB or residual unit tests | [Test Strategy](references/test-strategy.md) and [Coverage Model](references/coverage-model.md) |
 | Prepare AI-assisted UI/CLI/DB tests and evidence | [AI-assisted Testing](references/ai-assisted-testing.md) |

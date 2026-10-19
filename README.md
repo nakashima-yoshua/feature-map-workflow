@@ -34,7 +34,7 @@ Read the guide for the current task rather than loading every reference.
 | Work across requirements, design, tests, implementation and delivery | [Development Lifecycle](skills/feature-map-workflow/references/development-lifecycle.md) |
 | Understand unfamiliar code, dynamic dispatch, SQL and runtime dependencies | [Legacy Analysis](skills/feature-map-workflow/references/legacy-analysis.md) |
 | Reach a selected EXE/job/UI-to-BL path and discover minimal fixtures | [Target Reachability](skills/feature-map-workflow/references/target-reachability.md) |
-| Compare keeping, repairing or migrating a legacy slice | [Incremental Modernization](skills/feature-map-workflow/references/incremental-modernization.md) |
+| Compare local change, minimal Application/Domain boundaries or gradual replacement for a legacy slice | [Incremental Modernization](skills/feature-map-workflow/references/incremental-modernization.md) |
 | Connect business flow, data flow and evidenced ER relationships | [Three Complementary Views](skills/feature-map-workflow/references/three-view-understanding.md) |
 | Choose test layers and state what the evidence covers | [Test Strategy](skills/feature-map-workflow/references/test-strategy.md) and [Coverage Model](skills/feature-map-workflow/references/coverage-model.md) |
 | Execute repeatable UI/CLI/DB tests and retain evidence | [AI-assisted Testing](skills/feature-map-workflow/references/ai-assisted-testing.md) |
