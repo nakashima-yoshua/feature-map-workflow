@@ -256,3 +256,14 @@ Use the cheapest reliable mechanism for each kind of work:
 - **Human:** business decisions, material scope/authority changes, irreversible external actions, final acceptance where required.
 
 Never let a probabilistic classifier directly mutate the Feature Map, merge code, deploy, or establish an unverified fact.
+
+## Cross-phase change consistency contract
+
+For code-changing work, trace the **accepted change -> affected contracts/invariants -> observable checks -> actual evidence or explicit uncertainty** across existing phases. This is a conditional cross-phase check, **not** another lifecycle stage, artifact, mandatory checklist or permission to modify additional code.
+
+- **Before design (Phases 1-3):** establish the authorized change boundary separately from the wider analysis boundary. Identify directly and indirectly affected callers, shared contracts, data and state effects only as far as evidence and risk justify. For dynamic dispatch, configuration, SQL/DB triggers and external integrations, treat undiscovered paths as `UNVERIFIED`, never as proven unaffected.
+- **During test design (Phases 4-8):** pair each material affected invariant, interface or behavior with the cheapest observable verification and actual test boundary. A planned or passing local test does not establish unexercised cross-feature behavior. Record material gaps under existing `open` items or in the change/PR evidence, not a new schema.
+- **After implementation (Phases 9-10):** use the existing independent revision-bound diff review to examine requirement fit, responsibility/dependency direction, API/DB/external/error contracts, state/transaction effects, regression reach and maintenance cost. Distinguish tested from inferred behavior and follow existing risk-tier/HALT/human-approval rules.
+- **At completion:** update only confirmed durable Feature Map knowledge. Keep ephemeral review records, test logs and decisions in their existing owners (source/tests/CI/PR/Git). No change to XML/XSD, review authority or Task Runner limits.
+
+For a trivial internal change, existing checks and focused diff review may discharge the contract without written repetition. For material contract changes, unresolved high-impact uncertainty or missing authorization, HALT only the affected advancement and request human judgment. See [Code Review](code-review.md) and [Feature Map Contract](feature-map-contract.md).
