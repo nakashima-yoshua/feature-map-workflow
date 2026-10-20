@@ -97,6 +97,16 @@ ROLE_INFO = {
     "sequence": ("シーケンス図", "モジュールや外部連携の呼出順序を確認する"),
     "class": ("クラス図", "責務、型・オブジェクト間の構造を確認する"),
     "architecture": ("構成図", "サービス・プロセスなどの境界を確認する"),
+    "context": ("システムコンテキスト図", "利用者と外部システムの境界を確認する"),
+    "component": ("コンポーネント図", "機能とモジュールの責務・依存を確認する"),
+    "dependency": ("依存関係図", "変更の影響を受ける参照元と参照先を確認する"),
+    "lineage": ("データリネージ図", "データの由来・変換と伝播先を確認する"),
+    "crud": ("CRUDマトリクス", "機能ごとのデータ参照・更新範囲を確認する"),
+    "decision": ("決定表", "条件の組合せと期待結果を確認する"),
+    "traceability": ("トレーサビリティ図", "要件・実装・検証・証跡の対応を確認する"),
+    "deployment": ("配置図", "実行環境と通信経路を確認する"),
+    "timing": ("タイミング図", "待機時間とイベント順序を確認する"),
+    "batch": ("ジョブ依存図", "ジョブの先行後続と失敗波及を確認する"),
     "other": ("補足図", "検証上重要な他の構造を確認する"),
 }
 
@@ -105,6 +115,23 @@ def classify_diagram(element: ET.Element) -> str:
     kind = element.get("kind", "").lower()
     title = (element.get("title") or "").lower()
     source = (element.text or "").lstrip()
+    # Intent labels are encoded in diagram titles; the XSD has no extra kinds.
+    # Check specific categories first so a generic flowchart stays a flowchart.
+    named = (
+        ("lineage", r"データリネージ|data lineage|lineage"),
+        ("crud", r"crud|更新マトリクス"),
+        ("decision", r"決定表|decision table"),
+        ("traceability", r"トレーサビリティ|traceability"),
+        ("context", r"システムコンテキスト|system context|c4 level 1"),
+        ("component", r"コンポーネント|component"),
+        ("dependency", r"依存関係|dependency|call graph"),
+        ("deployment", r"配置図|deployment"),
+        ("timing", r"タイミング図|timing diagram"),
+        ("batch", r"ジョブ依存|バッチ依存|job dependency"),
+    )
+    for role, pattern in named:
+        if re.search(pattern, title):
+            return role
     if kind == "er" or source.startswith("erDiagram"):
         return "er"
     if kind == "state" or source.startswith("stateDiagram"):
@@ -141,7 +168,25 @@ def need_roles(root: ET.Element, cases: list[ET.Element]) -> set[str]:
     if writes or has_external or kinds.intersection({"table", "view", "query"}):
         roles.add("data")
     if len(touched_tables) >= 2:
-        roles.add("er")
+        roles.update({"er", "crud"})
+    if writes or has_external:
+        roles.add("lineage")
+    if has_external:
+        roles.add("context")
+    if "batch" in kinds:
+        roles.add("batch")
+    if re.search(r"境界|boundary|サービス|service|構成", words):
+        roles.update({"context", "component"})
+    if re.search(r"変更影響|impact|依存|dependency", words):
+        roles.update({"dependency", "traceability"})
+    if re.search(r"条件組合せ|組み合わせ|matrix|decision table|決定表", words):
+        roles.add("decision")
+    if re.search(r"証跡|traceability|トレーサビリティ|要件.*テスト", words):
+        roles.add("traceability")
+    if re.search(r"配置|deployment|ネットワーク|network", words):
+        roles.add("deployment")
+    if re.search(r"遅延|待機|latency|timing|時間制約", words):
+        roles.add("timing")
     if types.intersection({"state", "duplicate"}) or re.search(
         r"状態|遷移|status|state|有効|無効|完了済", words
     ):

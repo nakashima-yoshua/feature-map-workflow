@@ -8,6 +8,9 @@ Use this as an **optional conditional planning gate** after test boundaries are 
 
 ## Diagram selection: no three-diagram limit
 
+For the extended 17-view candidate catalog and selection/reconciliation rules, see [Diagram Selection](diagram-selection.md). These are candidates, never required diagram counts. Specialized diagram titles (e.g. データリネージ, CRUD, 決定表, ジョブ依存) can be selected from already documented views; a recommendation must not generate unsupported content.
+
+
 Select the existing evidence-backed view that answers the tester's question. There is **no numeric cap** and no mandatory triad:
 
 | Question | Useful notation | Existing Feature Map diagram kind |
