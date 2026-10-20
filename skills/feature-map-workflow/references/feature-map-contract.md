@@ -146,3 +146,11 @@ Do not add:
 ## Update rule
 
 Patch only the smallest durable knowledge delta. When a feature is investigated, newly confirmed domain knowledge must be preserved even if code is left unchanged or only a small slice is migrated. At change completion, review the Feature Map; update new durable findings or explicitly report that the existing map remains accurate. Internal refactoring that preserves externally meaningful behavior usually requires only source reference updates, or no Feature Map change at all.
+
+## Change impact and verification linkage
+
+For a material change, use the **existing** `goal/scope` and `goal/exclude` to delimit edits; `sourceMap` may reference wider affected callers without authorizing their modification. Use `knowledge/invariant`, `knowledge/constraint`, `knowledge/decision` (with reasons), representative `verify/case` and material `open/item` to preserve only knowledge expensive to rediscover.
+
+When relevant, the reviewer should be able to follow: **changed feature or source reference -> affected invariant/contract/behavior -> concrete test or observation -> actual evidence**. Refer to tests and CI rather than embedding logs or duplicating test plans. If a dynamic invocation, configuration, DB side effect or cross-feature path has not been verified, mark the consequential gap `open` and specify the least expensive next check; absence of static references is not proof of non-impact.
+
+Do not create items solely to satisfy this linkage for obvious low-risk edits. The map remains a durable feature index, not a second PR checklist or a claim that all impact paths are known. Completion and human authority still follow [Development Lifecycle](development-lifecycle.md) and [Code Review](code-review.md).
