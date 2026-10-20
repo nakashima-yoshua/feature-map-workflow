@@ -42,3 +42,13 @@ GitHub Actionsの `Harness maintenance` は、毎月1回および手動で、**�
 ## 保護条件
 
 Harnessの改善提案や監査出力はすべて未信頼の入力として扱う。秘密情報の送信や外部モデル利用は既存ルールに従い、Model/Decision Providerは検証ルール、権限、承認、HALTを変更できない。必要な検証と独立した人間レビューは既存の [Code Review](code-review.md)、[AI Trust Controls](ai-trust-controls.md) に従う。Feature MapのXSD、Task Runnerの承認契約、配布・実行フローは本方針だけを理由に変更しない。
+
+## Learning from recurring consistency failures
+
+When **separate completed tasks** reveal the same class of contract drift, missed caller, invariant regression, error-handling inconsistency or unverifiable assumption, trace the failure to its evidence before proposing a generic instruction. Preserve this ownership order:
+
+1. A specific business rule or decision belongs in the relevant Feature Map.
+2. A repeatable, observable regression belongs in the nearest stable automated test or CI check.
+3. A shared investigation/review method belongs in an existing guide or Skill only if it demonstrably recurs and cannot be handled more cheaply by the first two options.
+
+Use existing issues/PRs to note the triggering cases, cheapest candidate intervention, risks and later observed outcome. Do not automatically promote model-generated diagnoses into rules, produce new XML fields or add a review gate for every incident. During monthly read-only maintenance, inspect whether proposed guidance duplicates an existing rule or transfers work to human reviewers. If no recurring gap or measurable payoff is established, choose `NO_CHANGE`.
