@@ -69,3 +69,21 @@ Link to existing CI, test, Feature Map and Human Work Plan/functional-test Excel
 Start with **one representative PR** and a distinct read-only reviewer session, using `REVIEW.md` as its short instructions. Collect (a) real Important findings vs dismissed/false alarms, (b) AI passes-to-convergence, (c) human work and wait time, (d) regressions/reverts and incident count and (e) review evidence completeness. Compare similar risks and features. If automation increases false positives, delay or human workload, simplify or turn it off before adding services.
 
 **Not provided by this document:** an automatically installed AI reviewer, protected branch Rulesets, required approvals, a merge queue, feature flags, incident monitoring or rollback automation. These require separate authorization, access and verification. The current existing GitHub Actions CI continues to provide **deterministic** checks only.
+
+## Change-consistency review focus
+
+Apply these questions **selectively according to affected paths and risk**, using the existing finding format and approval gates; do not add a second independent reviewer or blanket full-repository scan.
+
+| Dimension | Evidence-based review question |
+| --- | --- |
+| Requirement | Does changed behavior satisfy the accepted outcome and preserve approved business rules? |
+| Structure | Do responsibilities and dependency direction still match the relevant architecture, without a gratuitous boundary change? |
+| Contract | Are caller/callee, API, data schema, integration, error and compatibility contracts preserved or explicitly approved to change? |
+| Behavior | Are failures, retries, permissions, state changes, transactions and data side effects handled where relevant? |
+| Regression | Which reachable callers, shared paths and neighboring features need verification? Are dynamic/config/DB-driven paths marked unknown when not traced? |
+| Maintenance | Does the change introduce unnecessary duplication, special cases, hidden dependencies or operational/recovery burden? |
+| Knowledge | Are non-obvious confirmed decisions/invariants retained and unresolved material questions visible without copying code or review logs into XML? |
+
+Link **changed target -> affected rule/contract/invariant -> test or observation -> actual result/revision** where material. A missing link is not automatically a defect: classify its risk, state what is unverified, choose the cheapest next check, and HALT if a required high-impact assurance cannot be established. A passing test is evidence only for the boundary it exercised. Never equate an AI review conclusion with business approval.
+
+**Example:** when changing a PL/SQL update, inspect authorized scope and reachable C#/job callers, trigger/transaction/data effects and recovery consequences; test representative unchanged flows and changed behavior. Do not edit a caller merely because it was inspected. For a comment-only edit, do not demand this analysis.
