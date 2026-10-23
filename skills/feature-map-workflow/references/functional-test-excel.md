@@ -46,6 +46,12 @@ python scripts/build_functional_test_excel.py results \
 
 **重要:** 添付テンプレートの総合判定式は証跡の存在・妥当性まで検査しません。納品・アーカイブ前に証跡の存在、実行版数、要求ID、採否、未実施・保留を別途確認し、人が受入判断を行います。Feature Map XMLは業務知識の正本、Excelは作業・顧客共有用の実行記録です。
 
+## Excelを入口にした監査
+
+監査対象が検証リストまたは `FT-xx` シートから指定された場合は、[Audit Evidence Traceability](audit-evidence-traceability.md#excel起点の監査検証リスト個別シートからの逆方向追跡) の逆方向追跡手順を使います。個別シートの `B7` にある `VERIFY:<検証ID>` と表紙 `K19` のソースリビジョンを起点として、Feature Map、元の `result.json`（`verifyCaseId` / `sourceRevision` / `runId`）、画像・ログ、PR/CI/人の承認、必要ならリリースまでを照合します。
+
+Excelの総合判定セルや数式だけを監査証拠として扱わず、原証跡の有無・実行対象リビジョン・権限・未確認事項を区別します。Excel原本の書換えや新たな必須列は必要ありません。
+
 ## 境界
 
 - 対応レイアウトの原本は利用者がローカルで指定します。顧客原本の取得・公開・外部への移送は生成CLIの役割に含めません。
