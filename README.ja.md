@@ -40,6 +40,7 @@ python skills/feature-map-workflow/scripts/init_feature_map.py --system Demo --f
 | UI・CLI・DBテストを繰り返し実行して証跡を残す | [AI-assisted Testing](skills/feature-map-workflow/references/ai-assisted-testing.md) |
 | ケースごとの合否を保ち、人の準備・切替回数を減らす | [Human Work Direction](skills/feature-map-workflow/references/human-work-direction.md) |
 | 提供されたExcelへ計画と手順単位の実行結果を反映する | [機能テストExcel](skills/feature-map-workflow/references/functional-test-excel.md) |
+| 監査時に試験番号・条件番号から実行原本へ辿る | [証跡の保存と監査索引](skills/feature-map-workflow/references/evidence-storage.md) |
 | 検証済みの変更をレビューし、人の承認へつなぐ | [Code Review](skills/feature-map-workflow/references/code-review.md)、[REVIEW.md](REVIEW.md) |
 | 明示的に依頼された保守負荷・工程効率の調査を行う | [保守改善トリアージ](skills/feature-map-workflow/references/maintenance-triage.md)、[YAGNIと全体最適](skills/feature-map-workflow/references/yagni-whole-system-optimization.md) |
 | 新しいタスクから共通手順を学習し、Harnessを棚卸し・校正する | [タスク横断型Harness保守](skills/feature-map-workflow/references/cross-task-harness-maintenance.md) |

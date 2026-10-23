@@ -46,6 +46,7 @@ Paths in this table are relative to this Skill. Root-level tools and examples ar
 | Prepare AI-assisted UI/CLI/DB tests and evidence | [AI-assisted Testing](references/ai-assisted-testing.md) |
 | Batch human checks and generate a focused HTML brief | [Human Work Direction](references/human-work-direction.md) |
 | Use a supplied functional-test workbook | [Functional Test Excel](references/functional-test-excel.md) |
+| Preserve audit-ready original evidence and trace test/condition IDs | [Evidence Storage](references/evidence-storage.md) |
 | Review a diff, triage findings or prepare human approval | [Code Review](references/code-review.md) and repository-root `REVIEW.md` |
 | Assess whole-system constraints and change-vs-no-change trade-offs | [YAGNI / Whole-system Optimization](references/yagni-whole-system-optimization.md) |
 | **Explicitly requested** maintenance or efficiency investigation | [Maintenance Triage](references/maintenance-triage.md) |
