@@ -127,6 +127,11 @@ For every phase, distinguish:
 
 **Output:** executable test boundary.
 
+When audit traceability is required, establish external case/condition IDs,
+private preservation root, exact baseline and per-condition evidence expectations
+here. Follow [Evidence Storage](evidence-storage.md); keep customer output free
+of internal environment and management details.
+
 **Optional human-work direction input:** if several test boundaries require human action, inventory the shared environment, role, fixture/reset costs and evidence mechanisms now; group only after the separate test cases and oracles are established. See `human-work-direction.md`.
 
 ### 6. Detailed Design
@@ -244,6 +249,11 @@ For every phase, distinguish:
 **Output:** accepted delivery; Feature Map may move to `closed`.
 
 **For human acceptance:** reuse the case-specific evidence and source revision from earlier runs. Batching manual work never turns an unexecuted or unapproved case into PASS.
+
+For an auditable handoff, validate the registered manifest/file hashes and open
+representative originals from the [private evidence index](evidence-storage.md).
+Report missing current results, historical applicability and backup/restore state
+separately; a generated index is not acceptance.
 
 ## Responsibility split
 

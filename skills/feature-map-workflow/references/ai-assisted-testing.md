@@ -52,6 +52,12 @@ For work that requires the standard Japanese functional-test workbook, see `func
 
 ## Evidence/privacy/sandbox
 
+When evidence must remain auditable, apply [Evidence Storage](evidence-storage.md)
+at design, run finalization and handoff. Seal original files outside disposable
+worktrees, register manifest hashes and condition-specific references in a private
+catalog, and preserve gaps. File integrity and past PASS do not prove a current
+test. Customer workbooks are separate sanitized projections of the execution record.
+
 - PASS: save minimal checks, important DB differences and representative screenshots only when needed.
 - FAIL/BLOCKED: also save bounded diagnostic logs, failure screenshot/trace when possible and the first blocking gate.
 - Screenshots and traces may contain PII, credentials, tokens and private business records. Use synthetic data in public demos; apply redaction **before** storage or model transmission, restrict access and set retention. Never commit customer/production snapshots.
