@@ -22,6 +22,7 @@ Context Sufficiency
   -> Implementation + CI
   -> Release Package / CD
   -> As-Built View
+  -> Customer Submission Materials Organization (when requested)
   -> Delivery / Acceptance
 ```
 
@@ -237,11 +238,29 @@ explicitly not-run.
 
 **Output:** business, developer, tester, or delivery-oriented view.
 
-When customer documents are requested, follow [Customer Deliverables](customer-deliverables.md):
-create a separate customer-facing view, check the complete file/package, formulas
-and rendered output, then freeze its hash with internal evidence references.
-Report inspected pages and remaining gaps; do not treat internal technical output
-as a ready customer submission.
+For customer-facing document creation and checks, use [Customer Deliverables](customer-deliverables.md).
+
+### 11a. Customer Submission Materials Organization (when requested)
+
+**Input:** customer candidates, required/optional scope, exact hashes and evidence.
+Design/interim submissions may use the current view before product acceptance.
+
+**Activity:** follow [Customer Deliverables §5](customer-deliverables.md#5-エビデンスが揃った提出資材を整理する):
+select evidence-backed files, create a new customer-only package and contents
+list, reconcile every file/archive entry with a private hash manifest.
+
+**Durable Feature Map delta:** normally none; keep records in the private index.
+
+**Hard gate:** required checks and claim-specific evidence match each included
+file, revision and scope. Plan/document evidence cannot prove functional PASS.
+
+**Semantic gate:** preserve failures and not-run states; do not hide scope gaps.
+
+**HALT:** unsupported/stale files, internal information, hash/list mismatches or
+missing required materials. Keep the eligible subset as preparation, not ready.
+
+**Output:** verified customer package/list and private selection, exclusion and
+evidence mappings. Organization grants no sending authority or acceptance.
 
 ### 12. Delivery / Acceptance
 
@@ -259,6 +278,8 @@ as a ready customer submission.
 
 **Output:** accepted delivery; Feature Map may move to `closed`.
 
+For customer submission, use the exact package fixed in Phase 11a; any file
+change requires renewed affected checks and package reconciliation.
 Customer submission is a separate recorded action under [Customer Deliverables](customer-deliverables.md).
 Check the exact frozen files, authorized recipients and transmission scope; record
 actual sending separately from document creation and product acceptance. Design
