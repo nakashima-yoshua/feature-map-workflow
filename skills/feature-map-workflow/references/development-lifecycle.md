@@ -35,6 +35,8 @@ For code-changing work, apply [Evidence-based Code Review](code-review.md) **wit
 
 For an **explicit request to investigate maintenance or workflow inefficiency**, use [Evidence-based Maintenance Triage](maintenance-triage.md) to decide whether a small experiment is worthwhile. This is an optional, initially read-only activity within existing phases; code changes still require the usual tests, approvals and review.
 
+For an **audit or evidence-traceability request**, use [Audit Evidence Traceability](audit-evidence-traceability.md) to assemble an on-demand index from existing requirement IDs, Feature Map references, exact code/review revision, actual test runs, human approvals and release digests. Keep source systems as the authorities for their own records; distinguish missing, not-run, stale and unverified evidence. Do not create a new mandatory phase, duplicate all artifacts, or treat an index as approval.
+
 ## Phase contract
 
 For every phase, distinguish:
