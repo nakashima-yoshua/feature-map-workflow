@@ -61,6 +61,54 @@ Audit question / change ID
 4. 不足を `MISSING`（証跡なし）、`NOT_RUN`（未実施）、`UNVERIFIED`（未確認）、`STALE`（対象リビジョン違い/古い）のように区別する。リンク切れはPASSではない。
 5. 監査者のアクセス権に応じてリンクと限定的な抜粋を提示し、機微情報や顧客データはマスク/別保管。承認や検査のない工程は推測で埋めない。
 
+## Excel起点の監査（検証リスト・個別シートからの逆方向追跡）
+
+既存の[機能テストExcel](functional-test-excel.md)は顧客共有・人の実施記録であり、**監査の入口**として利用する。Excelを監査上の唯一の正本に格上げしない。元テンプレートの列追加・式変更、Excelからの外部通信、VBA追加は不要。
+
+```text
+Excel 検証リスト（対象ケースを選択）
+  -> 個別 FT-xx シート B7: VERIFY:<verifyCaseId>
+  -> Feature Map verify/case（要求・ルール・期待結果の出典）
+  -> 表紙 K19: sourceRevision
+  -> results の result.json（verifyCaseId + sourceRevision + runId の一致）
+  -> checks[].evidence[] + 実在する証跡ファイル（画像・ログ）
+  -> PR / CI / コミット / 人の承認（対象SHA・権限・日時を照合）
+  -> release manifest / artifact digest / 受入記録（必要な場合）
+  -> Audit Index（参照先・照合結果・欠落と未確認）
+```
+
+### 手順
+
+1. **ケース選択：** 検証リストで対象行・結果・対象ケースを選び、対応する `FT-xx` シートの `B7` にある `VERIFY:<検証ID>` を抽出する。シート名・行番号だけを永続IDにしない。複数の検証IDが混在するときは対象を限定する。
+2. **対象特定：** 表紙 `K19` のソースリビジョンとFeature Mapの `verify/case`、関連 `useCase`・ルール・期待結果の出典を照合する。Excelに書かれた期待値が業務承認されたオラクルであるとは推定しない。
+3. **結果照合：** 実行記録の `result.json` を探し、`verifyCaseId`、`sourceRevision`、`runId` の組を照合する。候補が複数なら実行日時・環境・対象範囲で選択し、取り違えを避ける。Excel `H30`（総合判定）、`B31`（設計状態）と個別 `checks[]` の実績を区別する。Excelの数式値のみで証拠の存在やPASSを保証しない。
+4. **原物確認：** 各 `checks[].evidence[]` が該当run内の実在する画像/ログを指すこと、記録の出所・実行条件・アクセス権を確認する。Excel内の説明文や貼付画像だけしか残っていない場合は原証跡の欠落を明記する。既存の結果取込処理は相対パス・存在確認・シンボリックリンク制約を維持する。
+5. **変更・承認・配布への接続：** 検証したSHAに対応するPR・CI・独立レビュー・人の承認を原記録で辿る。リリースを問う場合のみ配布artifact digestとの対応も検証する。PRリンクだけでは対象SHAの一致は保証しない。
+6. **回答：** Audit Indexに `workbook reference + sheet + verifyCaseId + sourceRevision + runId` を起点キーとして、確認済みリンクと `MISSING` / `NOT_RUN` / `UNVERIFIED` / `STALE` を記録。監査用の抜粋は必要最小限とし、元Excelや顧客証跡を公開GitHubへ転記しない。
+
+### Excel起点Audit Indexの最小レコード（架空例）
+
+```yaml
+entry:
+  workbook_ref: private://audits/functional-test-results.xlsx
+  sheet: FT-04
+  verify_case_id: V-SUBMIT
+  workbook_revision: 0123456789abcdef0123456789abcdef01234567
+  expected_ref: REQ-04
+  run_id: null
+  result_ref: null
+  evidence_refs: []
+  review_ref: null
+  release_digest: null
+  audit_status: UNVERIFIED
+```
+
+`workbook_ref` は実際のアクセス権がある保管先の識別子を使用し、上の架空URIを正本とみなさない。参照できない・一致しない場合、監査側で無理にPASSへ補正しない。
+
+### 段階導入と自動化境界
+
+**まずは読み取り専用の照会手順を1ケースで実証する。** 既存Excelの `B7`・`K19` から索引の照会キーを抽出し、`result.json` とFeature Mapに突合する小さなスクリプトは、手動試行で追跡時間短縮を確認した場合のみ追加を検討する。自動化時も原本Excelの保存・式再計算・結果判定・承認操作は行わない。旧テンプレート・未知のレイアウト・不整合はエラー/未確認として報告し、推測で補完しない。
+
 ## 例（架空データ・実行証跡ではない）
 
 ```yaml
