@@ -136,3 +136,19 @@ Until that operation is actually evidenced, show the missing backup/recovery
 boundary in the audit index. Check access controls for the selected store; an
 unverified inherited ACL is not a claim of restricted access. Published policy,
 read-only file attributes and a Git commit do not prove server-side immutability.
+
+### Report and recovery proof constraints
+
+Reports may create only a new snapshot below `<store>/<project>/audit/`; output
+inside any sealed run or another project is rejected. The catalog bytes used for
+validation also supply the report hash. JSON and HTML retain the baseline,
+condition ID, native case ID, run ID, result path and each check evidence path.
+
+`restore-verified` requires a sealed `receipt: {runId, path}` in `backup` and a
+nonempty `destinationAlias`. The receipt JSON must contain `schemaVersion: 1`,
+`type: "backup-restore-receipt"`, matching `projectId` and `destinationAlias`,
+`owner`, `checkedAt`, `restoreCheck: "passed"`, and `restoredManifests` mapping
+all catalog run IDs except the receipt run itself to their exact manifest hashes.
+Adding a new run invalidates that complete-snapshot claim until recovery proof
+covers it. Validation checks the recorded receipt; it does not probe the backup
+service or infer that a storage location is available now.

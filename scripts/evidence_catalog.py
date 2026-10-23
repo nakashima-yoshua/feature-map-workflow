@@ -119,8 +119,10 @@ def seal(store,project,run_id,request_path):
 def verify_run(store,project,entry):
     root=project_root(store,project)/'runs'/identifier(entry['id']);no_links(root)
     manifest_path=child(root,'manifest.json')
-    if digest(manifest_path)!=entry['manifestSHA256']:raise ValueError(f'Manifest changed: {entry["id"]}')
-    m=read_json(manifest_path)
+    raw=manifest_path.read_bytes()
+    if len(raw)>8*1024*1024:raise ValueError('Manifest too large')
+    if hashlib.sha256(raw).hexdigest()!=entry['manifestSHA256']:raise ValueError(f'Manifest changed: {entry["id"]}')
+    m=json.loads(raw.decode('utf-8-sig'))
     if m.get('schemaVersion')!=1 or m['projectId']!=project or m['runId']!=entry['id']:
         raise ValueError('Run identity mismatch')
     if m['metadata'].get('category') not in CATEGORIES:raise ValueError('Unknown evidence category')
@@ -139,8 +141,10 @@ def verify_run(store,project,entry):
     if actual!=seen|{'manifest.json'}:raise ValueError(f'Unlisted evidence in run: {entry["id"]}')
     return root,m
 
-def validate(catalog,store):
-    c=read_json(catalog)
+def validate(catalog,store,catalog_bytes=None):
+    raw=catalog.read_bytes() if catalog_bytes is None else catalog_bytes
+    if len(raw)>8*1024*1024:raise ValueError('Catalog too large')
+    c=json.loads(raw.decode('utf-8-sig'))
     if c.get('schemaVersion')!=1:raise ValueError('Unknown catalog version')
     project=identifier(c['projectId'])
     baseline=c['baseline']
@@ -156,13 +160,28 @@ def validate(catalog,store):
         root,m=runs[plan['runId']]
         if plan['path'] not in {f['path'] for f in m['files']} or digest(child(root,plan['path']))!=baseline['planSHA256']:
             raise ValueError('Registered plan file does not match the baseline')
+    backup=c.get('backup',{'status':'unconfigured'})
+    if backup.get('status') not in {'unconfigured','copied-unverified','restore-verified'}:
+        raise ValueError('Unknown backup status')
+    if backup['status']=='restore-verified':
+        receipt=backup.get('receipt',{})
+        root,m=runs[receipt['runId']]
+        if receipt['path'] not in {f['path'] for f in m['files']}:raise ValueError('Backup receipt is not sealed')
+        proof=read_json(child(root,receipt['path']))
+        expected={e['id']:e['manifestSHA256'] for e in c['runs'] if e['id']!=receipt['runId']}
+        if (proof.get('schemaVersion')!=1 or proof.get('type')!='backup-restore-receipt'
+                or proof.get('projectId')!=project or not backup.get('destinationAlias')
+                or proof.get('destinationAlias')!=backup['destinationAlias']
+                or proof.get('restoreCheck')!='passed' or not proof.get('checkedAt') or not proof.get('owner')
+                or proof.get('restoredManifests')!=expected):
+            raise ValueError('Backup restore claim lacks a matching complete receipt')
     case_ids=set();condition_ids=set();rows=[]
     for case in c['cases']:
         if not case.get('conditions'):raise ValueError('A case requires distinct conditions')
         cid=identifier(case['id'])
         if cid in case_ids:raise ValueError('Duplicate case ID')
         case_ids.add(cid)
-        statuses=[]
+        statuses=[];condition_results=[]
         for cond in case['conditions']:
             ident=identifier(cond['id']);status=cond['status']
             if ident in condition_ids or status not in STATUSES:raise ValueError('Invalid condition')
@@ -195,6 +214,11 @@ def validate(catalog,store):
                 for path in checks[0]['evidence']:
                     rel=(relative(result_path).parent/relative(path)).as_posix()
                     if rel not in listed:raise ValueError('Check evidence is not sealed')
+                execution=dict(runId=execution['runId'],resultPath=result_path,
+                    verifyCaseId=result['verifyCaseId'],sourceRevision=meta['sourceRevision'],
+                    planSHA256=meta['planSHA256'],
+                    evidencePaths=[(relative(result_path).parent/relative(path)).as_posix() for path in checks[0]['evidence']])
+            condition_results.append(dict(id=ident,status=status,description=cond.get('description',''),execution=execution))
             statuses.append(status)
         refs=[]
         for ref in case.get('references',[]):
@@ -206,21 +230,23 @@ def validate(catalog,store):
                 refs.append(dict(runId=ref['runId'],category=m['metadata']['category'],path=path,note=ref['note']))
         rows.append(dict(id=cid,title=case['title'],conditions=len(statuses),
                          statuses={s:statuses.count(s) for s in sorted(STATUSES)},references=refs,
-                         conditionResults=[dict(id=x['id'],status=x['status'],description=x.get('description','')) for x in case['conditions']]))
+                         conditionResults=condition_results))
     return c,runs,rows
 
 def report(catalog,store,output,case_id=None):
-    c,runs,rows=validate(catalog,store)
+    catalog_bytes=catalog.read_bytes()
+    c,runs,rows=validate(catalog,store,catalog_bytes)
     if case_id:
         rows=[r for r in rows if r['id']==case_id or any(x['id']==case_id for x in
               next(k for k in c['cases'] if k['id']==r['id'])['conditions'])]
         if not rows:raise ValueError('Unknown case/condition ID')
     no_links(output)
     root=project_root(store,c['projectId'])
-    if output.resolve().is_relative_to((root/'runs').resolve()):raise ValueError('Report cannot modify sealed runs')
+    if not output.resolve().is_relative_to((root/'audit').resolve()) or output.resolve()==(root/'audit').resolve():
+        raise ValueError('Report output must be a new snapshot below this project audit directory')
     if output.exists():raise ValueError('Report output must be a new directory')
     output.mkdir(parents=True)
-    summary=dict(projectId=c['projectId'],catalogSHA256=digest(catalog),cases=rows,
+    summary=dict(projectId=c['projectId'],catalogSHA256=hashlib.sha256(catalog_bytes).hexdigest(),baseline=c['baseline'],cases=rows,
                  integrity='verified',backup=c.get('backup',{'status':'unconfigured'}),
                  notice='Historical and artifact checks are references only. File integrity is not business acceptance.')
     write_json(output/'index.json',summary)
@@ -229,7 +255,8 @@ def report(catalog,store,output,case_id=None):
            '<style>body{font:16px sans-serif;max-width:1500px;margin:2em auto}td,th{border:1px solid #bbb;padding:.6em;vertical-align:top}table{border-collapse:collapse;width:100%}small{color:#555}input{padding:.6em;width:30em}</style>',
            f'<h1>{esc(c["projectId"])} — Evidence audit index</h1>',
            '<p>試験番号 → 条件別結果 → 実行原本。過去・準備・帳票検査は現在の機能合格を証明しません。</p>',
-           f'<p>Backup: {esc(summary["backup"])}</p>',
+           f'<p>Source: {esc(c["baseline"]["sourceRevision"])}<br>Plan SHA256: {esc(c["baseline"]["planSHA256"])}</p>',
+           f'<p>Backup (recorded evidence; no external destination probe): {esc(summary["backup"])}</p>',
            '<label>検索 <input id="q" placeholder="試験番号または機能名"></label><table><thead><tr><th>試験</th><th>現在の条件別結果</th><th>原本エビデンス・適用範囲</th></tr></thead><tbody>']
     for row in rows:
         links=[]
@@ -237,14 +264,14 @@ def report(catalog,store,output,case_id=None):
             file=runs[ref['runId']][0]/relative(ref['path'])
             href=quote(os.path.relpath(file,output).replace('\\','/'),safe='/.-')
             links.append(f'<a href="{esc(href)}">{esc(ref["runId"])} / {esc(ref["path"])}</a><br><small>{esc(ref["category"])}: {esc(ref["note"])}</small>')
-        for case in c['cases']:
-            if case['id']!=row['id']:continue
-            for cond in case['conditions']:
-                ex=cond.get('execution')
-                if not ex:continue
-                file=runs[ex['runId']][0]/relative(ex['resultPath'])
+        for cond in row['conditionResults']:
+            ex=cond['execution']
+            if not ex:continue
+            for path in [ex['resultPath'],*ex['evidencePaths']]:
+                file=runs[ex['runId']][0]/relative(path)
                 href=quote(os.path.relpath(file,output).replace('\\','/'),safe='/.-')
-                links.append(f'<a href="{esc(href)}">{esc(cond["id"])}: {esc(cond["status"])}</a>')
+                links.append(f'<a href="{esc(href)}">{esc(cond["id"])} / {esc(ex["runId"])} / {esc(path)}</a>')
+            links.append(f'<small>verifyCaseId={esc(ex["verifyCaseId"])}; source={esc(ex["sourceRevision"])}; plan={esc(ex["planSHA256"])}</small>')
         details='<details><summary>条件別に表示</summary>'+''.join(f'<p>{esc(x["id"])}: {esc(x["status"])}<br><small>{esc(x["description"])}</small></p>' for x in row['conditionResults'])+'</details>'
         lines.append(f'<tr id="{esc(row["id"])}"><td>{esc(row["id"])}<br>{esc(row["title"])}</td><td>{esc(row["statuses"])}{details}</td><td>'+('<hr>'.join(links) or '現在の実行証拠は未登録')+'</td></tr>')
     lines.append('</tbody></table><script>document.getElementById("q").oninput=function(){const q=this.value.toLowerCase();document.querySelectorAll("tbody tr").forEach(r=>r.hidden=!r.textContent.toLowerCase().includes(q))}</script></html>')

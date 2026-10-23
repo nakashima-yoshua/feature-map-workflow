@@ -13,7 +13,7 @@ class EvidenceTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
         self.root=Path(self.tmp.name);self.source=self.root/'source';self.source.mkdir()
-        self.store=self.root/'store';self.catalog=self.root/'catalog.json'
+        self.store=self.root/'store';self.catalog=self.root/'catalog.json';self.reports=self.store/'fictional/audit'
         self.rev='a'*40;self.plan='b'*64
         (self.source/'shot.txt').write_text('synthetic observation',encoding='utf-8')
 
@@ -91,9 +91,9 @@ class EvidenceTests(unittest.TestCase):
 
     def test_historical_references_leave_current_not_run(self):
         self.seal();self.save(self.model())
-        out=ec.report(self.catalog,self.store,self.root/'report')
+        out=ec.report(self.catalog,self.store,self.reports/'report')
         self.assertEqual(1,out['notRun'])
-        data=ec.read_json(self.root/'report/index.json')
+        data=ec.read_json(self.reports/'report/index.json')
         self.assertEqual('unconfigured',data['backup']['status'])
         self.assertEqual('historical',data['cases'][0]['references'][0]['category'])
 
@@ -141,13 +141,67 @@ class EvidenceTests(unittest.TestCase):
 
     def test_report_query_escaping_and_output_boundaries(self):
         self.seal();c=self.model();c['cases'][0]['title']='<script>alert(1)</script>';self.save(c)
-        out=ec.report(self.catalog,self.store,self.root/'report','FT-01-01')
+        out=ec.report(self.catalog,self.store,self.reports/'report','FT-01-01')
         self.assertEqual(1,out['cases'])
-        content=(self.root/'report/index.html').read_text(encoding='utf-8')
+        content=(self.reports/'report/index.html').read_text(encoding='utf-8')
         self.assertIn('&lt;script&gt;alert(1)&lt;/script&gt;',content)
         self.assertIn('evidence/shot.txt',content)
-        with self.assertRaises(ValueError):ec.report(self.catalog,self.store,self.root/'report')
-        with self.assertRaises(ValueError):ec.report(self.catalog,self.store,self.root/'new','UNKNOWN')
+        with self.assertRaises(ValueError):ec.report(self.catalog,self.store,self.reports/'report')
+        with self.assertRaises(ValueError):ec.report(self.catalog,self.store,self.reports/'new','UNKNOWN')
         with self.assertRaises(ValueError):ec.report(self.catalog,self.store,self.store/'fictional/runs/NEW')
+
+    def test_other_project_sealed_run_cannot_be_report_output(self):
+        self.seal();self.save(self.model())
+        for output in [self.store/'other/runs/RUN-1/evidence/new',self.root/'outside',self.reports]:
+            with self.subTest(output=str(output)),self.assertRaises(ValueError):ec.report(self.catalog,self.store,output)
+            self.assertFalse(output.exists())
+
+    def test_report_keeps_execution_identity_and_check_links(self):
+        meta,result=self.functional();self.seal(metadata=meta,result=result);self.save(self.claimed())
+        ec.report(self.catalog,self.store,self.reports/'current')
+        data=ec.read_json(self.reports/'current/index.json')
+        ex=data['cases'][0]['conditionResults'][0]['execution']
+        self.assertEqual('RUN-1',ex['runId'])
+        self.assertEqual(self.rev,ex['sourceRevision'])
+        self.assertEqual(self.plan,ex['planSHA256'])
+        self.assertEqual(['evidence/shot.txt'],ex['evidencePaths'])
+        content=(self.reports/'current/index.html').read_text(encoding='utf-8')
+        self.assertIn('evidence/shot.txt',content)
+        self.assertIn('verifyCaseId=FT-01',content)
+
+    def test_report_hash_uses_validated_snapshot_when_catalog_changes(self):
+        self.seal();self.save(self.model());expected=ec.digest(self.catalog)
+        original=ec.validate
+        def concurrent(catalog,store,catalog_bytes=None):
+            validated=original(catalog,store,catalog_bytes)
+            self.catalog.write_text('{}')
+            return validated
+        from unittest.mock import patch
+        with patch.object(ec,'validate',side_effect=concurrent):
+            ec.report(self.catalog,self.store,self.reports/'snapshot')
+        data=ec.read_json(self.reports/'snapshot/index.json')
+        self.assertEqual(expected,data['catalogSHA256'])
+        self.assertNotEqual(expected,ec.digest(self.catalog))
+
+    def test_restore_receipt_must_cover_all_registered_run_hashes(self):
+        self.seal();c=self.model()
+        proof=dict(schemaVersion=1,type='backup-restore-receipt',projectId='fictional',
+            destinationAlias='offline-test',owner='synthetic-operator',checkedAt='2026-01-01T00:00:00Z',
+            restoreCheck='passed',restoredManifests={'RUN-1':self.entry['manifestSHA256']})
+        (self.source/'restore.json').write_text(json.dumps(proof))
+        req=self.root/'restore-request.json'
+        req.write_text(json.dumps(dict(sourceRoot=str(self.source),metadata=dict(category='preparation'),files=[dict(path='restore.json')])))
+        receipt=ec.seal(self.store,'fictional','BACKUP-1',req)
+        c['runs'].append(dict(id='BACKUP-1',manifestSHA256=receipt['manifestSHA256']))
+        c['backup']=dict(status='restore-verified',destinationAlias='offline-test',receipt=dict(runId='BACKUP-1',path='evidence/restore.json'))
+        self.save(c);ec.validate(self.catalog,self.store)
+        c['backup']['destinationAlias']='different';self.save(c)
+        with self.assertRaises(ValueError):ec.validate(self.catalog,self.store)
+
+    def test_backup_claim_requires_restore_receipt(self):
+        self.seal();c=self.model();c['backup']=dict(status='restore-verified');self.save(c)
+        with self.assertRaises((ValueError,KeyError)):ec.validate(self.catalog,self.store)
+        c['backup']=dict(status='unknown');self.save(c)
+        with self.assertRaises(ValueError):ec.validate(self.catalog,self.store)
 
 if __name__=='__main__':unittest.main()
