@@ -238,47 +238,29 @@ explicitly not-run.
 
 **Output:** business, developer, tester, or delivery-oriented view.
 
-When customer documents are requested, follow [Customer Deliverables](customer-deliverables.md):
-create a separate customer-facing view, check the complete file/package, formulas
-and rendered output, then freeze its hash with internal evidence references.
-Report inspected pages and remaining gaps; do not treat internal technical output
-as a ready customer submission.
+For customer-facing document creation and checks, use [Customer Deliverables](customer-deliverables.md).
 
 ### 11a. Customer Submission Materials Organization (when requested)
 
-**Input:** fixed customer-facing candidates, required/optional submission scope,
-per-file checks and evidence, and their exact hashes. For a design-review or
-interim submission, apply this phase to the appropriate current document view;
-final product release or acceptance is not a prerequisite for organizing it.
+**Input:** customer candidates, required/optional scope, exact hashes and evidence.
+Design/interim submissions may use the current view before product acceptance.
 
-**Activity:** follow [Customer Deliverables §5](customer-deliverables.md#5-エビデンスが揃った提出資材を整理する).
-Select only materials whose content claims and required checks have applicable,
-inspectable evidence matching the exact files and target revision. Copy those
-files into a new versioned customer-only package, create its customer-safe list,
-and reconcile every file/archive entry against an internal hash manifest. Keep
-raw originals, internal catalogs and exclusion records outside that package.
+**Activity:** follow [Customer Deliverables §5](customer-deliverables.md#5-エビデンスが揃った提出資材を整理する):
+select evidence-backed files, create a new customer-only package and contents
+list, reconcile every file/archive entry with a private hash manifest.
 
-**Durable Feature Map delta:** normally none; package contents and selection
-records belong in the private artifact/evidence index.
+**Durable Feature Map delta:** normally none; keep records in the private index.
 
-**Hard gate:** every included material and attachment has matching evidence and
-required checks; the file list, actual package and manifest agree. A design plan
-needs its design/document-check evidence, not invented functional execution.
-Result materials require actual observations, including truthful failures and
-blocked outcomes; unperformed conditions remain not-run.
+**Hard gate:** required checks and claim-specific evidence match each included
+file, revision and scope. Plan/document evidence cannot prove functional PASS.
 
-**Semantic gate:** exclude unsupported or stale materials without hiding failures
-or changing the agreed submission scope. Check business meaning and customer
-information boundaries, not just file presence.
+**Semantic gate:** preserve failures and not-run states; do not hide scope gaps.
 
-**HALT:** an included file lacks evidence, a hash/reference is inconsistent,
-internal information remains, or a required material is missing. Preserve the
-eligible subset as preparation, record holds internally, and do not declare the
-whole package ready. Do not fabricate or relabel evidence to fill missing claims.
+**HALT:** unsupported/stale files, internal information, hash/list mismatches or
+missing required materials. Keep the eligible subset as preparation, not ready.
 
-**Output:** evidence-backed customer package and customer-safe contents list;
-private selection/exclusion decisions, per-file hashes and evidence mappings.
-Organization does not authorize sending or establish product acceptance.
+**Output:** verified customer package/list and private selection, exclusion and
+evidence mappings. Organization grants no sending authority or acceptance.
 
 ### 12. Delivery / Acceptance
 
