@@ -43,7 +43,9 @@ rewrite both the catalog history and the store. Do not describe them as such.
 Customer-facing selection, sanitization, document checks and submission states
 follow [Customer Deliverables](customer-deliverables.md). Preserve the frozen
 customer file and its check records as artifact evidence; never export the
-internal catalog with it.
+internal catalog with it. Before submission, use that guide’s organization phase
+to select only evidence-backed materials and reconcile the customer package with
+a private per-file manifest; missing required evidence holds the package.
 
 ## Apply at the existing workflow boundaries
 

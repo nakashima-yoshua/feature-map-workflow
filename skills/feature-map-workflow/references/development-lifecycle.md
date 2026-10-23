@@ -22,6 +22,7 @@ Context Sufficiency
   -> Implementation + CI
   -> Release Package / CD
   -> As-Built View
+  -> Customer Submission Materials Organization (when requested)
   -> Delivery / Acceptance
 ```
 
@@ -243,6 +244,42 @@ and rendered output, then freeze its hash with internal evidence references.
 Report inspected pages and remaining gaps; do not treat internal technical output
 as a ready customer submission.
 
+### 11a. Customer Submission Materials Organization (when requested)
+
+**Input:** fixed customer-facing candidates, required/optional submission scope,
+per-file checks and evidence, and their exact hashes. For a design-review or
+interim submission, apply this phase to the appropriate current document view;
+final product release or acceptance is not a prerequisite for organizing it.
+
+**Activity:** follow [Customer Deliverables §5](customer-deliverables.md#5-エビデンスが揃った提出資材を整理する).
+Select only materials whose content claims and required checks have applicable,
+inspectable evidence matching the exact files and target revision. Copy those
+files into a new versioned customer-only package, create its customer-safe list,
+and reconcile every file/archive entry against an internal hash manifest. Keep
+raw originals, internal catalogs and exclusion records outside that package.
+
+**Durable Feature Map delta:** normally none; package contents and selection
+records belong in the private artifact/evidence index.
+
+**Hard gate:** every included material and attachment has matching evidence and
+required checks; the file list, actual package and manifest agree. A design plan
+needs its design/document-check evidence, not invented functional execution.
+Result materials require actual observations, including truthful failures and
+blocked outcomes; unperformed conditions remain not-run.
+
+**Semantic gate:** exclude unsupported or stale materials without hiding failures
+or changing the agreed submission scope. Check business meaning and customer
+information boundaries, not just file presence.
+
+**HALT:** an included file lacks evidence, a hash/reference is inconsistent,
+internal information remains, or a required material is missing. Preserve the
+eligible subset as preparation, record holds internally, and do not declare the
+whole package ready. Do not fabricate or relabel evidence to fill missing claims.
+
+**Output:** evidence-backed customer package and customer-safe contents list;
+private selection/exclusion decisions, per-file hashes and evidence mappings.
+Organization does not authorize sending or establish product acceptance.
+
 ### 12. Delivery / Acceptance
 
 **Input:** release package, acceptance evidence, unresolved items.
@@ -259,6 +296,8 @@ as a ready customer submission.
 
 **Output:** accepted delivery; Feature Map may move to `closed`.
 
+For customer submission, use the exact package fixed in Phase 11a; any file
+change requires renewed affected checks and package reconciliation.
 Customer submission is a separate recorded action under [Customer Deliverables](customer-deliverables.md).
 Check the exact frozen files, authorized recipients and transmission scope; record
 actual sending separately from document creation and product acceptance. Design
