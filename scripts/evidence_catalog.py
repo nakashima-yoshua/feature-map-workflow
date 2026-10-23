@@ -21,10 +21,15 @@ import uuid
 STATUSES={'passed','failed','blocked','not-run'}
 CATEGORIES={'functional','historical','artifact-check','preparation'}
 
+def json_bytes(path):
+    limit=8*1024*1024
+    if path.stat().st_size>limit:raise ValueError(f'JSON too large: {path.name}')
+    with path.open('rb') as f:raw=f.read(limit+1)
+    if len(raw)>limit:raise ValueError(f'JSON too large: {path.name}')
+    return raw
+
 def read_json(path):
-    if path.stat().st_size > 8*1024*1024:
-        raise ValueError(f'JSON too large: {path.name}')
-    return json.loads(path.read_text(encoding='utf-8-sig'))
+    return json.loads(json_bytes(path).decode('utf-8-sig'))
 
 def write_json(path,value):
     with path.open('x',encoding='utf-8',newline='\n') as f:
@@ -119,7 +124,7 @@ def seal(store,project,run_id,request_path):
 def verify_run(store,project,entry):
     root=project_root(store,project)/'runs'/identifier(entry['id']);no_links(root)
     manifest_path=child(root,'manifest.json')
-    raw=manifest_path.read_bytes()
+    raw=json_bytes(manifest_path)
     if len(raw)>8*1024*1024:raise ValueError('Manifest too large')
     if hashlib.sha256(raw).hexdigest()!=entry['manifestSHA256']:raise ValueError(f'Manifest changed: {entry["id"]}')
     m=json.loads(raw.decode('utf-8-sig'))
@@ -142,7 +147,7 @@ def verify_run(store,project,entry):
     return root,m
 
 def validate(catalog,store,catalog_bytes=None):
-    raw=catalog.read_bytes() if catalog_bytes is None else catalog_bytes
+    raw=json_bytes(catalog) if catalog_bytes is None else catalog_bytes
     if len(raw)>8*1024*1024:raise ValueError('Catalog too large')
     c=json.loads(raw.decode('utf-8-sig'))
     if c.get('schemaVersion')!=1:raise ValueError('Unknown catalog version')
@@ -163,18 +168,19 @@ def validate(catalog,store,catalog_bytes=None):
     backup=c.get('backup',{'status':'unconfigured'})
     if backup.get('status') not in {'unconfigured','copied-unverified','restore-verified'}:
         raise ValueError('Unknown backup status')
-    if backup['status']=='restore-verified':
+    if backup['status'] in {'copied-unverified','restore-verified'}:
         receipt=backup.get('receipt',{})
         root,m=runs[receipt['runId']]
         if receipt['path'] not in {f['path'] for f in m['files']}:raise ValueError('Backup receipt is not sealed')
         proof=read_json(child(root,receipt['path']))
         expected={e['id']:e['manifestSHA256'] for e in c['runs'] if e['id']!=receipt['runId']}
-        if (proof.get('schemaVersion')!=1 or proof.get('type')!='backup-restore-receipt'
+        if (proof.get('schemaVersion')!=1 or proof.get('type')!=('backup-restore-receipt' if backup['status']=='restore-verified' else 'backup-copy-receipt')
                 or proof.get('projectId')!=project or not backup.get('destinationAlias')
                 or proof.get('destinationAlias')!=backup['destinationAlias']
-                or proof.get('restoreCheck')!='passed' or not proof.get('checkedAt') or not proof.get('owner')
-                or proof.get('restoredManifests')!=expected):
-            raise ValueError('Backup restore claim lacks a matching complete receipt')
+                or proof.get('restoreCheck' if backup['status']=='restore-verified' else 'copyCheck')!='passed'
+                or not proof.get('checkedAt') or not proof.get('owner')
+                or proof.get('restoredManifests' if backup['status']=='restore-verified' else 'copiedManifests')!=expected):
+            raise ValueError('Backup claim lacks a matching complete receipt')
     case_ids=set();condition_ids=set();rows=[]
     for case in c['cases']:
         if not case.get('conditions'):raise ValueError('A case requires distinct conditions')
@@ -234,7 +240,7 @@ def validate(catalog,store,catalog_bytes=None):
     return c,runs,rows
 
 def report(catalog,store,output,case_id=None):
-    catalog_bytes=catalog.read_bytes()
+    catalog_bytes=json_bytes(catalog)
     c,runs,rows=validate(catalog,store,catalog_bytes)
     if case_id:
         rows=[r for r in rows if r['id']==case_id or any(x['id']==case_id for x in

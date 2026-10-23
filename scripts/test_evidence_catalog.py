@@ -198,6 +198,21 @@ class EvidenceTests(unittest.TestCase):
         c['backup']['destinationAlias']='different';self.save(c)
         with self.assertRaises(ValueError):ec.validate(self.catalog,self.store)
 
+    def test_oversized_json_is_rejected_before_open(self):
+        huge=self.root/'huge.json'
+        with huge.open('wb') as f:f.seek(8*1024*1024);f.write(b'x')
+        from unittest.mock import patch
+        with patch.object(Path,'open',side_effect=AssertionError('must reject before open')):
+            with self.assertRaises(ValueError):ec.json_bytes(huge)
+        with self.assertRaises(ValueError):ec.report(huge,self.store,self.reports/'huge')
+        self.seal();manifest=self.store/'fictional/runs/RUN-1/manifest.json'
+        with manifest.open('wb') as f:f.seek(8*1024*1024);f.write(b'x')
+        with self.assertRaises(ValueError):ec.verify_run(self.store,'fictional',self.entry)
+
+    def test_copy_claim_requires_receipt(self):
+        self.seal();c=self.model();c['backup']=dict(status='copied-unverified');self.save(c)
+        with self.assertRaises((ValueError,KeyError)):ec.validate(self.catalog,self.store)
+
     def test_backup_claim_requires_restore_receipt(self):
         self.seal();c=self.model();c['backup']=dict(status='restore-verified');self.save(c)
         with self.assertRaises((ValueError,KeyError)):ec.validate(self.catalog,self.store)

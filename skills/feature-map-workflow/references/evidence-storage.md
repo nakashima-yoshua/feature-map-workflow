@@ -152,3 +152,9 @@ all catalog run IDs except the receipt run itself to their exact manifest hashes
 Adding a new run invalidates that complete-snapshot claim until recovery proof
 covers it. Validation checks the recorded receipt; it does not probe the backup
 service or infer that a storage location is available now.
+
+`copied-unverified` likewise requires destination alias and a sealed receipt,
+using `type: "backup-copy-receipt"`, `copyCheck: "passed"` and
+`copiedManifests` in place of the restore fields; `owner`, `checkedAt`, project
+and all covered manifest hashes are mandatory. This proves only the recorded
+copy operation, not recovery. A bare status string is rejected.
