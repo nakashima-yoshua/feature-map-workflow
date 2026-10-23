@@ -40,6 +40,11 @@ match the registered snapshot. These are tamper-evident checks, not WORM storage
 a digital signature, a timestamp authority or proof against an attacker who can
 rewrite both the catalog history and the store. Do not describe them as such.
 
+Customer-facing selection, sanitization, document checks and submission states
+follow [Customer Deliverables](customer-deliverables.md). Preserve the frozen
+customer file and its check records as artifact evidence; never export the
+internal catalog with it.
+
 ## Apply at the existing workflow boundaries
 
 1. **Design:** freeze customer test/condition IDs and the plan hash. Record the

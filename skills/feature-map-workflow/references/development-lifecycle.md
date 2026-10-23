@@ -134,6 +134,11 @@ of internal environment and management details.
 
 **Optional human-work direction input:** if several test boundaries require human action, inventory the shared environment, role, fixture/reset costs and evidence mechanisms now; group only after the separate test cases and oracles are established. See `human-work-direction.md`.
 
+For requested customer test plans, select the audience, customer-safe fields and
+external IDs now using [Customer Deliverables](customer-deliverables.md). A design
+submission can be prepared before execution; keep all unperformed conditions
+explicitly not-run.
+
 ### 6. Detailed Design
 
 **Input:** basic design, scenarios, test boundaries.
@@ -232,6 +237,12 @@ of internal environment and management details.
 
 **Output:** business, developer, tester, or delivery-oriented view.
 
+When customer documents are requested, follow [Customer Deliverables](customer-deliverables.md):
+create a separate customer-facing view, check the complete file/package, formulas
+and rendered output, then freeze its hash with internal evidence references.
+Report inspected pages and remaining gaps; do not treat internal technical output
+as a ready customer submission.
+
 ### 12. Delivery / Acceptance
 
 **Input:** release package, acceptance evidence, unresolved items.
@@ -247,6 +258,12 @@ of internal environment and management details.
 **HALT:** failed/blocked verification, missing acceptance evidence, or unresolved high-impact `open` item.
 
 **Output:** accepted delivery; Feature Map may move to `closed`.
+
+Customer submission is a separate recorded action under [Customer Deliverables](customer-deliverables.md).
+Check the exact frozen files, authorized recipients and transmission scope; record
+actual sending separately from document creation and product acceptance. Design
+review or an interim report need not wait for final product acceptance, but must
+show failed, blocked and unperformed work honestly.
 
 **For human acceptance:** reuse the case-specific evidence and source revision from earlier runs. Batching manual work never turns an unexecuted or unapproved case into PASS.
 
