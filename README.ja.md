@@ -36,7 +36,7 @@ python skills/feature-map-workflow/scripts/init_feature_map.py --system Demo --f
 | EXE・ジョブ・画面から対象BLへ到達する条件と最小データを探す | [Target Reachability](skills/feature-map-workflow/references/target-reachability.md) |
 | レガシー機能追加で局所改修・最小限の責務分離・段階的置換を比較する | [Incremental Modernization](skills/feature-map-workflow/references/incremental-modernization.md) |
 | 業務フロー、データフロー、根拠のあるER関係をつなぐ | [Three Complementary Views](skills/feature-map-workflow/references/three-view-understanding.md) |
-| テスト層と証明範囲を決める | [Test Strategy](skills/feature-map-workflow/references/test-strategy.md)、[Coverage Model](skills/feature-map-workflow/references/coverage-model.md) |
+| 変更箇所と影響経路から検証項目・入力条件を優先度で絞り、必要十分なテスト層を決める | [Test Strategy](skills/feature-map-workflow/references/test-strategy.md)、[Coverage Model](skills/feature-map-workflow/references/coverage-model.md) |
 | UI・CLI・DBテストを繰り返し実行して証跡を残す | [AI-assisted Testing](skills/feature-map-workflow/references/ai-assisted-testing.md) |
 | ケースごとの合否を保ち、人の準備・切替回数を減らす | [Human Work Direction](skills/feature-map-workflow/references/human-work-direction.md) |
 | 提供されたExcelへ計画と手順単位の実行結果を反映する | [機能テストExcel](skills/feature-map-workflow/references/functional-test-excel.md) |

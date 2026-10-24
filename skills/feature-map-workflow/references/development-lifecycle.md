@@ -28,6 +28,13 @@ Purpose / scope / risk / exclusions
   -> operational feedback to requirements, procedures and regression tests
 ```
 
+Before preparing a formal run, apply the condition-level
+[change/risk selection](test-strategy.md#select-changed-behavior-before-selecting-cases).
+Verify the changed program guarantees and their consequential impact paths, reuse
+matching existing evidence, and keep environment construction outside functional
+completion counts. A preparation-budget review may change the safe route or leave
+a blocker; it never supplies missing proof or waives mandatory acceptance.
+
 Feedback to an earlier phase is allowed whenever new evidence contradicts an assumption. Do not force work through a gate merely to preserve phase order.
 
 | Work boundary | Existing phases | Entry and exit / minimum useful artifact |

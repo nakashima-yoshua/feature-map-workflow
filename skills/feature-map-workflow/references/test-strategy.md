@@ -15,6 +15,99 @@ Business scenario
 
 Do not maximize test count. Minimize duplicated guarantees and untested behavior.
 
+## Select changed behavior before selecting cases
+
+Start from the agreed change and its actual base/candidate identities. A later
+test-launcher change is not the baseline for the whole business feature. Map each
+changed rule, state, UI binding or data effect to the smallest affected caller and
+downstream boundary. Inspect unchanged dependencies only far enough to establish
+that boundary; do not turn their entire behavior into new acceptance work.
+
+Classify **each input condition**, not only the case heading:
+
+| Priority | Protection | Selection |
+| --- | --- | --- |
+| P1 | Data loss/corruption, unauthorized operation, unintended writes or serious business misjudgment | Keep distinct normal, rejection and consequential boundary/state paths in the changed/affected flow. |
+| P2 | Primary changed journey or rule; a failure materially prevents ordinary work | Keep one representative success and each materially different failure/transition. |
+| P3 | Cosmetic/rare variation or unchanged low-impact behavior | Omit from the current required run, or retain an existing cheap regression by reference. Add only for a distinct demonstrated risk. |
+
+Cost chooses the observation method and execution order; it does not downgrade
+P1/P2 risk. An unavailable required path stays blocked until a justified scope
+decision or adequate evidence resolves it.
+
+For each retained condition record the requirement/change reference, concrete
+defect it detects, input class, expected effect, cheapest sufficient layer and
+evidence needed. Use existing case tables/test parameters rather than a new
+registry. Keep a normal representative and only boundaries that change program
+behavior; do not multiply all text types, adjacent valid values, screens and roles
+into a Cartesian product. A shared dependency does not by itself make two input
+conditions equivalent.
+
+Distinguish these scopes:
+
+- **Changed program guarantees:** new/modified rules, validation, state handling,
+  authorization binding, transaction and error behavior.
+- **Affected regression:** the nearest real caller or consumer that could break
+  because of that change. Use a few representative integration/UI journeys.
+- **Environment prerequisites:** connectivity, schema installation, capacity,
+  login setup and operating-system configuration. Preflight once for the planned
+  session; they are not customer functional cases unless the change delivers them.
+- **Unchanged functionality:** full login, reporting, file-dialog and external
+  system suites are outside this run absent a concrete impact path or obligation.
+
+A pure serializer/formatter needs deterministic tests, not a complete business
+environment. A stored-program safety/transaction guarantee still needs the real
+DB boundary; source review, parse-only checks and mocks cannot replace it. A
+changed UI binding still needs a real UI observation. An unchanged history screen
+is not a prerequisite for proving a changed caller's persisted business effect
+unless the accepted requirement explicitly includes that screen.
+
+### Inventory and reduce an existing plan
+
+Keep the original plan/results immutable. For every old condition choose retain,
+equivalent representative, lower-layer supplement, unchanged/out of scope, or
+oracle/method correction. Record the reason, replacement/reference, old result
+and the authority for material scope/oracle changes. Apply an already explicit
+user decision; do not ask for the same decision again. Contractual or other
+mandatory acceptance cannot be removed by the agent merely because it is costly.
+
+Do not delete a known failure to improve the denominator. Preserve it and its
+disposition even when its condition leaves the required run; unresolved material
+failures and unverified changed guarantees still block the relevant conclusion.
+Do not mark excluded conditions PASS or NOT APPLICABLE merely because they were
+excluded. Report old-plan results separately from the revised-plan denominator.
+
+If an old expectation contains an unrelated screen or an unreachable UI input,
+review its source before spending on reachability. A corrected expectation gets
+an explicit amendment/new condition identity. Reuse only the observed subset of
+existing evidence that proves the new expectation; retain the old blocked/failed
+result. A changed method is never retroactively described as the old UI test.
+
+### Keep preparation proportional
+
+Before building fixtures, compare reusing a working authorized environment,
+existing tests/procedures and a smaller real entry boundary with constructing a
+new environment. Close only the prerequisites needed for the selected behavior.
+Do not build a general recovery engine, broad DB clone or automation framework
+solely to get past one blocked case without an explicit cost/benefit decision.
+Keep required isolation, authorization and recovery; choose a cheaper safe route
+or leave the case blocked when those costs dominate.
+
+Set a project-appropriate preparation/diagnosis budget and review point before
+another setup or automation attempt. At that point report functional conditions
+closed, remaining blockers, new evidence and the cheapest safe alternative.
+Preparation checks, helper tests and metadata captures do not count as product
+conditions completed. Record measured active/wait/setup time when available;
+file counts and elapsed wall time are not measurements of engineering effort.
+
+Freeze shared candidate/environment evidence once per unchanged session. Capture
+per-condition input, initial state, expectation, decisive observation and only
+the affected side effects/reset needed for independence. Broader snapshots are
+justified by uncertainty or blast radius, not by a default demand to export every
+table for every click. Reuse valid evidence and rerun only conditions affected by
+a changed program, assertion, fixture or dependency. Stop after the selected
+guarantees and required defect dispositions have adequate proof.
+
 This is a design order, not a requirement to execute E2E first or finish every
 detailed test before implementation. From an agreed specification/acceptance
 baseline, select a feature's representative flow and significant boundaries/errors;
