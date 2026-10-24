@@ -343,10 +343,8 @@ def import_one(ws, record, path):
     planned_v2 = {}
     for number in range(1, 7):
         value = str(ws[f"B{number + 15}"].value or "")
-        if value.startswith("CONDITION:"):
-            marker = re.match(r"^CONDITION:([^\s|]+) \| OPERATION:", value)
-            if not marker:
-                raise ValueError("Invalid planned v2 checkpoint marker")
+        marker = re.match(r"^CONDITION:([^\s|]+) \| OPERATION:[^\n]+ \| PROCEDURE:[^\n]+\n", value)
+        if marker:
             planned_v2[number] = marker.group(1)
     for check in record.get("checks", []):
         if not isinstance(check, dict):
@@ -360,8 +358,7 @@ def import_one(ws, record, path):
             raise ValueError("Each mapped check must identify a unique step, status and evidence")
         if not ws[f"B{step_no + 15}"].value:
             raise ValueError("Cannot import a result for an unplanned step")
-        marker = re.match(r"^CONDITION:([^\s|]+) \| OPERATION:", str(ws[f"B{step_no + 15}"].value))
-        if marker and check.get("conditionId") != marker.group(1):
+        if step_no in planned_v2 and check.get("conditionId") != planned_v2[step_no]:
             raise ValueError("Result conditionId does not match the planned checkpoint")
         checks[step_no] = check
     if record["status"] == "not-run" and checks:

@@ -237,6 +237,24 @@ class WorkbookTests(unittest.TestCase):
         self.assertNotEqual(0,self.cli("results","--workbook",target,"--result",source,"--output",output).returncode)
         self.assertFalse(output.exists())
 
+    def test_v1_free_text_prefix_is_not_a_v2_checkpoint(self):
+        for index,condition in enumerate(("CONDITION: user is authorized",
+                                           "CONDITION:X | OPERATION: described behavior")):
+            with self.subTest(condition=condition):
+                tree=ET.parse(self.xml);tree.getroot().find("./verify/case/condition").text=condition
+                tree.write(self.xml,encoding="utf-8")
+                target=self.root/f"legacy-plan-{index}.xlsx"
+                planned=self.cli("plan","--template",self.template,"--feature-map",self.xml,
+                                 "--revision","sha-test","--output",target)
+                self.assertEqual(0,planned.returncode,planned.stderr)
+                source=self.root/f"legacy-result-{index}.json"
+                source.write_text(json.dumps(dict(schemaVersion=1,runId="LEGACY",verifyCaseId="V-ONE",
+                                                  sourceRevision="sha-test",status="passed",checks=[],evidence=[])),encoding="utf-8")
+                output=self.root/f"legacy-import-{index}.xlsx"
+                result=self.cli("results","--workbook",target,"--result",source,"--output",output)
+                self.assertEqual(0,result.returncode,result.stderr)
+                self.assertIsNone(load_workbook(output)["FT-01"]["H16"].value)
+
     def test_v2_keeps_authoritative_expectation_next_to_checkpoint(self):
         def contradict(plan):
             for session in plan["sessions"]:
