@@ -15,6 +15,7 @@
   <sourceMap>
     <ref kind="external" target="https://github.com/nakashima-yoshua/feature-map-workflow/issues/8"/>
     <ref kind="external" target="https://github.com/nakashima-yoshua/system-understanding-architecture"/>
+    <ref kind="external" target="https://github.com/nakashima-yoshua/feature-map-workflow/issues/47"/>
     <ref kind="symbol" target="hooks/decision_provider.py:OpenAIDecisionsProvider"/>
     <ref kind="symbol" target="scripts/task_runner.py:Runner"/>
     <ref kind="symbol" target="scripts/task_runner.py:Sandbox"/>
@@ -26,10 +27,11 @@
     <invariant id="INV-HUMAN-ACCOUNTABILITY">Self-check never constitutes human approval, merge permission or release authorization.</invariant>
     <invariant id="INV-EVALUATION">Required tests and acceptance inputs remain outside model write authority; an improved metric never overrides a failed required check.</invariant>
     <invariant id="INV-NO-REPLAY">Unknown in-flight work is HALTed rather than replayed. Safe checkpoints preserve attempts, evidence and remaining wall-time budget.</invariant>
+    <invariant id="INV-PHASE-CANDIDATE">A phase classification describes current requested work only; it never establishes completed gates, verification or human approval. OpenAI defaults to observation; content-bearing phase input is a separate opt-in.</invariant>
     <invariant id="INV-ADVICE">Decision Provider failures affect advice only; permissions, XML/schema, tests and human approval remain independent.</invariant>
     <decision id="ADR-PROPOSAL-BOUNDARY" reason="Separate proposed content from command execution, canonical source writes and human review authority.">Codex supplies bounded file-change data; the runner validates all edits before writing to its own detached worktree.</decision>
     <constraint id="CON-OS-ISOLATION">Evaluators require functioning Linux bubblewrap. Missing isolation is a blocking environment failure.</constraint>
-    <constraint id="CON-BETA">OpenAI Decisions API and the version-pinned optional Codex broker require explicit data-transmission consent and independent quality evaluation.</constraint>
+    <constraint id="CON-TRANSMISSION">OpenAI Decisions API and the version-pinned optional Codex broker require explicit data-transmission consent and independent quality evaluation.</constraint>
   </knowledge>
   <verify>
     <case id="VERIFY-BOUNDED-REPAIR" type="retry" status="passed">
@@ -47,9 +49,14 @@
       <expect>Normalized advice is compatible; required local gates remain independent.</expect>
       <evidence ref="scripts/test_decision_provider.py:OpenAIDecisionsTests.test_both_real_hook_call_sites_use_normalized_openai_advice"/>
     </case>
+    <case id="VERIFY-PHASE-ADVICE" type="regression" status="passed">
+      <condition>Opt-in phase input, mocked named choices, low-confidence/unknown/refused answers and observation mode.</condition>
+      <expect>One request yields bounded advisory candidates; observation never routes or blocks work and required local gates remain independent.</expect>
+      <evidence ref="scripts/test_decision_provider.py:PhaseAdviceTests"/>
+    </case>
   </verify>
   <open>
-    <item id="OPEN-LIVE-EVIDENCE" type="external-dependency" impact="medium" next="Use a separately authorized synthetic live smoke test before opting into production decisions.">Live Decisions/Codex quality, cost and latency have not been measured; all API transport tests are mocked.</item>
+    <item id="OPEN-LIVE-EVIDENCE" type="external-dependency" impact="medium" next="Use a separately authorized synthetic live smoke test before opting into production decisions.">Production Decisions/Codex quality, cost and latency are not established. Repository transport tests are mocked; any small synthetic API probe is recorded separately in PR evidence.</item>
     <item id="OPEN-ADOPTION" type="acceptance" impact="medium" next="Compare accepted-delivery time, human intervention, review wait and defects against the manual workflow.">The offline repair proves mechanics and boundaries, not a whole-system benefit.</item>
   </open>
 </featureMap>
