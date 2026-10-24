@@ -47,6 +47,7 @@ Paths in this table are relative to this Skill. Root-level tools and examples ar
 | Batch human checks and generate a focused HTML brief | [Human Work Direction](references/human-work-direction.md) |
 | Use a supplied functional-test workbook | [Functional Test Excel](references/functional-test-excel.md) |
 | Review a diff, triage findings or prepare human approval | [Code Review](references/code-review.md) and repository-root `REVIEW.md` |
+| Trace requirements, change, revision, test evidence, approval and release for an audit | [Audit Evidence Traceability](references/audit-evidence-traceability.md) |
 | Assess whole-system constraints and change-vs-no-change trade-offs | [YAGNI / Whole-system Optimization](references/yagni-whole-system-optimization.md) |
 | **Explicitly requested** maintenance or efficiency investigation | [Maintenance Triage](references/maintenance-triage.md) |
 | Learn from successive tasks; maintain, audit and calibrate Harness instructions | [Cross-task Harness Maintenance](references/cross-task-harness-maintenance.md) |
