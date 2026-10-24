@@ -22,6 +22,7 @@ Context Sufficiency
   -> Implementation + CI
   -> Release Package / CD
   -> As-Built View
+  -> Customer Submission Materials Organization (when requested)
   -> Delivery / Acceptance
 ```
 
@@ -129,7 +130,17 @@ For every phase, distinguish:
 
 **Output:** executable test boundary.
 
+When audit traceability is required, establish external case/condition IDs,
+private preservation root, exact baseline and per-condition evidence expectations
+here. Follow [Evidence Storage](evidence-storage.md); keep customer output free
+of internal environment and management details.
+
 **Optional human-work direction input:** if several test boundaries require human action, inventory the shared environment, role, fixture/reset costs and evidence mechanisms now; group only after the separate test cases and oracles are established. See `human-work-direction.md`.
+
+For requested customer test plans, select the audience, customer-safe fields and
+external IDs now using [Customer Deliverables](customer-deliverables.md). A design
+submission can be prepared before execution; keep all unperformed conditions
+explicitly not-run.
 
 ### 6. Detailed Design
 
@@ -229,6 +240,30 @@ For every phase, distinguish:
 
 **Output:** business, developer, tester, or delivery-oriented view.
 
+For customer-facing document creation and checks, use [Customer Deliverables](customer-deliverables.md).
+
+### 11a. Customer Submission Materials Organization (when requested)
+
+**Input:** customer candidates, required/optional scope, exact hashes and evidence.
+Design/interim submissions may use the current view before product acceptance.
+
+**Activity:** follow [Customer Deliverables §5](customer-deliverables.md#5-エビデンスが揃った提出資材を整理する):
+select evidence-backed files, create a new customer-only package and contents
+list, reconcile every file/archive entry with a private hash manifest.
+
+**Durable Feature Map delta:** normally none; keep records in the private index.
+
+**Hard gate:** required checks and claim-specific evidence match each included
+file, revision and scope. Plan/document evidence cannot prove functional PASS.
+
+**Semantic gate:** preserve failures and not-run states; do not hide scope gaps.
+
+**HALT:** unsupported/stale files, internal information, hash/list mismatches or
+missing required materials. Keep the eligible subset as preparation, not ready.
+
+**Output:** verified customer package/list and private selection, exclusion and
+evidence mappings. Organization grants no sending authority or acceptance.
+
 ### 12. Delivery / Acceptance
 
 **Input:** release package, acceptance evidence, unresolved items.
@@ -245,7 +280,20 @@ For every phase, distinguish:
 
 **Output:** accepted delivery; Feature Map may move to `closed`.
 
+For customer submission, use the exact package fixed in Phase 11a; any file
+change requires renewed affected checks and package reconciliation.
+Customer submission is a separate recorded action under [Customer Deliverables](customer-deliverables.md).
+Check the exact frozen files, authorized recipients and transmission scope; record
+actual sending separately from document creation and product acceptance. Design
+review or an interim report need not wait for final product acceptance, but must
+show failed, blocked and unperformed work honestly.
+
 **For human acceptance:** reuse the case-specific evidence and source revision from earlier runs. Batching manual work never turns an unexecuted or unapproved case into PASS.
+
+For an auditable handoff, validate the registered manifest/file hashes and open
+representative originals from the [private evidence index](evidence-storage.md).
+Report missing current results, historical applicability and backup/restore state
+separately; a generated index is not acceptance.
 
 ## Responsibility split
 

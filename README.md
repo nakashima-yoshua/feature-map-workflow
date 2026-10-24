@@ -41,6 +41,8 @@ Read the guide for the current task rather than loading every reference.
 | Execute repeatable UI/CLI/DB tests and retain evidence | [AI-assisted Testing](skills/feature-map-workflow/references/ai-assisted-testing.md) |
 | Reduce human setup and context switching without combining test outcomes | [Human Work Direction](skills/feature-map-workflow/references/human-work-direction.md) |
 | Fill a supplied customer workbook from planned cases and step evidence | [Functional Test Excel](skills/feature-map-workflow/references/functional-test-excel.md) |
+| Create and organize evidence-backed customer submissions with whole-package checks | [Customer Deliverables](skills/feature-map-workflow/references/customer-deliverables.md) |
+| Trace audit evidence from case/condition IDs to preserved originals | [Evidence Storage](skills/feature-map-workflow/references/evidence-storage.md) |
 | Review a tested candidate and prepare human approval | [Code Review](skills/feature-map-workflow/references/code-review.md) and [REVIEW.md](REVIEW.md) |
 | Investigate explicitly requested maintenance or workflow inefficiency | [Maintenance Triage](skills/feature-map-workflow/references/maintenance-triage.md), using the [YAGNI / whole-system principles](skills/feature-map-workflow/references/yagni-whole-system-optimization.md) |
 | Learn reusable methods across new tasks; audit and calibrate harness guidance | [Cross-task Harness Maintenance](skills/feature-map-workflow/references/cross-task-harness-maintenance.md) |

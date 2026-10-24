@@ -1,6 +1,6 @@
 ---
 name: feature-map-workflow
-description: Maintain Source-first Feature Map XML for system catch-up, requirements, design, implementation, verification and delivery. Use for legacy analysis, tracing EXE/job/UI entry points to business logic, discovering path-specific DB/API/config prerequisites and reproducible fixtures, preserving business rules and source/test references, selecting useful Mermaid/UML/DFD/ER views, or preparing human verification briefs and test evidence. Also use for scoped incremental modernization, XML/XSD/XPath/XQuery work, Codex lifecycle hooks, optional bounded decisions, and explicitly requested maintenance or workflow-efficiency investigations.
+description: Maintain Source-first Feature Map XML for system catch-up, requirements, design, implementation, verification and delivery. Use for legacy analysis, tracing EXE/job/UI entry points to business logic, discovering path-specific DB/API/config prerequisites and reproducible fixtures, preserving business rules and source/test references, selecting useful Mermaid/UML/DFD/ER views, or preparing human verification briefs, test evidence and customer submission materials. Also use for scoped incremental modernization, XML/XSD/XPath/XQuery work, Codex lifecycle hooks, optional bounded decisions, and explicitly requested maintenance or workflow-efficiency investigations.
 ---
 
 # Feature Map Workflow
@@ -46,6 +46,8 @@ Paths in this table are relative to this Skill. Root-level tools and examples ar
 | Prepare AI-assisted UI/CLI/DB tests and evidence | [AI-assisted Testing](references/ai-assisted-testing.md) |
 | Batch human checks and generate a focused HTML brief | [Human Work Direction](references/human-work-direction.md) |
 | Use a supplied functional-test workbook | [Functional Test Excel](references/functional-test-excel.md) |
+| Create, check and organize evidence-backed customer submission materials | [Customer Deliverables](references/customer-deliverables.md) |
+| Preserve audit-ready original evidence and trace test/condition IDs | [Evidence Storage](references/evidence-storage.md) |
 | Review a diff, triage findings or prepare human approval | [Code Review](references/code-review.md) and repository-root `REVIEW.md` |
 | Trace requirements, change, revision, test evidence, approval and release for an audit | [Audit Evidence Traceability](references/audit-evidence-traceability.md) |
 | Assess whole-system constraints and change-vs-no-change trade-offs | [YAGNI / Whole-system Optimization](references/yagni-whole-system-optimization.md) |

@@ -33,6 +33,7 @@ jobs:
       - run: python scripts/test_three_view_understanding.py
       - run: python scripts/test_verification_brief.py
       - run: python scripts/test_functional_test_excel.py
+      - run: python scripts/test_evidence_catalog.py
       - run: python scripts/setup-ai-testing.py --dry-run --with-xquery
       - run: python scripts/validate_repository.py
       - run: python scripts/package_plugin.py
@@ -49,3 +50,4 @@ jobs:
       - run: python scripts/test_setup_ai_testing.py
       - run: python scripts/test_package_plugin.py
       - run: python scripts/test_audit_harness.py
+      - run: python scripts/test_evidence_catalog.py
