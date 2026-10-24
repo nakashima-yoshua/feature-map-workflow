@@ -125,6 +125,15 @@ class HookContextReuseTests(unittest.TestCase):
                 self.prompt()
         self.assertIn("1) Reuse conversation", self.prompt())
 
+    def test_unknown_git_identity_never_reuses_policy(self):
+        # Git absence and failed discovery cannot be distinguished safely.
+        with patch.object(feature_map_hook, "_git_root", return_value=None):
+            self.assertIn("1) Reuse conversation", self.prompt())
+            self.assertIn("1) Reuse conversation", self.prompt())
+        with patch.object(feature_map_hook, "_run", return_value=""):
+            self.assertIn("1) Reuse conversation", self.prompt())
+            self.assertIn("1) Reuse conversation", self.prompt())
+
 
 class DecisionProviderSelectionTests(unittest.TestCase):
     def test_hook_context_helpers_are_available(self) -> None:

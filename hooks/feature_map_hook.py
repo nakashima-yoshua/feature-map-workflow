@@ -446,8 +446,10 @@ def _context_policy_key(event, cwd, feature_map, matches, summary, parse_error):
         return None
     try:
         root = _git_root(cwd)
-        revision = _run(["git", "rev-parse", "HEAD"], root) if root else None
-        if root and not revision:
+        if root is None:
+            return None
+        revision = _run(["git", "rev-parse", "HEAD"], root)
+        if not revision:
             return None
         identity = dict(cwd=str(cwd), feature_map=str(feature_map), summary=summary,
                         repository=str(root), revision=revision,

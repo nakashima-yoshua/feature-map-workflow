@@ -73,7 +73,8 @@ warnings and applicable advice remain visible.
 Full policy returns on the first prompt, after any SessionStart (startup/resume/
 clear/compact), missing/unknown session or state, parse/target ambiguity, and policy,
 cwd/repository revision, selected XML/hash or summary changes. Unreadable Git
-identity also prevents reuse. Metadata is saved only after emission.
+identity also prevents reuse. Non-Git directories keep full policy because absence
+and discovery failure cannot be distinguished reliably. Metadata is saved only after emission.
 Lost writes repeat full policy safely. No persisted workflow/approval state changes.
 
 Hosts may omit lifecycle events or compact without notification. Emission history
