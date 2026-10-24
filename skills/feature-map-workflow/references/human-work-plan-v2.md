@@ -67,6 +67,8 @@ ones. Promote common guidance only under the existing
 of an unknown operation is different from automatically repeating completed tasks
 to optimize the Harness.
 
+Use the [condition/cost strategy](test-strategy.md#condition-selection-and-verification-cost) as the single selection/exit policy. Reference the project decision record in existing preflight and stopOn; no plan fields or numeric gates are added.
+
 ### Formal results, evidence and costs
 
 Exploratory trials and formal judgments are separate. A trial execution may be

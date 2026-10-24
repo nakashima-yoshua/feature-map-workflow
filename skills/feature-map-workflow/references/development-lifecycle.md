@@ -58,6 +58,8 @@ HALT affected advancement for a materially unagreed oracle, unknown authority,
 unsafe/non-resettable state, missing required evidence, failed required checks or
 unaccepted material risk. Project scales, thresholds and tailoring are human decisions.
 
+The [condition/cost strategy](test-strategy.md#condition-selection-and-verification-cost) owns condition selection, additions and exit/budget decisions; apply it during test preparation and QA handoff.
+
 ### Select the next route
 
 Read only the current question's route, not all links recursively:

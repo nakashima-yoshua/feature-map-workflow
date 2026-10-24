@@ -22,6 +22,58 @@ For unknown operations use [Human Work Direction](human-work-direction.md);
 its v2 contract owns trials, consolidation and total-cost measurements. Reuse known
 procedures; keep individual judgment, safety, evidence and human approval.
 
+## Condition selection and verification cost
+
+Minimize total preparation, execution, evidence, diagnosis/rerun and maintenance
+cost **subject to agreed quality, safety, traceability and reproducibility**.
+Fewest tests/clicks is not the objective; cheap execution does not establish PASS.
+
+1. Fix the mandatory set first: acceptance conditions, material risks, important
+   boundaries, branches and state transitions. Keep its denominator, source version
+   and exclusion reasons in the existing project test/acceptance record.
+2. For each acceptance condition, select factors that can change its judgment,
+   equivalence partitions/representatives/boundaries, feasibility constraints and
+   important interactions. Avoid the full Cartesian product. Unreachable states
+   are not the same as operations that must be attempted and correctly rejected.
+3. Pairwise is a candidate for ordinary interactions, not a universal guarantee.
+   Explicitly select justified higher-order combinations for material risks.
+   Start abnormal checks with one fault; combine faults only for evidenced concerns
+   such as error priority, authorization bypass or transaction atomicity.
+4. Record selected strength/constraints and omitted conditions with reasons; trace
+   condition IDs -> scenarios -> consolidated operations/checkpoints. Requirements,
+   necessary conditions and code-path coverage have different denominators.
+   Do not redefine the denominator silently to fit a budget.
+
+For each proposed addition record the unchecked guarantee, failure impact, difference
+from existing evidence, cheapest reliable layer and total-cost rationale. Adopt,
+defer or reject with a reason in the existing plan/change record. Weak proposals
+need not become tests; unknown material risks cannot be discarded as mere expense.
+For interaction background see [NIST combinatorial testing](https://www.nist.gov/publications/combinatorial-testing);
+its research is not proof of this project's sufficiency or savings.
+
+Trial only unknown/changed operations. Choose automation by creation/maintenance
+cost versus plausible repeated-run savings and reliability; do not force every
+check into automation. Keep the AI-trial -> deterministic Playwright/FlaUI route
+in [AI-assisted Testing](ai-assisted-testing.md#from-screen-trials-to-deterministic-regression).
+
+### Completion and budget decisions
+
+Finish only when mandatory checks/evidence and required gates are satisfied, and
+the responsible owner disposes of remaining defects, not-run work and residual risk.
+Keep failed/blocked/not-run results intact; acceptance never rewrites them into PASS.
+If a budget/effort limit is exceeded, stop affected advancement for a human decision
+on scope, deadline and risk acceptance. Rebaseline any agreed scope/version change;
+never silently drop mandatory checks or terminate successfully on budget alone.
+Set scales/budgets per project; no universal numerical target is imposed.
+
+Keep one lightweight selection/adoption/exit record in existing project test docs.
+Reference it from existing plan preflight, session stopOn and the review packet;
+v2 requiredConditions records agreed necessary IDs, not the complete factor model.
+No new mandatory v1/v2 fields, condition generator, cost solver or automatic
+sufficiency/approval gate is implemented. Existing HTML/JSON carries those
+checkpoints. Practical sufficiency and cost effectiveness remain unverified until
+an authorized pilot measures preparation, runs, rework, evidence and maintenance.
+
 ## Choose the next guide
 
 | Current question | Guide |

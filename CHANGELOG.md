@@ -4,6 +4,8 @@ All notable user-visible changes are documented here.
 
 ## Unreleased
 
+- Centralize condition modeling, mandatory checks, test/automation adoption and human exit/budget decisions in the test strategy; reuse existing v1/v2 checkpoints without a new solver or required fields.
+
 - Route lifecycle phases and Human Work Plan v2 details on demand; keep one task index and canonical definitions instead of repeated full guidance.
 - Reduce repeated hook policy with an always-present safety kernel and full reinsertion on lifecycle/state/target/policy changes.
 - Add canonical XML/plan JSON context projection; FMW HTML remains human-only output, never a model/tool data source.

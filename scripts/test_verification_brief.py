@@ -132,6 +132,26 @@ class VerificationBriefTests(unittest.TestCase):
         self.assertEqual(hashlib.sha256(self.plan.read_bytes()).hexdigest(), context["sources"]["planSHA256"])
         self.assertEqual("HUMAN OUTPUT MUST NEVER BECOME INPUT", output.read_text(encoding="utf-8"))
 
+    def test_existing_plan_checkpoints_carry_selection_and_budget_decisions(self):
+        for version in (1, 2):
+            with self.subTest(version=version):
+                if version == 2:
+                    self.save_plan(self.v2_plan())
+                raw = json.loads(self.plan.read_text(encoding="utf-8"))
+                reference = "README.md#condition-selection-and-exit-criteria"
+                self.assertTrue(any(reference in line for line in raw["preflight"]))
+                stop = raw["sessions"][0]["stopOn"][-1]
+                page_run = self.run_brief("--plan", str(self.plan), "--force")
+                self.assertEqual(0, page_run.returncode, page_run.stderr)
+                visible = " ".join(self.document().itertext())
+                self.assertIn(reference, visible)
+                self.assertIn(stop, visible)
+                json_run = self.run_brief("--plan", str(self.plan), "--format", "json")
+                self.assertEqual(0, json_run.returncode, json_run.stderr)
+                context = json.loads(json_run.stdout)
+                self.assertEqual(raw["preflight"], context["plan"]["preflight"])
+                self.assertIn(stop, context["plan"]["sessions"][0]["stopOn"])
+
     def save_plan(self, plan):
         self.plan.write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
 

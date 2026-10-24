@@ -37,3 +37,15 @@ python skills/feature-map-workflow/scripts/build_verification_brief.py --feature
 Mermaidの描画にはHTMLと同じフォルダに `feature-map.mermaid.min.js` が必要です。公開CDNを許可する場合に限り `--allow-cdn` を指定します。利用できない場合は図のMermaidソースが表示されます。
 
 作業計画を省いた場合は理解用ブリーフのみが生成され、**HALT（人へ実行依頼を出さない）**が表示されます。計画JSONは架空の操作案であり、許可されたテスト環境・準備・業務上の期待結果を示す証拠ではありません。
+
+## Condition selection and exit criteria
+
+条件選定・追加採否・終了判断の正本は[テスト戦略](../../skills/feature-map-workflow/references/test-strategy.md#condition-selection-and-verification-cost)です。
+実案件では、受入条件ごとの因子・代表値/境界・制約・必須分岐/状態・重要な相互作用、
+選定強度・除外理由・対象版、追加の価値/総費用、終了・予算超過時の人の判断を既存テスト計画へ記録します。
+条件IDからシナリオ、操作、個別判定、証跡へ追跡し、v2の requiredConditions は必要条件IDの合意集合として使います。
+
+この架空例に、承認済みの条件モデル・予算・十分性の実証はありません。
+v1/v2計画の既存 preflight と stopOn に確認点を置き、未合意なら正式実行を停止します。
+スクリプトは文面を表示・JSONへ投影しますが、十分性や費用対効果を自動認定しません。
+実務での有効性は、別途許可された試行案件で測定する必要があります。
