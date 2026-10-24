@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import copy
 import shutil
 import subprocess
 import sys
@@ -67,6 +68,78 @@ class VerificationBriefTests(unittest.TestCase):
         self.assertIn("HALT：作業計画が未指定", text)
         self.assertNotIn("H-RECEPTION", text)
         self.assertIn("2 cases, 3 diagrams, 0 directed sessions", run.stdout)
+
+    def v2_plan(self):
+        return json.loads((EXAMPLE / "human-work-plan.v2.example.json").read_text(encoding="utf-8"))
+
+    def save_plan(self, plan):
+        self.plan.write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+
+    def test_v2_shared_operation_keeps_individual_checkpoints_and_trial_state(self):
+        self.save_plan(self.v2_plan())
+        run = self.run_brief("--plan", str(self.plan))
+        self.assertEqual(0, run.returncode, run.stderr)
+        page = self.document()
+        self.assertEqual(1, len(page.xpath("//*[@data-operation-id='OP-OPEN']")))
+        self.assertEqual(4, len(page.xpath("//*[@data-condition-id]")))
+        rendered = " ".join(page.itertext())
+        for expected in ("NORMAL-READY", "ERROR-READY", "NORMAL-RESULT", "ERROR-RESULT",
+                         "fictional:REQ-SUBMIT@1", "OP-OPEN", "P-SUBMIT@1", "required", "delta"):
+            self.assertIn(expected, rendered)
+        self.assertIn("正式合格", rendered)
+        self.assertIn("未測定", rendered)
+
+    def test_v2_rejects_broken_bindings_without_replacing_output(self):
+        self.assertEqual(0, self.run_brief().returncode)
+        original = (self.dir / "verification-brief.html").read_bytes()
+        mutations = [
+            lambda p: p["sessions"][0]["steps"][0]["checks"][0].pop("capture"),
+            lambda p: p["sessions"][0]["steps"][0]["checks"][0].update(caseId="UNKNOWN"),
+            lambda p: p["sessions"][0]["steps"][1]["checks"][0].update(stepNo=1),
+            lambda p: p["sessions"][0]["steps"].pop(),
+            lambda p: p["sessions"][0]["steps"][0]["checks"][0].update(status="passed"),
+        ]
+        for mutate in mutations:
+            with self.subTest(mutation=mutate):
+                p = self.v2_plan(); mutate(p); self.save_plan(p)
+                self.assertNotEqual(0, self.run_brief("--plan", str(self.plan), "--force").returncode)
+                self.assertEqual(original, (self.dir / "verification-brief.html").read_bytes())
+
+    def test_v2_refuses_stale_procedure_or_incompatible_context(self):
+        mutations = [
+            lambda p: p["procedures"][0].update(status="retired"),
+            lambda p: p["procedures"][0]["appliesTo"].update(actor="admin"),
+            lambda p: p["procedures"][0]["appliesTo"].update(data="live-data"),
+            lambda p: p["procedures"][0]["appliesTo"].update(sourceRevision="other"),
+            lambda p: p["sessions"][0]["steps"][0].update(procedureRevision="2"),
+            lambda p: p["procedures"][0].pop("verifiedAt"),
+            lambda p: p["sessions"][0]["steps"][0]["trial"].pop("recordRef"),
+            lambda p: p["procedures"][0].update(destructive=True, parallelSafe=True),
+        ]
+        for mutate in mutations:
+            with self.subTest(mutation=mutate):
+                p = self.v2_plan(); mutate(p); self.save_plan(p)
+                self.assertNotEqual(0, self.run_brief("--plan", str(self.plan)).returncode)
+                self.assertFalse((self.dir / "verification-brief.html").exists())
+
+    def test_v2_requires_dependencies_and_restart_within_prior_session_steps(self):
+        for field, value in (("dependsOn", ["OP-REJECT"]), ("dependsOn", ["UNKNOWN"]),
+                             ("restartFrom", "OP-REJECT")):
+            with self.subTest(field=field, value=value):
+                p = self.v2_plan(); p["sessions"][0]["steps"][0][field] = value
+                self.save_plan(p)
+                self.assertNotEqual(0, self.run_brief("--plan", str(self.plan)).returncode)
+
+    def test_v2_measurements_require_finite_nonnegative_observations_and_reference(self):
+        p = self.v2_plan()
+        p["measurements"] = {"reference": "fictional:timing/1", "minutes": {"setup": 3, "waiting": 2}}
+        self.save_plan(p)
+        self.assertEqual(0, self.run_brief("--plan", str(self.plan)).returncode)
+        self.assertIn("fictional:timing/1", (self.dir / "verification-brief.html").read_text(encoding="utf-8"))
+        for value in (-1, float("inf"), True):
+            q = copy.deepcopy(p); q["measurements"]["minutes"]["setup"] = value
+            self.save_plan(q)
+            self.assertNotEqual(0, self.run_brief("--plan", str(self.plan), "--force").returncode)
 
     def extend_with_all_relevant_uml(self) -> list[str]:
         tree = ET.parse(self.xml)

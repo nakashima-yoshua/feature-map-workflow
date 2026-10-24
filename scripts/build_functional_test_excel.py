@@ -13,10 +13,14 @@ from datetime import datetime
 import json
 from pathlib import Path
 import re
+import sys
 from xml.etree import ElementTree as ET
 
 from openpyxl import load_workbook
 from openpyxl.worksheet.hyperlink import Hyperlink
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills" / "feature-map-workflow" / "scripts"))
+from human_work_plan import case_checkpoints, normalize_v2
 
 TYPE_SLOT = {
     "normal": 1, "condition": 2, "branch": 2, "boundary": 3,
@@ -189,6 +193,12 @@ def human_steps(path):
     return steps
 
 
+def plan_cell(value):
+    if len(str(value).strip()) > 3200:
+        raise ValueError("Procedure checkpoint exceeds workbook cell capacity; split the case")
+    return cell_text(value)
+
+
 def create_plan(args):
     root = parse_xml(args.feature_map)
     cases = choose_cases(root, args.case)
@@ -202,7 +212,13 @@ def create_plan(args):
         focus = matching[0]
     else:
         focus = usecases[0] if usecases else None
-    work = human_steps(args.human_plan)
+    raw_plan = load_json(args.human_plan) if args.human_plan else None
+    procedure_plan = (normalize_v2(raw_plan, [c.get("id") for c in cases.values()], args.revision)
+                      if isinstance(raw_plan, dict) and raw_plan.get("version") == 2 else None)
+    checkpoints = case_checkpoints(procedure_plan) if procedure_plan else {}
+    if any(check["stepNo"] > 6 for entries in checkpoints.values() for _, _, check in entries):
+        raise ValueError("Workbook supports six steps per case; split the case without dropping checks")
+    work = {} if procedure_plan else human_steps(args.human_plan)
     if set(work) - {c.get("id") for c in cases.values()}:
         raise ValueError("Human Work Plan includes unselected verification IDs")
     dest_check(args.template, args.output)
@@ -244,6 +260,29 @@ def create_plan(args):
             ws["E16"] = cell_text(expected)
         else:
             ws["D16"] = cell_text(expected)
+        if procedure_plan:
+            entries = checkpoints[cid]
+            ws["B8"] = plan_cell(" / ".join(dict.fromkeys(
+                setup for session, _, _ in entries for setup in session["sharedSetup"])))
+            ws["B10"] = plan_cell(" / ".join(f'{step["id"]}: {step["procedure"]["resetBefore"]}'
+                                             for _, step, _ in entries))
+            # The v1 case row is replaced by individually mapped planned checkpoints.
+            for address in ("B16", "C16", "D16", "E16"):
+                ws[address] = None
+            for _, operation, check in entries:
+                row = check["stepNo"] + 15
+                part = operation["procedure"]
+                ws[f"B{row}"] = plan_cell(
+                    f'CONDITION:{check["conditionId"]} | OPERATION:{operation["id"]} | '
+                    f'PROCEDURE:{part["id"]}@{part["revision"]}\n{part["action"]}\n'
+                    f'要件: {check["requirementRef"]} / 手順正本: {part["sourceRef"]}\n'
+                    f'前提: {part["precondition"]} / 初期化: {part["resetBefore"]}\n'
+                    f'終了状態: {part["postcondition"]} / 復旧: {part["recovery"]}\n'
+                    f'依存: {", ".join(operation["dependsOn"])} / 再開: {operation["restartFrom"]}\n'
+                    f'試行: {operation["trial"]["mode"]} / 証跡取得: {check["capture"]}')
+                ws[f"C{row}"] = plan_cell(operation["data"])
+                column = "E" if re.search(r"DB|テーブル|登録|更新|行|INSERT|UPDATE|DELETE", check["expected"], re.I) else "D"
+                ws[f"{column}{row}"] = plan_cell(check["expected"])
     book.calculation.fullCalcOnLoad = True
     book.calculation.forceFullCalc = True
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -302,6 +341,9 @@ def import_one(ws, record, path):
             raise ValueError("Each mapped check must identify a unique step, status and evidence")
         if not ws[f"B{step_no + 15}"].value:
             raise ValueError("Cannot import a result for an unplanned step")
+        marker = re.match(r"^CONDITION:([^\s|]+) \| OPERATION:", str(ws[f"B{step_no + 15}"].value))
+        if marker and check.get("conditionId") != marker.group(1):
+            raise ValueError("Result conditionId does not match the planned checkpoint")
         checks[step_no] = check
     if record["status"] == "not-run" and checks:
         raise ValueError("Not-run result cannot include executed steps")

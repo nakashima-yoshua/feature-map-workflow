@@ -8,25 +8,76 @@ This policy applies to both `catchup` and `change` mode. Do not add a third Feat
 
 ## Lifecycle
 
-Use this default flow:
+The following is a proposed standard to tailor by feature and risk, not a claim
+that a project has approved every stage or a new enforced workflow state machine.
+Keep the existing numbered phase contracts below as reference keys. They do not
+require all detailed tests and all test data to be completed before implementation.
+
+Use this feature-sized flow:
 
 ```text
-Context Sufficiency
-  -> Requirements
-  -> Basic Design
-  -> Business Scenario / E2E Design
-  -> Test Boundary Design
-  -> Detailed Design
-  -> Condition / State / Boundary Tests
-  -> Residual Unit Tests
-  -> Implementation + CI
-  -> Release Package / CD
-  -> As-Built View
-  -> Customer Submission Materials Organization (when requested)
-  -> Delivery / Acceptance
+Purpose / scope / risk / exclusions
+  -> agreed specification and acceptance baseline, reviewed for testability
+  -> representative scenarios + important boundary/error conditions
+  -> input data + prerequisite data + specification-derived expected results
+  -> small design / implementation / local-verification iterations
+  -> selective trials on the actual product + consolidated work plan
+  -> required formal verification + individual judgments and evidence
+  -> QA evaluation + human risk disposition and release/delivery authorization
+  -> release / handoff / preserved evidence
+  -> operational feedback to requirements, procedures and regression tests
 ```
 
 Feedback to an earlier phase is allowed whenever new evidence contradicts an assumption. Do not force work through a gate merely to preserve phase order.
+
+| Work boundary | Existing phases | Entry and exit / minimum useful artifact |
+| --- | --- | --- |
+| Purpose and authorized slice | 1–2 | Request and context -> agreed goal, risk, scope and exclusions |
+| Specification and acceptance | 2–3 | Authorized slice -> identifiable agreed specification/oracle version; QA reviews observability before agreement |
+| Design and test preparation | 3–8 | Accepted baseline -> selected scenarios, input/fixture data, independent expectations and a feasible test boundary for the next slice |
+| Implementation and local verification | 6–9 | Prepared slice -> small tested candidate; revise design/data/implementation from actual evidence |
+| Trial and work-plan preparation | 5 and the manual-verification handoff in 9 | Actual operations or reusable procedures -> only necessary trials, per-operation checkpoints, dependency/reset/restart plan and its validity review |
+| Formal verification | 9 and the verification input to 12 | Valid plan, authorized environment and candidate -> per-case/condition results, exact revision and original evidence; seal after runs rather than waiting until delivery |
+| QA evaluation and authorization | 9–10 and 12 | Results and gaps -> QA conclusion, unresolved defects/risks, human disposition and applicable release/delivery authorization |
+| Release and handoff | 10–12, including conditional 11a | Authorized candidate -> artifact digest, as-built references, customer-safe materials, handoff/acceptance and archived evidence |
+| Operation and learning | 1–2/7/9 on a subsequent authorized change | Incident/observation -> corrected specification, minimal regression and applicable procedure knowledge |
+
+Prepare data that can **judge specification conformance**, including important
+invalid states; do not merely find data that makes the current implementation pass.
+Expected results come from the accepted specification or independent business
+oracle, not from reading back the implementation's answer. Work feature by feature:
+prepare enough for the next safe iteration and add only evidenced missing cases.
+An actual-product trial discovers operations, observation points, timing and recovery;
+it is distinct from both the early test design and a formal PASS. Reuse known
+procedures or only trial their changed part. An execution already satisfying the
+formal identity, oracle, reproducibility and evidence conditions may be considered
+for formal use; the trial label alone neither disqualifies nor approves it.
+
+### Tailoring and stop conditions
+
+A small, low-risk change may reuse existing design, fixtures and evidence routes,
+skip trials when applicable procedures are current, and omit irrelevant diagrams,
+work plans and customer deliverables. Record a material omission's scope and reason
+in the existing change record; do not manufacture a complete document set.
+
+Design and change-impact review still select the relevant security/authorization,
+privacy, data/transaction, nonfunctional and regression guarantees. Unchanged low-risk
+areas do not need a blanket retest; unknown important effects remain visible. HALT
+the affected advancement for an unagreed material oracle, unknown authority, unsafe
+or non-resettable state, missing required evidence, a failed required check or an
+unaccepted material risk. Scales, thresholds and project-specific tailoring remain
+human decisions, not invented universal numbers.
+
+Specification, development and QA are responsibilities, not a required headcount:
+upstream owns the agreed requirement/acceptance baseline, development owns its
+realization, QA owns conformance judgment and proof. All reference the same IDs and
+versions. Actual source/tests, original execution records and human approvals remain
+with their existing owners; Feature Map is the durable index. Humans agree business
+meaning, accept residual risk and authorize release/delivery. AI can propose and
+deterministic tools can check; neither silently supplies that authority. When roles
+are performed by one person, record self-review limitations and necessary independent
+checks. Versioning, impact analysis, approvals and evidence preservation are shared
+cross-phase procedures, not extra packages.
 
 For changes to legacy functionality, apply [Change-Driven Incremental Modernization](incremental-modernization.md) across existing phases. Investigate enough of the surrounding business flow to document it accurately, but change or migrate only an approved, cohesive slice. Modernization is a choice in design, not a new mandatory lifecycle phase.
 
@@ -167,7 +218,7 @@ explicitly not-run.
 
 **Input:** rules, state transitions, input domains, effects.
 
-**Activity:** cover equivalence classes, boundary values, state transitions, errors, permissions, retries, duplicates, and DB side effects below the E2E layer.
+**Activity:** prepare and verify the important equivalence classes, boundary values, state transitions, errors, permissions, retries, duplicates, and DB side effects below the E2E layer, incrementally with implementation. Prepare the next slice's input, prerequisite data and specification-derived expected result; do not require the whole catalog before coding.
 
 **Durable Feature Map delta:** representative verification cases only. Do not store generated combinatorial test catalogs in XML.
 
@@ -212,6 +263,12 @@ explicitly not-run.
 **Output:** tested commit candidate with revision-bound review summary and unresolved human decisions (no machine-generated approval).
 
 **Before manual verification:** run automated preflight first, then issue a short focused brief plus an explicitly reviewed human session plan. Without approved oracle, isolatable test state or authorized environment, report HALT instead of inventing runnable steps.
+
+For unclear operations, use the conditional procedure trials and optional v2 work
+plan in [Human Work Direction](human-work-direction.md#procedure-based-plan-version-2).
+Validate the consolidated sequence before required formal checks; retain individual
+case/condition results, blocked versus not-run versus failed, and the original
+evidence. A plan or trial does not by itself establish QA acceptance.
 
 ### 10. Release Package / CD
 

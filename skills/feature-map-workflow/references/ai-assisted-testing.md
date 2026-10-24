@@ -31,6 +31,15 @@ AI explores and drafts; deterministic code executes and asserts; a human determi
 
 ## Result contract (version 1)
 
+The optional procedure-based Human Work Plan v2 is a planning input, not a new
+result schema. Preserve per-case native results after shared operations; use
+`checks[].conditionId`, and `stepNo` when projecting into Excel. Keep operation ID,
+procedure revision and the accepted requirement/specification reference in the
+frozen plan/private execution record. A plan's required/delta/reuse trial choice
+cannot assert execution, adopt evidence or establish PASS. Prepare specification-led
+input/fixture/expected data for the next feature slice before implementation;
+trial actual operations only when needed, then verify the consolidated plan.
+
 Test tools retain their native JUnit/TRX/Playwright reports. To connect them to Feature Map, emit a compact `result.json` for each run:
 
 | Field | Meaning |

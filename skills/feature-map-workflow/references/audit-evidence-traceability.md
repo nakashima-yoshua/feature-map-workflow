@@ -86,6 +86,11 @@ Excel 検証リスト（対象ケースを選択）
 5. **変更・承認・配布への接続：** 検証したSHAに対応するPR・CI・独立レビュー・人の承認を原記録で辿る。リリースを問う場合のみ配布artifact digestとの対応も検証する。PRリンクだけでは対象SHAの一致は保証しない。
 6. **回答：** Audit Indexに `workbook reference + sheet + verifyCaseId + sourceRevision + runId` を起点キーとして、確認済みリンクと `MISSING` / `NOT_RUN` / `UNVERIFIED` / `STALE` を記録。監査用の抜粋は必要最小限とし、元Excelや顧客証跡を公開GitHubへ転記しない。
 
+任意の手順計画 v2 を使う場合は、個別行の条件 ID・操作 ID・手順 ID/版から、
+封印した計画（`planSHA256`）と `checks[].conditionId`・`stepNo` へ対応をたどります。
+共通操作でもケース別の観測・合否・証跡を照合し、試行の採用条件や実行不能の理由を確認します。
+作業時間の短縮は QA 作業効率の情報として扱い、製品品質や人の納品承認の代用にしません。
+
 ### Excel起点Audit Indexの最小レコード（架空例）
 
 ```yaml

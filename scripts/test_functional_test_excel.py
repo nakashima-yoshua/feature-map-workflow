@@ -103,5 +103,85 @@ class WorkbookTests(unittest.TestCase):
                         "--revision","sha-test","--output",self.root/"other.xlsx")
         self.assertNotEqual(0,failed.returncode)
 
+    def v2_plan(self, name="v2.xlsx", mutate=None):
+        tree=ET.parse(self.xml)
+        if tree.getroot().find("./verify/case[@id='V-TWO']") is None:
+            c=ET.SubElement(tree.getroot().find("verify"),"case",id="V-TWO",type="error",status="not-run")
+            ET.SubElement(c,"condition").text="Invalid input"
+            ET.SubElement(c,"expect").text="Error without registration"
+        tree.write(self.xml,encoding="utf-8")
+        plan=json.loads((ROOT/"examples/fictional-stock-request/human-work-plan.v2.example.json").read_text(encoding="utf-8"))
+        plan["sourceRevision"]="sha-test"
+        plan["requiredConditions"]={"V-ONE":plan["requiredConditions"]["V-SUBMIT"],
+                                    "V-TWO":plan["requiredConditions"]["V-REJECT"]}
+        for part in plan["procedures"]:
+            part["appliesTo"]["sourceRevision"]="sha-test"
+        for session in plan["sessions"]:
+            for step in session["steps"]:
+                for check in step["checks"]:
+                    check["caseId"]={"V-SUBMIT":"V-ONE","V-REJECT":"V-TWO"}[check["caseId"]]
+        if mutate:mutate(plan)
+        source=self.root/"human-plan.json"
+        source.write_text(json.dumps(plan),encoding="utf-8")
+        target=self.root/name
+        run=self.cli("plan","--template",self.template,"--feature-map",self.xml,
+                     "--revision","sha-test","--human-plan",source,"--output",target)
+        return target,run
+
+    def test_v2_shared_operations_project_to_independent_pending_case_rows(self):
+        target,run=self.v2_plan()
+        self.assertEqual(0,run.returncode,run.stderr)
+        w=load_workbook(target)
+        self.assertIn("CONDITION:NORMAL-READY",w["FT-01"]["B16"].value)
+        self.assertIn("CONDITION:NORMAL-RESULT",w["FT-01"]["B17"].value)
+        self.assertIn("CONDITION:ERROR-READY",w["FT-07"]["B16"].value)
+        self.assertIn("OPERATION:OP-OPEN",w["FT-01"]["B16"].value)
+        self.assertIn("OPERATION:OP-OPEN",w["FT-07"]["B16"].value)
+        for sheet in ("FT-01","FT-07"):
+            self.assertEqual("未判定",w[sheet]["F6"].value)
+            self.assertEqual("f",w[sheet]["H30"].data_type)
+            self.assertTrue(all(w[sheet][f"H{row}"].value is None for row in (16,17)))
+
+    def test_v2_rejects_revision_or_row_overflow_before_creating_workbook(self):
+        for index,mutate in enumerate((
+            lambda p:p.update(sourceRevision="different"),
+            lambda p:p["sessions"][0]["steps"][1]["checks"][0].update(stepNo=7),
+        )):
+            target,run=self.v2_plan(name=f"bad-{index}.xlsx",mutate=mutate)
+            self.assertNotEqual(0,run.returncode)
+            self.assertFalse(target.exists())
+
+    def test_v2_result_keeps_case_status_and_refuses_wrong_condition_or_missing_evidence(self):
+        target,run=self.v2_plan()
+        self.assertEqual(0,run.returncode,run.stderr)
+        for final,label in (("failed","不合格"),("blocked","保留")):
+            (self.root/"ready.txt").write_text("ready observation",encoding="utf-8")
+            (self.root/"result.txt").write_text("result observation",encoding="utf-8")
+            result=dict(schemaVersion=1,runId="RUN-1",verifyCaseId="V-ONE",sourceRevision="sha-test",
+                        status=final,checks=[
+                            dict(stepNo=1,conditionId="NORMAL-READY",status="passed",evidence=["ready.txt"]),
+                            dict(stepNo=2,conditionId="NORMAL-RESULT",status=final,evidence=["result.txt"])],
+                        evidence=["ready.txt","result.txt"])
+            source=self.root/"result.json";source.write_text(json.dumps(result),encoding="utf-8")
+            output=self.root/f"{final}.xlsx"
+            imported=self.cli("results","--workbook",target,"--result",source,"--output",output)
+            self.assertEqual(0,imported.returncode,imported.stderr)
+            w=load_workbook(output)
+            self.assertEqual("合格",w["FT-01"]["H16"].value)
+            self.assertEqual(label,w["FT-01"]["H17"].value)
+            self.assertIsNone(w["FT-07"]["H16"].value)
+            for key,value in (("conditionId","WRONG"),("evidence",["missing.txt"])):
+                result["checks"][1][key]=value
+                source.write_text(json.dumps(result),encoding="utf-8")
+                invalid=self.root/f"bad-{final}-{key}.xlsx"
+                self.assertNotEqual(0,self.cli("results","--workbook",target,"--result",source,"--output",invalid).returncode)
+                self.assertFalse(invalid.exists())
+                result["checks"][1].update(conditionId="NORMAL-RESULT",evidence=["result.txt"])
+        result.update(status="not-run",checks=[],evidence=[])
+        source.write_text(json.dumps(result),encoding="utf-8")
+        notrun=self.root/"not-run.xlsx"
+        self.assertEqual(0,self.cli("results","--workbook",target,"--result",source,"--output",notrun).returncode)
+        self.assertIsNone(load_workbook(notrun)["FT-01"]["H16"].value)
+
 if __name__=="__main__":
     unittest.main()
