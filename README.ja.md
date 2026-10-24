@@ -115,7 +115,7 @@ bash ./scripts/setup-ai-testing.sh --dry-run
 
 有効化前に[hooks/hooks.json](hooks/hooks.json)と[実装](hooks/feature_map_hook.py)を確認します。スクリプトはPluginファイルを持つホストで動作します。Web上でPluginを追加しただけでは、スクリプトはローカルに配置されません。プロンプト中の曖昧な語は調査の手掛かりとして使い、利用可能な情報を確認しても結果を左右する不足が残る場合だけ質問します。Stop時の検証は現在のXMLハッシュに結び付き、継続回数には上限があります。
 
-判断補助は `FEATURE_MAP_DECISION_PROVIDER=off|jev|openai` で選び、既存の `FEATURE_MAP_JEV_*` 設定も維持します。metadataや本文送信モードで送る内容はProviderごとに異なります。有効化前に[Decision Providers](skills/feature-map-workflow/references/decision-providers.md)と[Jev](skills/feature-map-workflow/references/jev.md)の送信条件を確認してください。判断補助で事実や権限を確定せず、必須検証を解除しません。APIの失敗は未判断とし、ローカルのゲートは維持します。
+判断補助は `FEATURE_MAP_DECISION_PROVIDER=off|jev|openai` で選び、OpenAIには任意の作業フェーズ判定と、結果を記録するだけの観測モードがあります。既存の `FEATURE_MAP_JEV_*` 設定も維持します。metadataや本文送信モードで送る内容はProviderごとに異なります。有効化前に[Decision Providers](skills/feature-map-workflow/references/decision-providers.md)と[Jev](skills/feature-map-workflow/references/jev.md)の送信条件を確認してください。判断補助で事実や権限を確定せず、必須検証を解除しません。APIの失敗は未判断とし、ローカルのゲートは維持します。
 
 ## 検証、レビュー、人の権限
 
