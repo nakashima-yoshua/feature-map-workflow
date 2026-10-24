@@ -21,6 +21,12 @@ python scripts/build_functional_test_excel.py plan \
 
 **採否はすべて未判定**です。期待結果の出所が承認されていなければ、Excelを生成しただけでは実行可能とみなしません。複数のユースケースを含むXMLでは、対象の `useCase` と検証IDを明示してください。
 
+任意の [Human Work Plan v2](human-work-direction.md#procedure-based-plan-version-2) も
+同じ `--human-plan` で指定できます。共有操作をケース別の確認行へ展開し、操作 ID、
+手順 ID と版、条件 ID、要件参照、前提・終了状態、初期化・復旧・再開位置と証跡取得方法を
+保持します。対象リビジョンや必要条件との不一致、欠落・重複、1ケース6手順を超える計画は
+出力前に拒否します。手順や確認条件を黙って省略せず、ケースの分割を明示してください。
+
 Excelは `FT-xx!B7` に `VERIFY:<検証ID>` を保持し、`表紙!K19` にソースリビジョンを記録します。検証リストの数式、個別ケースの `B31`（設計状態）と `H30`（総合判定）は保全します。10件超ではシートと一覧行を追加します。各ケース6手順を超える場合は、手順を無理に省略せず、ケース設計を見直して分割します。
 
 ## 結果・証跡の反映
@@ -33,6 +39,12 @@ python scripts/build_functional_test_excel.py results \
 ```
 
 標準 `ai-assisted-testing.md` の `result.json` を読み、**sourceRevision・verifyCaseId・runId** を必須照合します。実行全体がPASSでも各手順の合格にはしません。各 `checks[]` に `stepNo`（1～6）、`status` と `evidence[]` があり、同一result内の実在する相対証跡パスに対応する場合のみ個別行へ結果を反映します。
+
+v2 から作った行では、`checks[].conditionId` も行頭の `CONDITION:` と照合します。
+別条件の結果を同じ手順番号へ流用しません。v1 の帳票・結果の取込条件は維持します。
+実行不能は `blocked`（保留）、未着手は `not-run`、期待結果との差を観測した場合は
+`failed` とし、前の操作の失敗だけで後続を不合格にしません。試行記録や作業計画から
+結果セルを自動的に合格へ変更しません。
 
 ```json
 {

@@ -13,9 +13,13 @@ import json
 import re
 import tempfile
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from xml.etree import ElementTree as ET
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from human_work_plan import normalize_v2
 
 MAX_INPUT = 2 * 1024 * 1024
 MAX_PLAN = 128 * 1024
@@ -270,8 +274,10 @@ def read_plan(path: Path | None, case_ids: list[str]) -> dict | None:
         plan = json.loads(path.read_text(encoding="utf-8"))
     except (ValueError, UnicodeError) as exc:
         raise ValueError(f"Invalid plan JSON: {exc}") from exc
+    if isinstance(plan, dict) and plan.get("version") == 2:
+        return normalize_v2(plan, case_ids)
     if not isinstance(plan, dict) or plan.get("version") != 1:
-        raise ValueError("Plan must use version 1")
+        raise ValueError("Plan must use version 1 or 2")
     required_string(plan, "environment", "plan")
     required_string(plan, "sourceRevision", "plan")
     required_list(plan, "preflight", "plan")
@@ -312,6 +318,34 @@ def read_plan(path: Path | None, case_ids: list[str]) -> dict | None:
 
 def li(lines: list[str]) -> str:
     return "<ol>" + "".join(f"<li>{esc(x)}</li>" for x in lines) + "</ol>"
+
+
+def procedure_rows(session):
+    rows = []
+    for step in session["steps"]:
+        part = step["procedure"]
+        checks = "".join(
+            f'<li data-condition-id="{esc(check["conditionId"])}">'
+            f'<strong>{esc(check["caseId"])}</strong> / {esc(check["conditionId"])} '
+            f'/ stepNo {check["stepNo"]} / {esc(check["requirementRef"])}'
+            f'<p>合格条件：{esc(check["expected"])}<br>証跡取得：{esc(check["capture"])}</p></li>'
+            for check in step["checks"]
+        )
+        trial = step["trial"]
+        rows.append(
+            f'<li data-operation-id="{esc(step["id"])}"><strong>{esc(step["id"])}</strong>：'
+            f'{esc(part["action"])} <small>{esc(part["id"])}@{esc(part["revision"])}</small>'
+            f'<p>手順正本：{esc(part["sourceRef"])} / 状態：{esc(part["status"])} / '
+            f'検証日：{esc(part.get("verifiedAt", "未検証"))}</p>'
+            f'<p>データ：{esc(step["data"])}<br>前提：{esc(part["precondition"])}'
+            f'<br>初期化：{esc(part["resetBefore"])}<br>終了状態：{esc(part["postcondition"])}'
+            f'<br>復旧：{esc(part["recovery"])} / 再開位置：{esc(step["restartFrom"])}'
+            f'<br>依存：{esc(", ".join(step["dependsOn"]) or "なし")}'
+            f' / 並行可否の申告：{part["parallelSafe"]} / 破壊操作：{part["destructive"]}</p>'
+            f'<p>試行：{esc(trial["mode"])} / {esc(trial["reason"])} / '
+            f'記録：{esc(trial.get("recordRef", "未記録"))}</p><ul>{checks}</ul></li>'
+        )
+    return rows
 
 
 def render(root: ET.Element, focus: ET.Element | None,
@@ -378,7 +412,7 @@ def render(root: ET.Element, focus: ET.Element | None,
         session_parts = []
         for session in plan["sessions"]:
             rows = []
-            for step in session["steps"]:
+            for step in session["steps"] if plan["version"] == 1 else []:
                 c = case_by_id[step["caseId"]]
                 rows.append(
                     f"<li><strong>{esc(step['caseId'])}</strong>：{esc(step['action'])}"
@@ -388,6 +422,8 @@ def render(root: ET.Element, focus: ET.Element | None,
                     "<p class='muted'>実測・判定は検証ID別に外部の記録へ残す"
                     "（このHTMLには実行結果を保存しない）。</p></li>"
                 )
+            if plan["version"] == 2:
+                rows = procedure_rows(session)
             session_parts.append(
                 f'<article><h3>{esc(session["id"])}：{esc(session["title"])}'
                 f' <small>（担当：{esc(session["actor"])}）</small></h3>'
@@ -407,6 +443,18 @@ def render(root: ET.Element, focus: ET.Element | None,
             '<h3>事前チェック（人を呼ぶ前）</h3>' + li(plan["preflight"])
             + "".join(session_parts) + "</section>"
         )
+        if plan["version"] == 2:
+            measured = plan.get("measurements")
+            timing = (f'申告された実測値：{esc(json.dumps(measured["minutes"], ensure_ascii=False))}'
+                      f' / 根拠：{esc(measured["reference"])}' if measured else '作業時間：未測定')
+            sessions += ('<section><h2>試行と改善の境界</h2><p>この計画は正式合格・試行完了・'
+                         '実環境の適合を証明しません。試行が必要な箇所は妥当性確認後に正式検証します。'
+                         '記録条件を満たす実行の再利用は別途判断し、全件を二重実行しません。'
+                         '並行実行や自動最適化は行いません。前提不成立の後続は blocked、'
+                         '未着手は not-run、観測した期待結果との差は failed として個別に残します。</p>'
+                         f'<p>{timing}</p><p>結果は既存の Result v1 に case / condition / '
+                         'stepNo / run と個別証跡を結び付けて記録し、手順版と操作 ID は計画の版に固定します。'
+                         '製品品質と作業効率は別に評価します。</p></section>')
 
     issues = root.findall("./open/item")
     issue_rows = []

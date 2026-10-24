@@ -77,6 +77,16 @@ Storage or reference integrity does not prove the test oracle, completeness of
 observations, business acceptance or customer delivery. In particular, a saved
 Excel, a build log or an overall run PASS does not make every condition pass.
 
+For procedure-based work plans, seal the exact plan snapshot (including procedure
+revisions and required condition IDs) and bind it through the existing plan hash.
+Preserve trial records, measured effort and recovery notes as scoped preparation
+references; they do not satisfy a functional condition. A trial execution considered
+for formal use must already meet the exact formal oracle, identity, reproducibility
+and evidence requirements, with an explicit adoption decision. Never relabel a sealed
+preparation run. Retain failed/blocked attempts and link a new run on re-execution.
+Operation/check mappings live in the plan and original execution records, not a
+second Feature Map catalog or a new XML schema.
+
 ## Existing-result integration and deterministic checks
 
 `scripts/evidence_catalog.py` uses Python's standard library and never connects

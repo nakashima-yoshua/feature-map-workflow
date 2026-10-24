@@ -15,6 +15,23 @@ Business scenario
 
 Do not maximize test count. Minimize duplicated guarantees and untested behavior.
 
+This is a design order, not a requirement to execute E2E first or finish every
+detailed test before implementation. From an agreed specification/acceptance
+baseline, select a feature's representative flow and significant boundaries/errors;
+prepare input, prerequisite data and independent expected results, then iterate
+implementation and local checks in small slices. Data must expose nonconformance,
+not merely make the current code pass. Include security, nonfunctional, regression
+and change-impact checks where the feature's risk requires them.
+
+When actual operations are unclear, use the selective trials and procedure-based
+plan in [Human Work Direction](human-work-direction.md#procedure-based-plan-version-2).
+Reuse applicable known procedures or trial only a changed part. After consolidation,
+check starting/ending states, dependencies, resets, recovery and all individual
+checkpoints before formal verification. Preserve QA judgment and human risk/release
+authority. Optimize total preparation, execution, waiting, switching, evidence,
+diagnosis, rerun and maintenance cost under required coverage, safety, evidence
+completeness and reproducibility; fewer clicks alone do not prove quality.
+
 ## Choose the next guide
 
 | Current question | Guide |

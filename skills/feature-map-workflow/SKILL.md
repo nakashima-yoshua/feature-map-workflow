@@ -44,7 +44,7 @@ Paths in this table are relative to this Skill. Root-level tools and examples ar
 | Select among UML, DFD, lineage, CRUD, traceability and other views by purpose | [Diagram Selection](references/diagram-selection.md) |
 | Choose E2E, integration, DB or residual unit tests | [Test Strategy](references/test-strategy.md) and [Coverage Model](references/coverage-model.md) |
 | Prepare AI-assisted UI/CLI/DB tests and evidence | [AI-assisted Testing](references/ai-assisted-testing.md) |
-| Batch human checks and generate a focused HTML brief | [Human Work Direction](references/human-work-direction.md) |
+| Trial unclear operations, reuse procedures, consolidate human checks and generate a focused HTML brief | [Human Work Direction](references/human-work-direction.md) |
 | Use a supplied functional-test workbook | [Functional Test Excel](references/functional-test-excel.md) |
 | Create, check and organize evidence-backed customer submission materials | [Customer Deliverables](references/customer-deliverables.md) |
 | Preserve audit-ready original evidence and trace test/condition IDs | [Evidence Storage](references/evidence-storage.md) |

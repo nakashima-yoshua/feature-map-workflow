@@ -4,6 +4,9 @@ All notable user-visible changes are documented here.
 
 ## Unreleased
 
+- Add optional Human Work Plan v2 with versioned procedures, selective trials, dependency/restart checks, complete condition mappings and measured effort references; render shared operations with independent checkpoints in briefs and functional-test Excel while retaining v1 plans/results.
+- Reframe the lifecycle as a risk-tailored, feature-sized specification/data/implementation loop followed by selective trials, formal verification, QA/human authorization, handoff and operational feedback, preserving existing phase IDs and schema contracts.
+
 - Align Decisions guidance with general availability; add opt-in current-work phase candidates, observation-first OpenAI hooks, bounded content context and configurable transport timeout.
 
 - Expand evidence-backed verification diagram selection with a purpose-driven 17-view catalog (including lineage, CRUD, decision tables, dependency, traceability, context and batch) without changing the Feature Map schema or fabricating diagrams.

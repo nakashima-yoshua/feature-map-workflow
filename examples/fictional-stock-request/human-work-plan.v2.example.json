@@ -1,0 +1,71 @@
+{
+  "version": 2,
+  "environment": "fictional-isolated",
+  "sourceRevision": "fictional-no-implementation",
+  "preflight": ["Confirm authorized environment, accepted expectations and isolated data; this example executes nothing."],
+  "requiredConditions": {"V-SUBMIT": ["NORMAL-READY", "NORMAL-RESULT"], "V-REJECT": ["ERROR-READY", "ERROR-RESULT"]},
+  "procedures": [
+    {
+      "id": "P-OPEN", "revision": "1", "sourceRef": "fictional:procedures/open@1",
+      "status": "active", "verifiedAt": "2026-10-24",
+      "appliesTo": {"environment": "fictional-isolated", "sourceRevision": "fictional-no-implementation", "actor": "tester", "data": "synthetic-only"},
+      "action": "Log in once and open the request screen",
+      "precondition": "Authorized synthetic account; isolated data",
+      "postcondition": "Request screen ready without a submitted request",
+      "resetBefore": "Restore and check the synthetic baseline",
+      "recovery": "Stop, preserve evidence and restore the baseline before a new run",
+      "parallelSafe": false, "destructive": false
+    },
+    {
+      "id": "P-SUBMIT", "revision": "1", "sourceRef": "fictional:procedures/submit@1",
+      "status": "draft",
+      "appliesTo": {"environment": "fictional-isolated", "sourceRevision": "fictional-no-implementation", "actor": "tester", "data": "synthetic-only"},
+      "action": "Register ITEM-001 with quantity 3",
+      "precondition": "Independent normal-case starting state verified",
+      "postcondition": "Synthetic request stored; record before cleanup",
+      "resetBefore": "Restore normal-case fixture and verify its state",
+      "recovery": "Record failure and restore the normal-case fixture before restarting",
+      "parallelSafe": false, "destructive": false
+    },
+    {
+      "id": "P-REJECT", "revision": "1", "sourceRef": "fictional:procedures/reject@1",
+      "status": "draft",
+      "appliesTo": {"environment": "fictional-isolated", "sourceRevision": "fictional-no-implementation", "actor": "tester", "data": "synthetic-only"},
+      "action": "Attempt registration with an invalid item ID",
+      "precondition": "Previous registration effects removed and checked",
+      "postcondition": "Error observed and no request inserted",
+      "resetBefore": "Restore invalid-input fixture; HALT if reset fails",
+      "recovery": "Stop affected checks and restore the isolated fixture",
+      "parallelSafe": false, "destructive": false
+    }
+  ],
+  "sessions": [{
+    "id": "H-RECEPTION", "title": "Fictional consolidated request checks", "actor": "tester",
+    "sharedSetup": ["Prepare synthetic data and separate evidence for each case"],
+    "stopOn": ["Unexpected live data, missing authority, failed reset or mismatched revision"],
+    "cleanup": ["Preserve individual results and restore isolated data"],
+    "steps": [
+      {
+        "id": "OP-OPEN", "procedureId": "P-OPEN", "procedureRevision": "1", "data": "synthetic-only",
+        "dependsOn": [], "restartFrom": "OP-OPEN",
+        "trial": {"mode": "reuse", "reason": "Same verified applicability", "recordRef": "fictional:trial/open-1"},
+        "checks": [
+          {"caseId": "V-SUBMIT", "conditionId": "NORMAL-READY", "stepNo": 1, "requirementRef": "fictional:REQ-SUBMIT@1", "expected": "Normal-case screen ready", "capture": "case-specific readiness observation"},
+          {"caseId": "V-REJECT", "conditionId": "ERROR-READY", "stepNo": 1, "requirementRef": "fictional:REQ-REJECT@1", "expected": "Invalid-input screen ready", "capture": "separate case-specific readiness observation"}
+        ]
+      },
+      {
+        "id": "OP-SUBMIT", "procedureId": "P-SUBMIT", "procedureRevision": "1", "data": "synthetic-only",
+        "dependsOn": ["OP-OPEN"], "restartFrom": "OP-OPEN",
+        "trial": {"mode": "required", "reason": "Confirm actual operations, timing and recovery before formal use"},
+        "checks": [{"caseId": "V-SUBMIT", "conditionId": "NORMAL-RESULT", "stepNo": 2, "requirementRef": "fictional:REQ-SUBMIT@1", "expected": "Request identifier and expected DB effects", "capture": "case-specific UI, DB differences and log"}]
+      },
+      {
+        "id": "OP-REJECT", "procedureId": "P-REJECT", "procedureRevision": "1", "data": "synthetic-only",
+        "dependsOn": ["OP-SUBMIT"], "restartFrom": "OP-OPEN",
+        "trial": {"mode": "delta", "reason": "Confirm only the changed invalid-input path"},
+        "checks": [{"caseId": "V-REJECT", "conditionId": "ERROR-RESULT", "stepNo": 2, "requirementRef": "fictional:REQ-REJECT@1", "expected": "Error shown; no request inserted", "capture": "case-specific error, DB differences and log"}]
+      }
+    ]
+  }]
+}
