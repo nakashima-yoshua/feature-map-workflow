@@ -343,7 +343,7 @@ def import_one(ws, record, path):
     planned_v2 = {}
     for number in range(1, 7):
         value = str(ws[f"B{number + 15}"].value or "")
-        marker = re.match(r"^CONDITION:([^\s|]+) \| OPERATION:[^\n]+ \| PROCEDURE:[^\n]+\n", value)
+        marker = re.match(r"^CONDITION:([^\s|]+) \| OPERATION:[^|]+ \| PROCEDURE:[^\n]*\n", value)
         if marker:
             planned_v2[number] = marker.group(1)
     for check in record.get("checks", []):

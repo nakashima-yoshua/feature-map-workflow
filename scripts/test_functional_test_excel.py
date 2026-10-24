@@ -162,6 +162,9 @@ class WorkbookTests(unittest.TestCase):
             self.assertTrue(all(w[sheet][f"H{row}"].value is None for row in (16,17)))
 
     def test_v2_rejects_revision_or_row_overflow_before_creating_workbook(self):
+        def newline_ids(plan):
+            for session in plan["sessions"]:
+                for operation in session["steps"]:operation["id"]="\n"+operation["id"]
         def overflow(plan):
             operation=plan["sessions"][0]["steps"][-1]
             original=operation["checks"][0]
@@ -172,6 +175,7 @@ class WorkbookTests(unittest.TestCase):
         for index,mutate in enumerate((
             lambda p:p.update(sourceRevision="different"),
             overflow,
+            newline_ids,
         )):
             target,run=self.v2_plan(name=f"bad-{index}.xlsx",mutate=mutate)
             self.assertNotEqual(0,run.returncode)
@@ -235,6 +239,19 @@ class WorkbookTests(unittest.TestCase):
         source=self.root/"contradictory.json";source.write_text(json.dumps(record),encoding="utf-8")
         output=self.root/"contradictory.xlsx"
         self.assertNotEqual(0,self.cli("results","--workbook",target,"--result",source,"--output",output).returncode)
+        self.assertFalse(output.exists())
+
+        legacy=load_workbook(target)
+        for row in (16,17):
+            cell=legacy["FT-01"][f"B{row}"]
+            cell.value=cell.value.replace("| OPERATION:","| OPERATION:\n")
+        legacy_target=self.root/"legacy-newline-id.xlsx";legacy.save(legacy_target)
+        record.update(checks=[],evidence=[])
+        source=self.root/"legacy-empty-pass.json";source.write_text(json.dumps(record),encoding="utf-8")
+        output=self.root/"legacy-empty-pass.xlsx"
+        rejected=self.cli("results","--workbook",legacy_target,"--result",source,"--output",output)
+        self.assertNotEqual(0,rejected.returncode)
+        self.assertIn("every planned v2 checkpoint",rejected.stderr)
         self.assertFalse(output.exists())
 
     def test_v1_free_text_prefix_is_not_a_v2_checkpoint(self):

@@ -31,7 +31,7 @@ def objects(item, key, where):
 
 def identifier(item, key, where):
     value = string(item, key, where)
-    if re.search(r"[\s|]", value):
+    if item[key] != value or re.search(r"[\s|]", value):
         raise ValueError(f"{where}.{key} cannot contain whitespace or a pipe")
     return value
 
