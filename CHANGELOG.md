@@ -6,6 +6,12 @@ All notable user-visible changes are documented here.
 
 - Prioritize individual conditions by changed program guarantees and consequential impact; preserve old-plan failures and scope amendments, reuse sufficient evidence and review preparation cost before expanding fixtures or automation.
 
+- Centralize condition modeling, mandatory checks, test/automation adoption and human exit/budget decisions in the test strategy; reuse existing v1/v2 checkpoints without a new solver or required fields.
+
+- Route lifecycle phases and Human Work Plan v2 details on demand; keep one task index and canonical definitions instead of repeated full guidance.
+- Reduce repeated hook policy with an always-present safety kernel and full reinsertion on lifecycle/state/target/policy changes.
+- Add canonical XML/plan JSON context projection; FMW HTML remains human-only output, never a model/tool data source.
+
 - Add optional Human Work Plan v2 with versioned procedures, selective trials, dependency/restart checks, complete condition mappings and measured effort references; render shared operations with independent checkpoints in briefs and functional-test Excel while retaining v1 plans/results.
 - Reframe the lifecycle as a risk-tailored, feature-sized specification/data/implementation loop followed by selective trials, formal verification, QA/human authorization, handoff and operational feedback, preserving existing phase IDs and schema contracts.
 

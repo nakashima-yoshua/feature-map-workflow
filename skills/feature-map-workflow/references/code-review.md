@@ -49,6 +49,8 @@ Style preferences, unconstrained refactors, duplicate assertions and speculative
 - A new commit after human approval **invalidates that revision-bound approval** until the host's actual review policy is satisfied again. Track the new SHA and re-evaluate affected evidence; an old AI "clean" result does not apply to new changes.
 - Review cost alone never justifies bypassing a mandatory CI/security/human gate.
 
+When verification scope/cost changes, check the [selection and exit decision record](test-strategy.md#condition-selection-and-verification-cost): mandatory coverage, additions/omissions, budget escalation and the responsible human disposition. Reuse the existing review packet.
+
 ## Human review brief (in the PR description or review reply)
 
 ```text
