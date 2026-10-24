@@ -2,7 +2,10 @@
   "version": 2,
   "environment": "fictional-isolated",
   "sourceRevision": "fictional-no-implementation",
-  "preflight": ["Confirm authorized environment, accepted expectations and isolated data; this example executes nothing."],
+  "preflight": [
+    "Confirm authorized environment, accepted expectations and isolated data; this example executes nothing.",
+    "Confirm the agreed condition model, mandatory checks, addition decisions and exit criteria at README.md#condition-selection-and-exit-criteria; halt formal execution if unavailable."
+  ],
   "requiredConditions": {"V-SUBMIT": ["NORMAL-READY", "NORMAL-RESULT"], "V-REJECT": ["ERROR-READY", "ERROR-RESULT"]},
   "procedures": [
     {
@@ -42,7 +45,10 @@
   "sessions": [{
     "id": "H-RECEPTION", "title": "Fictional consolidated request checks", "actor": "tester",
     "sharedSetup": ["Prepare synthetic data and separate evidence for each case"],
-    "stopOn": ["Unexpected live data, missing authority, failed reset or mismatched revision"],
+    "stopOn": [
+        "Unexpected live data, missing authority, failed reset or mismatched revision",
+        "On budget/effort overrun, stop for owner decisions on scope, deadline and residual risk; never silently remove mandatory checks."
+      ],
     "cleanup": ["Preserve individual results and restore isolated data"],
     "steps": [
       {

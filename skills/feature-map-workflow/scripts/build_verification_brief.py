@@ -9,12 +9,14 @@ from __future__ import annotations
 
 import argparse
 import html
+import hashlib
 import json
 import re
 import tempfile
 import os
 import sys
 from dataclasses import dataclass
+from collections import Counter
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -35,10 +37,14 @@ def text(node: ET.Element | None, path: str) -> str:
     return " ".join((node.findtext(path) or "").split())
 
 
-def read_xml(path: Path) -> ET.Element:
+def read_xml(path: Path, *, with_identity=False):
+    if path.suffix.lower() in {".html", ".htm"}:
+        raise ValueError("HTML is human-facing output, not a Feature Map input")
     if not path.is_file() or path.stat().st_size > MAX_INPUT:
         raise ValueError("Feature Map is missing or exceeds 2 MiB")
     raw = path.read_bytes()
+    if len(raw) > MAX_INPUT:
+        raise ValueError("Feature Map exceeds 2 MiB")
     if re.search(br"<!DOCTYPE\b|<!ENTITY\b", raw, flags=re.I):
         raise ValueError("DOCTYPE and ENTITY declarations are forbidden")
     try:
@@ -49,7 +55,7 @@ def read_xml(path: Path) -> ET.Element:
         raise ValueError("Expected a featureMap root")
     if not text(root, "./meta/feature") or not text(root, "./meta/system"):
         raise ValueError("Feature Map system and feature must be present")
-    return root
+    return (root, hashlib.sha256(raw).hexdigest()) if with_identity else root
 
 
 def choose_focus(root: ET.Element, focus: str | None) -> ET.Element | None:
@@ -265,13 +271,18 @@ def required_list(item: dict, key: str, location: str) -> list[str]:
     return [s.strip() for s in value]
 
 
-def read_plan(path: Path | None, case_ids: list[str]) -> dict | None:
+def read_plan(path: Path | None, case_ids: list[str], *, raw=None) -> dict | None:
     if path is None:
         return None
+    if path.suffix.lower() in {".html", ".htm"}:
+        raise ValueError("HTML is human-facing output, not a plan input")
     if not path.is_file() or path.stat().st_size > MAX_PLAN:
         raise ValueError("Plan is missing or exceeds 128 KiB")
     try:
-        plan = json.loads(path.read_text(encoding="utf-8"))
+        raw = path.read_bytes() if raw is None else raw
+        if len(raw) > MAX_PLAN:
+            raise ValueError("Plan exceeds 128 KiB")
+        plan = json.loads(raw.decode("utf-8"))
     except (ValueError, UnicodeError) as exc:
         raise ValueError(f"Invalid plan JSON: {exc}") from exc
     if isinstance(plan, dict) and plan.get("version") == 2:
@@ -551,6 +562,76 @@ li{margin:.45rem 0}li p{margin:.2rem 0 0 .4rem}
             + loader + '</body></html>')
 
 
+def project_context(root, focus, cases, plan_path):
+    """Read canonical XML/JSON only; retain whole touched sessions and global risks."""
+    selected = {case.get("id", "") for case in cases}
+    catalog = {case.get("id", ""): case for case in root.findall("./verify/case")}
+    plan = None
+    plan_hash = None
+    if plan_path:
+        if (plan_path.suffix.lower() != ".json" or not plan_path.is_file()
+                or plan_path.stat().st_size > MAX_PLAN):
+            raise ValueError("Context plan must be a JSON file within the plan size limit")
+        plan_bytes = plan_path.read_bytes()
+        if len(plan_bytes) > MAX_PLAN:
+            raise ValueError("Plan exceeds 128 KiB")
+        raw = json.loads(plan_bytes.decode("utf-8"))
+        plan_hash = hashlib.sha256(plan_bytes).hexdigest()
+        if not isinstance(raw, dict):
+            raise ValueError("Plan must be an object")
+        if raw.get("version") == 2:
+            declared = raw.get("requiredConditions", {})
+            if not isinstance(declared, dict):
+                raise ValueError("requiredConditions must be an object")
+            ids = list(declared)
+        else:
+            ids = [step.get("caseId") for session in raw.get("sessions", [])
+                   if isinstance(session, dict) for step in session.get("steps", [])
+                   if isinstance(step, dict)]
+        if not all(isinstance(cid, str) and cid in catalog for cid in ids):
+            raise ValueError("Plan contains an unknown case ID")
+        plan = read_plan(plan_path, ids, raw=plan_bytes)
+        if not selected <= set(ids):
+            raise ValueError("Requested cases are missing from the plan")
+    related = set(selected)
+    if plan:
+        sessions, procedure_ids = [], set()
+        for session in plan["sessions"]:
+            ids = {check["caseId"] for step in session["steps"]
+                   for check in (step["checks"] if plan["version"] == 2 else [step])}
+            if not ids & selected:
+                continue
+            related.update(ids)
+            # Keep serial dependencies, shared reset/recovery, and other case checks.
+            steps = [{key: value for key, value in step.items() if key != "procedure"}
+                     for step in session["steps"]]
+            procedure_ids.update(step.get("procedureId") for step in steps)
+            sessions.append(dict(session, steps=steps))
+        plan = dict(plan, sessions=sessions)
+        if plan["version"] == 2:
+            plan["procedures"] = [part for part in plan["procedures"] if part["id"] in procedure_ids]
+            plan["requiredConditions"] = {cid: value for cid, value in plan["requiredConditions"].items()
+                                          if cid in related}
+    def nodes(path):
+        return [dict(node.attrib, text=" ".join(node.itertext()).strip()) for node in root.findall(path)]
+    return dict(version=1, kind="preparation-only", feature=dict(root.attrib, system=text(root, "./meta/system"),
+                name=text(root, "./meta/feature")), goal={key: text(root, "./goal/" + key)
+                for key in ("purpose", "done", "scope", "exclude")},
+                selectedCaseIds=sorted(selected), relatedCaseIds=sorted(related),
+                catalogCaseCount=len(catalog), omittedCaseCount=len(catalog) - len(related),
+                recordedStatusCounts=dict(Counter(case.get("status") or "unknown" for case in catalog.values())),
+                attentionCases=[dict(id=cid, recordedStatus=case.get("status"))
+                                for cid, case in catalog.items() if cid not in related
+                                and case.get("status") in {"failed", "blocked"}],
+                useCase=dict(focus.attrib, scenario=text(focus, "scenario")) if focus is not None else None,
+                cases=[dict(id=cid, selected=cid in selected, condition=text(catalog[cid], "condition"),
+                            expected=text(catalog[cid], "expect"), recordedStatus=catalog[cid].get("status", ""),
+                            evidence=[dict(item.attrib) for item in catalog[cid].findall("evidence")])
+                       for cid in sorted(related)],
+                invariants=nodes("./knowledge/invariant"), constraints=nodes("./knowledge/constraint"),
+                openItems=nodes("./open/item"), plan=plan, planSHA256=plan_hash)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--feature-map", required=True, type=Path)
@@ -558,14 +639,38 @@ def main() -> int:
     parser.add_argument("--case", action="append", default=[], help="Include one verification ID; repeat as needed")
     parser.add_argument("--diagram", action="append", default=[], help="Select diagram IDs explicitly, repeat without count limit")
     parser.add_argument("--plan", type=Path, help="Optional, reviewable human-work session JSON")
-    parser.add_argument("--output", type=Path, default=Path("verification-brief.html"))
+    parser.add_argument("--format", choices=("html", "json"), default="html",
+                        help="Human HTML output or read-only canonical-data JSON to stdout")
+    parser.add_argument("--output", type=Path)
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--allow-cdn", action="store_true",
                         help="Allow fallback to external Mermaid CDN (default: local only)")
     args = parser.parse_args()
     source = args.feature_map.resolve()
     base = source.parent
-    raw_out = base / args.output if not args.output.is_absolute() else args.output
+    if args.format == "json":
+        if args.output is not None or args.force or args.allow_cdn or args.diagram:
+            parser.error("JSON context cannot use HTML output/diagram options")
+        try:
+            root, source_hash = read_xml(source, with_identity=True)
+            focus = choose_focus(root, args.use_case)
+            cases = choose_cases(root, args.case, len(root.findall("./useCase")) > 1)
+            context = project_context(root, focus, cases, args.plan)
+            context["sources"] = {"featureMap": str(source),
+                                  "featureMapSHA256": source_hash}
+            if args.plan:
+                context["sources"].update(plan=str(args.plan.resolve()),
+                                          planSHA256=context.pop("planSHA256"))
+            else:
+                context.pop("planSHA256")
+        except (ValueError, OSError, TypeError, KeyError) as exc:
+            parser.error(str(exc))
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8")
+        print(json.dumps(context, ensure_ascii=False, separators=(",", ":")))
+        return 0
+    output_arg = args.output or Path("verification-brief.html")
+    raw_out = base / output_arg if not output_arg.is_absolute() else output_arg
     if raw_out.is_symlink():
         parser.error("Refusing symlink output")
     output = raw_out.resolve()

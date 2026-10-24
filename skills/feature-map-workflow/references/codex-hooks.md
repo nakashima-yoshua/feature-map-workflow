@@ -63,6 +63,26 @@ The injected policy is intentionally narrow:
 - when asking, give the current interpretation first and ask one question;
 - preserve meaning, identifiers, modality, scope, and exclusions while rendering natural Japanese.
 
+## Repeated-context policy
+
+Every prompt receives an immutable safety kernel. Reuse only suppresses the longer
+policy and unchanged Feature Map scope/exclusions/high-impact open items after an
+earlier emission in the same known session/target. New ambiguity signals, provider
+warnings and applicable advice remain visible.
+
+Full policy returns on the first prompt, after any SessionStart (startup/resume/
+clear/compact), missing/unknown session or state, parse/target ambiguity, and policy,
+cwd/repository revision, selected XML/hash or summary changes. Unreadable Git
+identity also prevents reuse. Non-Git directories keep full policy because absence
+and discovery failure cannot be distinguished reliably. Metadata is saved only after emission.
+Lost writes repeat full policy safely. No persisted workflow/approval state changes.
+
+Hosts may omit lifecycle events or compact without notification. Emission history
+cannot prove model memory: the repeated kernel requires rereading canonical scope,
+acceptance and high-impact open items if absent, and never grants authority.
+This is conservative kernel-plus-delta reduction, not guaranteed event detection.
+Stop/XSD validation and external-provider opt-in rules are unchanged.
+
 ## Configuration
 
 - `FEATURE_MAP_PATH`: explicit XML path, absolute or repo-relative.
