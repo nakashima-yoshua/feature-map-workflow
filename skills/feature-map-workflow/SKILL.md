@@ -42,7 +42,7 @@ Paths in this table are relative to this Skill. Root-level tools and examples ar
 | Compare keeping, repairing or migrating a slice; optionally choose minimal boundaries for a legacy feature addition | [Incremental Modernization](references/incremental-modernization.md) |
 | Understand business flow, data flow and evidenced ER relationships | [Three Complementary Views](references/three-view-understanding.md) | 
 | Select among UML, DFD, lineage, CRUD, traceability and other views by purpose | [Diagram Selection](references/diagram-selection.md) |
-| Choose E2E, integration, DB or residual unit tests | [Test Strategy](references/test-strategy.md) and [Coverage Model](references/coverage-model.md) |
+| Select changed program guarantees, prioritize input conditions and choose the cheapest sufficient test layer | [Test Strategy](references/test-strategy.md) and [Coverage Model](references/coverage-model.md) |
 | Prepare AI-assisted UI/CLI/DB tests and evidence | [AI-assisted Testing](references/ai-assisted-testing.md) |
 | Trial unclear operations, reuse procedures, consolidate human checks and generate a focused HTML brief | [Human Work Direction](references/human-work-direction.md) |
 | Use a supplied functional-test workbook | [Functional Test Excel](references/functional-test-excel.md) |

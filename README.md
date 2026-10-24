@@ -37,7 +37,7 @@ Read the guide for the current task rather than loading every reference.
 | Compare local change, minimal Application/Domain boundaries or gradual replacement for a legacy slice | [Incremental Modernization](skills/feature-map-workflow/references/incremental-modernization.md) |
 | Connect business flow, data flow and evidenced ER relationships | [Three Complementary Views](skills/feature-map-workflow/references/three-view-understanding.md) |
 | Select the minimum useful diagrams for understanding, change impact and testing | [Diagram Selection](skills/feature-map-workflow/references/diagram-selection.md) |
-| Choose test layers and state what the evidence covers | [Test Strategy](skills/feature-map-workflow/references/test-strategy.md) and [Coverage Model](skills/feature-map-workflow/references/coverage-model.md) |
+| Prioritize changed guarantees and input conditions; choose sufficient test layers | [Test Strategy](skills/feature-map-workflow/references/test-strategy.md) and [Coverage Model](skills/feature-map-workflow/references/coverage-model.md) |
 | Execute repeatable UI/CLI/DB tests and retain evidence | [AI-assisted Testing](skills/feature-map-workflow/references/ai-assisted-testing.md) |
 | Reduce human setup and context switching without combining test outcomes | [Human Work Direction](skills/feature-map-workflow/references/human-work-direction.md) |
 | Fill a supplied customer workbook from planned cases and step evidence | [Functional Test Excel](skills/feature-map-workflow/references/functional-test-excel.md) |
