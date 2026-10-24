@@ -74,6 +74,8 @@ v2 から作った行では、`checks[].conditionId` も行頭の `CONDITION:` �
   failed/blockedを含むPASSは拒否し、出力しません。未完了の実行を自動で合格にしません。
   failed/blockedの部分結果とchecksのないnot-runは保持できます。
 - v1のchecksが空のrun-level結果は従来どおり扱い、未確認の手順セルを合格にしません。
+  v2の判別には生成器のCONDITION/OPERATION/PROCEDUREを含むマーカー行を使い、
+  v1の自由記述が単にCONDITION:で始まるだけではv2と扱いません。
   stepNoのない従来の補足記録にも新しい必須項目は追加しませんが、明示的な
   failed/blocked/not-runを含む記録とoverall PASSの矛盾は拒否します。
   v2の旧不完全PASS入力はエラーとなるため、実際の全結果・証跡を揃えるか、
