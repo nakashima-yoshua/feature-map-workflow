@@ -283,6 +283,15 @@ class WorkbookTests(unittest.TestCase):
         self.assertEqual({"V-ONE","V-TWO"},set(case_checkpoints(normalized)))
         self.assertTrue(any(c["caseId"]==" V-ONE " for s in raw["sessions"] for op in s["steps"] for c in op["checks"]))
         self.assertTrue(all(c["caseId"] in {"V-ONE","V-TWO"} for s in normalized["sessions"] for op in s["steps"] for c in op["checks"]))
+        projection=subprocess.run(
+            [sys.executable,str(ROOT/"skills/feature-map-workflow/scripts/build_verification_brief.py"),
+             "--feature-map",str(self.xml),"--use-case","UC-ONE","--case","V-ONE",
+             "--plan",str(self.root/"human-plan.json"),"--format","json"],
+            capture_output=True,encoding="utf-8",timeout=20)
+        self.assertEqual(0,projection.returncode,projection.stderr)
+        context=json.loads(projection.stdout)
+        self.assertEqual(1,len(context["plan"]["sessions"]))
+        self.assertEqual(["V-ONE"],context["selectedCaseIds"])
 
     def test_v2_reuse_rejects_future_verification_date(self):
         self.v2_plan()

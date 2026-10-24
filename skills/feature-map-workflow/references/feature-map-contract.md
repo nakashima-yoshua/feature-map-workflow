@@ -12,6 +12,11 @@ Feature Map XML is a compact navigation and decision artifact shared by a develo
 - For many features, generate a **metadata-only directory** with `scripts/build_feature_index.py`. It contains titles, systems, states, short purposes, and relative links to XML files; it does not concatenate full Feature Maps, diagrams or evidence. Refresh it when files change; it is a regenerable display artifact, not a new source of truth.
 - Existing XML/XSD v1.3, links to tests, and the XSLT file association remain unchanged. No new runtime server, database, JavaScript framework or mandatory external service.
 
+HTML views and indexes are for people only. AI/tools query canonical XML, structured
+plans/native results and evidence metadata; do not parse FMW HTML to recover data.
+Read the [context projection route](human-work-direction.md#ai-tool-context-from-canonical-data)
+when a focused machine projection is needed.
+
 ## Information test
 
 Before writing any item, classify it:

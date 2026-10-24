@@ -45,6 +45,7 @@ def audit(root: Path, *, max_skill_bytes: int = 16384,
     paths += guides
     errors, warnings = [], []
     sizes = {}
+    characters = lines_count = 0
     repeated = {}
     for path in paths:
         rel = path.relative_to(root).as_posix()
@@ -53,6 +54,8 @@ def audit(root: Path, *, max_skill_bytes: int = 16384,
             continue
         content = path.read_text(encoding='utf-8')
         sizes[rel] = len(content.encode('utf-8'))
+        characters += len(content)
+        lines_count += len(content.splitlines())
         # Only actual Markdown prose is scanned; examples in code fences are not links.
         lines = list(_prose_lines(content))
         for number, line in lines:
@@ -94,7 +97,8 @@ def audit(root: Path, *, max_skill_bytes: int = 16384,
             warnings.append({'kind': 'repeated-prose', 'paths': sorted(locations),
                              'excerpt': paragraph[:100]})
     return {'documents': len(sizes), 'guide_count': len(guides),
-            'total_bytes': total, 'skill_bytes': sizes.get(SKILL_REL.as_posix(), 0),
+            'total_bytes': total, 'total_characters': characters, 'total_lines': lines_count,
+            'skill_bytes': sizes.get(SKILL_REL.as_posix(), 0),
             'errors': errors, 'warnings': warnings}
 
 
@@ -102,6 +106,7 @@ def markdown(report: dict) -> str:
     lines = ['## Harness maintenance audit', '',
              f"- Documents: {report['documents']} (guides: {report['guide_count']})",
              f"- Total bytes: {report['total_bytes']:,}",
+             f"- Characters / lines: {report['total_characters']:,} / {report['total_lines']:,}",
              f"- SKILL.md bytes: {report['skill_bytes']:,}",
              f"- Broken/missing: {len(report['errors'])}; review candidates: {len(report['warnings'])}",
              '']
