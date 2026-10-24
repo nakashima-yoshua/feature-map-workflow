@@ -4,6 +4,8 @@ All notable user-visible changes are documented here.
 
 ## Unreleased
 
+- Align Decisions guidance with general availability; add opt-in current-work phase candidates, observation-first OpenAI hooks, bounded content context and configurable transport timeout.
+
 - Expand evidence-backed verification diagram selection with a purpose-driven 17-view catalog (including lineage, CRUD, decision tables, dependency, traceability, context and batch) without changing the Feature Map schema or fabricating diagrams.
 
 - Add an optional A/B/C decision aid for legacy feature additions, with minimal Clean Architecture boundaries, a fictional C#/.NET + DB walkthrough and existing compatibility/recovery test links.

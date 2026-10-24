@@ -11,7 +11,10 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
-from decision_provider import completion_mode, context_mode, get_decision_provider
+from decision_provider import (
+    OpenAIDecisionsProvider, completion_mode, context_mode, decision_policy,
+    get_decision_provider, phase_mode,
+)
 
 PLUGIN_ROOT = Path(os.environ.get("PLUGIN_ROOT", Path(__file__).resolve().parents[1])).resolve()
 PLUGIN_DATA = Path(os.environ.get("PLUGIN_DATA", PLUGIN_ROOT / ".plugin-data")).resolve()
@@ -386,7 +389,7 @@ def _context_gate_context(
             "Local ambiguity signals (advisory only; inspect evidence before asking): " + ", ".join(compact)
         )
 
-    if decision:
+    if decision and decision_policy(str(decision.get("provider"))) == "advisory" and "question_required" in decision:
         threshold = _float_env(
             "FEATURE_MAP_DECISION_CONTEXT_THRESHOLD",
             0.75,
@@ -402,6 +405,15 @@ def _context_gate_context(
         else:
             lines.append(
                 f"{provider_name} advisory: clarification probability={q:.2f}, category={t}. This is not permission to ignore a material gap found from local evidence."
+            )
+    if decision and decision_policy(str(decision.get("provider"))) == "advisory":
+        phase = decision.get("current_phase")
+        confidence = decision.get("current_phase_confidence", 0.0)
+        if phase in OpenAIDecisionsProvider.PHASE_CHOICES and phase != "unknown" and confidence >= 0.75:
+            lines.append(
+                f"Work phase candidate: {phase} (confidence={confidence:.2f}). "
+                "Select relevant lifecycle guidance after inspecting local evidence; this is not phase completion, "
+                "approval, permission or proof that earlier gates passed."
             )
     if decision_warning:
         lines.append(decision_warning + "; continue with the local gate (fail-open).")
@@ -432,11 +444,15 @@ def _handle_user_prompt(event: dict[str, Any]) -> None:
     provider = get_decision_provider()
     mode = context_mode(provider.name)
     high_open = [x for x in summary.get("open", []) if x.get("impact") == "high"]
-    if mode != "off" and (signals or high_open):
-        decision, decision_warning = provider.context_decide(mode, summary, prompt, signals)
+    phase_enabled = phase_mode(provider.name) == "prompt"
+    if phase_enabled or (mode != "off" and (signals or high_open)):
+        # A phase-only request must not silently enable otherwise skipped context questions.
+        selected_context_mode = mode if (signals or high_open) else "off"
+        decision, decision_warning = provider.context_decide(selected_context_mode, summary, prompt, signals)
 
     state = _load_state(session_id)
     state["last_context_signals"] = signals
+    state.pop("last_context_decision", None)
     if decision:
         state["last_context_decision"] = decision
     _save_state(session_id, state)
@@ -615,7 +631,9 @@ def _handle_stop(event: dict[str, Any]) -> None:
             state["last_decision"] = decision
             _save_state(session_id, state)
             update_threshold = _float_env("FEATURE_MAP_DECISION_UPDATE_THRESHOLD", 0.70, "FEATURE_MAP_JEV_UPDATE_THRESHOLD")
-            if decision.get("update_required", 0.0) >= update_threshold:
+            actionable_section = provider.name != "openai" or decision.get("update_section") != "none"
+            if (decision_policy(provider.name) == "advisory" and actionable_section
+                    and decision.get("update_required", 0.0) >= update_threshold):
                 section = str(decision.get("update_section") or "unknown")
                 prob = float(decision.get("update_required") or 0.0)
                 reason = (
@@ -631,7 +649,7 @@ def _handle_stop(event: dict[str, Any]) -> None:
         state["decision_warning_emitted"] = True
         _save_state(session_id, state)
         messages.append(decision_warning + "; continuing fail-open")
-    if decision:
+    if decision and decision_policy(provider.name) == "advisory":
         review_threshold = _float_env("FEATURE_MAP_DECISION_REVIEW_THRESHOLD", 0.85, "FEATURE_MAP_JEV_REVIEW_THRESHOLD")
         if decision.get("human_review_required", 0.0) >= review_threshold:
             messages.append(

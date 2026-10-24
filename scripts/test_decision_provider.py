@@ -228,7 +228,8 @@ class OpenAIDecisionsTests(unittest.TestCase):
             response1.__enter__.return_value.read.return_value = json.dumps({"answers": self.context_answers}).encode()
             response2.__enter__.return_value.read.return_value = json.dumps({"answers": completion}).encode()
             env = {"FEATURE_MAP_DECISION_PROVIDER": "openai", "OPENAI_API_KEY": "synthetic-test-key",
-                   "FEATURE_MAP_DECISION_CONTEXT_MODE": "metadata", "FEATURE_MAP_DECISION_COMPLETION_MODE": "metadata"}
+                   "FEATURE_MAP_DECISION_CONTEXT_MODE": "metadata", "FEATURE_MAP_DECISION_COMPLETION_MODE": "metadata",
+                   "FEATURE_MAP_DECISION_POLICY": "advisory"}
             with patch.dict(os.environ, env, clear=True), \
                     patch.object(feature_map_hook, "_find_feature_map", return_value=(feature_map, [feature_map])), \
                     patch.object(feature_map_hook, "_git_root", return_value=root), \
@@ -237,7 +238,9 @@ class OpenAIDecisionsTests(unittest.TestCase):
                     patch.object(feature_map_hook, "_git_changed_files", return_value=["app.py"]), \
                     patch.object(feature_map_hook, "_git_diff_stat", return_value="private"), \
                     patch.object(feature_map_hook, "_emit") as emitted, \
-                    patch("urllib.request.OpenerDirector.open", side_effect=[response1, response2]) as opening:
+                    patch("urllib.request.build_opener", return_value=MagicMock(
+                        open=MagicMock(side_effect=[response1, response2]))) as opener_factory:
+                opening = opener_factory.return_value.open
                 (root / ".git").mkdir()
                 event = {"cwd": str(root), "session_id": "fixture", "prompt": "関連箇所を適宜変更"}
                 feature_map_hook._handle_user_prompt(event)
@@ -263,6 +266,144 @@ class OpenAIDecisionsTests(unittest.TestCase):
         self.assertEqual(result["question_required"], .1)
         self.assertEqual(result["provider"], "jev")
         self.assertIsNone(warning)
+
+
+class PhaseAdviceTests(unittest.TestCase):
+    def setUp(self):
+        self.env = {"OPENAI_API_KEY": "synthetic-key", "FEATURE_MAP_DECISION_PROVIDER": "openai",
+                    "FEATURE_MAP_DECISION_PHASE_MODE": "prompt"}
+        self.phase = {"name": "current_phase", "type": "choice", "choice": "implementation_ci", "confidence": .9}
+
+    def request(self, env=None, mode="off", answers=None, summary=None):
+        provider = OpenAIDecisionsProvider(self.env if env is None else env)
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = json.dumps(
+            {"answers": [self.phase] if answers is None else answers}).encode()
+        with patch("urllib.request.OpenerDirector.open", return_value=response) as opening:
+            result = provider.context_decide(mode, summary or {}, "Implement person@example.org", [])
+        payload = json.loads(opening.call_args.args[0].data) if opening.called else None
+        return result, payload, opening
+
+    def test_phase_is_separate_opt_in_and_defaults_to_no_network(self):
+        for mode in (None, "off", "metadata", "typo"):
+            env = dict(self.env)
+            if mode is None:
+                env.pop("FEATURE_MAP_DECISION_PHASE_MODE")
+            else:
+                env["FEATURE_MAP_DECISION_PHASE_MODE"] = mode
+            (result, warning), _, opening = self.request(env)
+            self.assertIsNone(result)
+            self.assertIsNone(warning)
+            opening.assert_not_called()
+
+    def test_phase_only_request_is_redacted_and_not_an_approval(self):
+        (result, warning), payload, _ = self.request(summary={"purpose": "synthetic goal", "scope": "a" * 2000})
+        self.assertIsNone(warning)
+        self.assertEqual("implementation_ci", result["current_phase"])
+        self.assertEqual(.9, result["current_phase_confidence"])
+        self.assertEqual(["current_phase"], [q["name"] for q in payload["questions"]])
+        state = json.loads(payload["input"])
+        self.assertNotIn("person@example.org", state["prompt"])
+        self.assertLessEqual(len(state["feature_context"]["scope"]), 1000)
+        choices = {c["value"] for c in payload["questions"][0]["choices"]}
+        self.assertEqual(13, len(choices))  # 12 existing phases plus unknown.
+        self.assertNotIn("APPROVED", choices)
+
+    def test_context_and_phase_are_batched_with_distinct_confidence(self):
+        context = OpenAIDecisionsTests()
+        context.setUp()
+        (result, warning), payload, opening = self.request(mode="prompt", answers=context.context_answers + [self.phase])
+        self.assertIsNone(warning)
+        self.assertEqual(.8, result["missing_context_confidence"])
+        self.assertEqual(.9, result["current_phase_confidence"])
+        self.assertEqual(4, len(payload["questions"]))
+        self.assertEqual(1, opening.call_count)
+
+    def test_unknown_low_confidence_and_stale_phase_are_not_routing_facts(self):
+        for choice, confidence in (("unknown", .99), ("implementation_ci", .2)):
+            decision = {"provider": "openai", "current_phase": choice, "current_phase_confidence": confidence}
+            rendered = feature_map_hook._context_gate_context("", {}, [], decision, None)
+            self.assertNotIn("phase candidate:", rendered)
+        with tempfile.TemporaryDirectory() as directory:
+            state = {"last_context_decision": {"current_phase": "requirements"}}
+            with patch.dict(os.environ, {}, clear=True), \
+                    patch.object(feature_map_hook, "_find_feature_map", return_value=(None, [])), \
+                    patch.object(feature_map_hook, "_load_state", return_value=state), \
+                    patch.object(feature_map_hook, "_save_state"), patch.object(feature_map_hook, "_emit"):
+                feature_map_hook._handle_user_prompt({"cwd": directory, "prompt": "plain request"})
+            self.assertNotIn("last_context_decision", state)
+
+    def test_phase_opt_in_runs_for_unambiguous_prompt_and_observe_does_not_route(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state = {}
+            response = MagicMock()
+            response.__enter__.return_value.read.return_value = json.dumps({"answers": [self.phase]}).encode()
+            with patch.dict(os.environ, self.env, clear=True), \
+                    patch.object(feature_map_hook, "_find_feature_map", return_value=(None, [])), \
+                    patch.object(feature_map_hook, "_load_state", return_value=state), \
+                    patch.object(feature_map_hook, "_save_state"), patch.object(feature_map_hook, "_emit") as emit, \
+                    patch("urllib.request.build_opener", return_value=MagicMock(
+                        open=MagicMock(return_value=response))) as opener_factory:
+                opening = opener_factory.return_value.open
+                feature_map_hook._handle_user_prompt({"cwd": directory, "prompt": "Implement fixture"})
+            self.assertEqual(1, opening.call_count)
+            self.assertEqual("implementation_ci", state["last_context_decision"]["current_phase"])
+            self.assertNotIn("phase candidate:", emit.call_args.args[0]["hookSpecificOutput"]["additionalContext"])
+
+    def test_advisory_phase_is_only_a_candidate(self):
+        with patch.dict(os.environ, {"FEATURE_MAP_DECISION_POLICY": "advisory"}, clear=True):
+            rendered = feature_map_hook._context_gate_context("", {}, [],
+                {"provider": "openai", "current_phase": "implementation_ci", "current_phase_confidence": .9}, None)
+        self.assertIn("phase candidate: implementation_ci", rendered)
+        self.assertIn("not phase completion", rendered)
+
+    def test_timeout_is_bounded_and_invalid_value_falls_back(self):
+        for value, expected in (("1.5", 1.5), ("nan", 2.0), ("99", 2.0), ("0", 2.0), ("bad", 2.0)):
+            env = dict(self.env, FEATURE_MAP_DECISION_TIMEOUT_SECONDS=value)
+            _, _, opening = self.request(env)
+            self.assertEqual(expected, opening.call_args.kwargs["timeout"])
+
+    def test_observe_policy_never_weakens_local_gate(self):
+        self.assertEqual("observe", feature_map_hook.decision_policy("openai", {}))
+        self.assertEqual("observe", feature_map_hook.decision_policy("openai", {"FEATURE_MAP_DECISION_POLICY": "typo"}))
+        self.assertEqual("advisory", feature_map_hook.decision_policy("jev", {}))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / ".git").mkdir()
+            fmap = root / "feature-map.xml"
+            fmap.write_text('<featureMap state="ready"><sourceMap><ref kind="entry" target="app.py"/></sourceMap></featureMap>', encoding="utf-8")
+            state = {"feature_map_hash_start": feature_map_hook._xml_canonical_hash(fmap)}
+            provider = OpenAIDecisionsProvider(self.env)
+            advice = {"provider": "openai", "update_required": 1.0, "update_section": "rule", "human_review_required": 1.0}
+            with patch.dict(os.environ, {"FEATURE_MAP_DECISION_COMPLETION_MODE": "metadata"}, clear=True), \
+                    patch.object(feature_map_hook, "get_decision_provider", return_value=provider), \
+                    patch.object(provider, "completion_decide", return_value=(advice, None)) as decide, \
+                    patch.object(feature_map_hook, "_find_feature_map", return_value=(fmap, [fmap])), \
+                    patch.object(feature_map_hook, "_git_root", return_value=root), \
+                    patch.object(feature_map_hook, "_load_state", return_value=state), \
+                    patch.object(feature_map_hook, "_save_state"), \
+                    patch.object(feature_map_hook, "_git_changed_files", return_value=["app.py"]), \
+                    patch.object(feature_map_hook, "_git_diff_stat", return_value=""), \
+                    patch.object(feature_map_hook, "_emit") as emit:
+                feature_map_hook._handle_stop({"cwd": directory})
+                self.assertEqual({"continue": True}, emit.call_args.args[0])
+                self.assertEqual(advice, state["last_decision"])
+                # Conflicting independent answers cannot invent a target section.
+                advice["update_section"] = "none"
+                with patch.dict(os.environ, {"FEATURE_MAP_DECISION_POLICY": "advisory"}):
+                    feature_map_hook._handle_stop({"cwd": directory})
+                    self.assertTrue(emit.call_args.args[0]["continue"])
+                advice["update_section"] = "rule"
+                fmap.write_text('<featureMap state="verified"><open><item impact="high">unknown</item></open></featureMap>', encoding="utf-8")
+                feature_map_hook._handle_stop({"cwd": directory})
+                self.assertEqual("block", emit.call_args.args[0]["decision"])
+                self.assertEqual(2, decide.call_count)
+
+    def test_phase_refusal_unknown_choice_and_invalid_confidence_are_undetermined(self):
+        for changes in ({"type": "refusal"}, {"choice": "APPROVED"}, {"confidence": float("nan")}, {"confidence": True}):
+            (result, warning), _, _ = self.request(answers=[dict(self.phase, **changes)])
+            self.assertIsNone(result)
+            self.assertIn("undetermined", warning)
 
 
 if __name__ == "__main__":
