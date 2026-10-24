@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import copy
 import shutil
 import subprocess
@@ -34,7 +35,7 @@ class VerificationBriefTests(unittest.TestCase):
         return subprocess.run(
             [sys.executable, str(SCRIPT), "--feature-map", str(self.xml),
              "--use-case", "UC-SUBMIT", *args],
-            capture_output=True, text=True, timeout=15,
+            capture_output=True, text=True, encoding="utf-8", timeout=15,
         )
 
     def document(self, name="verification-brief.html"):
@@ -71,6 +72,65 @@ class VerificationBriefTests(unittest.TestCase):
 
     def v2_plan(self):
         return json.loads((EXAMPLE / "human-work-plan.v2.example.json").read_text(encoding="utf-8"))
+
+    def test_json_context_uses_canonical_inputs_and_preserves_shared_risks(self):
+        for version in (1, 2):
+            with self.subTest(version=version):
+                if version == 2:
+                    self.save_plan(self.v2_plan())
+                run = self.run_brief("--format", "json", "--case", "V-SUBMIT", "--plan", str(self.plan))
+                self.assertEqual(0, run.returncode, run.stderr)
+                context = json.loads(run.stdout)
+                self.assertEqual(["V-SUBMIT"], context["selectedCaseIds"])
+                self.assertEqual("preparation-only", context["kind"])
+                self.assertTrue(context["openItems"])
+                self.assertEqual({"V-SUBMIT", "V-REJECT"}, set(context["relatedCaseIds"]))
+                self.assertEqual(1, len(context["plan"]["sessions"]))
+                self.assertTrue(context["plan"]["preflight"])
+                self.assertNotIn("<html", run.stdout)
+                self.assertFalse((self.dir / "verification-brief.html").exists())
+                if version == 2:
+                    self.assertEqual({"P-OPEN", "P-SUBMIT", "P-REJECT"},
+                                     {part["id"] for part in context["plan"]["procedures"]})
+                    self.assertNotIn("procedure", context["plan"]["sessions"][0]["steps"][0])
+                    self.assertTrue(context["plan"]["sessions"][0]["steps"][1]["dependsOn"])
+
+    def test_json_context_refuses_html_inputs_and_html_output_options(self):
+        for args in (("--output", "out.html"), ("--allow-cdn",), ("--force",)):
+            run = self.run_brief("--format", "json", *args)
+            self.assertNotEqual(0, run.returncode)
+        disguised = self.dir / "input.html"
+        disguised.write_bytes(self.xml.read_bytes())
+        run = self.run_brief("--format", "json", "--feature-map", str(disguised))
+        self.assertNotEqual(0, run.returncode)
+
+    def test_json_context_filters_sessions_without_reading_existing_html(self):
+        root = ET.parse(self.xml)
+        failed = ET.SubElement(root.getroot().find("verify"), "case", id="V-FAILED", status="failed")
+        ET.SubElement(failed, "condition").text = "A separate recorded failure"
+        ET.SubElement(failed, "expect").text = "Requires investigation"
+        root.write(self.xml, encoding="utf-8", xml_declaration=True)
+        plan = json.loads(self.plan.read_text(encoding="utf-8"))
+        second = copy.deepcopy(plan["sessions"][0])
+        second["id"] = "UNRELATED"
+        second["steps"] = [plan["sessions"][0]["steps"].pop()]
+        plan["sessions"].append(second)
+        self.save_plan(plan)
+        output = self.dir / "verification-brief.html"
+        output.write_text("HUMAN OUTPUT MUST NEVER BECOME INPUT", encoding="utf-8")
+        run = self.run_brief("--format", "json", "--case", "V-SUBMIT", "--plan", str(self.plan))
+        self.assertEqual(0, run.returncode, run.stderr)
+        context = json.loads(run.stdout)
+        self.assertEqual(["V-SUBMIT"], context["relatedCaseIds"])
+        self.assertEqual(1, len(context["plan"]["sessions"]))
+        self.assertNotIn("UNRELATED", run.stdout)
+        self.assertTrue(context["openItems"])
+        self.assertEqual(2, context["omittedCaseCount"])
+        self.assertEqual(1, context["recordedStatusCounts"]["failed"])
+        self.assertEqual([{"id": "V-FAILED", "recordedStatus": "failed"}], context["attentionCases"])
+        self.assertEqual(hashlib.sha256(self.xml.read_bytes()).hexdigest(), context["sources"]["featureMapSHA256"])
+        self.assertEqual(hashlib.sha256(self.plan.read_bytes()).hexdigest(), context["sources"]["planSHA256"])
+        self.assertEqual("HUMAN OUTPUT MUST NEVER BECOME INPUT", output.read_text(encoding="utf-8"))
 
     def save_plan(self, plan):
         self.plan.write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")

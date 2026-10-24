@@ -15,6 +15,11 @@ Good candidates:
 - run schema/query validation and return only structured failures and evidence.
 
 Keep semantic investigation adaptive when each result can change the next question.
+Use XML/structured plans/native results as inputs. FMW HTML is output for people;
+never parse it or pass it to a model to recover cases, operations, state or evidence.
+The [canonical JSON projection](human-work-direction.md#ai-tool-context-from-canonical-data)
+is a bounded alternative when xquery-mcp is unavailable. Preserve global risks/open
+items and shared-session dependencies, and report what was selected/omitted.
 
 ## Routing boundary
 

@@ -42,6 +42,9 @@ class HarnessAuditTests(unittest.TestCase):
                  for p in self.root.rglob('*.md')}
         self.assertEqual(before, after)
         self.assertEqual([], result['errors'])
+        contents = [value.decode('utf-8').replace('\r\n', '\n') for value in before.values()]
+        self.assertEqual(sum(map(len, contents)), result['total_characters'])
+        self.assertEqual(sum(len(value.splitlines()) for value in contents), result['total_lines'])
         self.assertIn('This report is structural only.', markdown(result))
 
     def test_missing_link_and_missing_document_are_errors(self) -> None:

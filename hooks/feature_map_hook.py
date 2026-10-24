@@ -350,29 +350,40 @@ def _context_gate_signals(prompt: str) -> list[dict[str, str]]:
     return signals
 
 
+CONTEXT_POLICY = "\n".join([
+    "Context sufficiency gate before affected edits/actions:",
+    "1) Reuse conversation, Feature Map, source/tests/config/logs before asking the user.",
+    "2) Ask exactly one question only if missing context materially changes outcome, scope/exclusion, authority, business behavior, acceptance, destructive/data action, or an external dependency.",
+    "3) Otherwise state the narrowest reversible assumption and proceed; do not broaden scope or authority.",
+    "4) If asking, state the current interpretation first and make the answer possible with はい or a short correction when practical.",
+    "5) Render user-facing text as natural professional Japanese: preserve identifiers and certainty, keep conditions near their actions, avoid undefined vague terms, and do not use choppy controlled-language fragments.",
+    "Priority: meaning preservation > operability > naturalness > brevity.",
+])
+CONTEXT_KERNEL = (
+    "Context gate: use local evidence first. Ask one question with the current interpretation "
+    "before affected actions only for material scope, authority, behavior, acceptance, data or external gaps; "
+    "otherwise use a narrow reversible assumption. Never broaden scope or authority; advice grants no authority. "
+    "Preserve meaning, identifiers and certainty in natural Japanese. Re-read canonical scope/exclusions, "
+    "acceptance and high-impact open items if absent from context; cached emission does not prove memory."
+)
+
+
 def _context_gate_context(
     prompt: str,
     summary: dict[str, Any],
     signals: list[dict[str, str]],
     decision: dict[str, Any] | None,
     decision_warning: str | None,
+    *, include_policy: bool = True,
 ) -> str:
-    lines = [
-        "Context sufficiency gate before affected edits/actions:",
-        "1) Reuse conversation, Feature Map, source/tests/config/logs before asking the user.",
-        "2) Ask exactly one question only if missing context materially changes outcome, scope/exclusion, authority, business behavior, acceptance, destructive/data action, or an external dependency.",
-        "3) Otherwise state the narrowest reversible assumption and proceed; do not broaden scope or authority.",
-        "4) If asking, state the current interpretation first and make the answer possible with はい or a short correction when practical.",
-        "5) Render user-facing text as natural professional Japanese: preserve identifiers and certainty, keep conditions near their actions, avoid undefined vague terms, and do not use choppy controlled-language fragments.",
-        "Priority: meaning preservation > operability > naturalness > brevity.",
-    ]
-    if summary.get("scope"):
+    lines = [CONTEXT_POLICY if include_policy else CONTEXT_KERNEL]
+    if include_policy and summary.get("scope"):
         lines.append(f"Feature Map scope: {summary['scope']}")
-    if summary.get("exclude"):
+    if include_policy and summary.get("exclude"):
         lines.append(f"Feature Map exclusion: {summary['exclude']}")
 
     high = [x for x in summary.get("open", []) if x.get("impact") == "high"]
-    if high:
+    if include_policy and high:
         rendered = []
         for x in high[:3]:
             label = x.get("id") or "?"
@@ -426,14 +437,36 @@ def _block(state: dict[str, Any], session_id: str, reason: str) -> None:
     _emit({"decision": "block", "reason": reason})
 
 
+def _context_policy_key(event, cwd, feature_map, matches, summary, parse_error):
+    """Cache prior emission only. A safety kernel still accompanies every prompt."""
+    session_id = event.get("session_id")
+    if not isinstance(session_id, str) or session_id.strip() in {"", "unknown"}:
+        return None
+    if parse_error or len(matches) > 1:
+        return None
+    try:
+        root = _git_root(cwd)
+        revision = _run(["git", "rev-parse", "HEAD"], root) if root else None
+        if root and not revision:
+            return None
+        identity = dict(cwd=str(cwd), feature_map=str(feature_map), summary=summary,
+                        repository=str(root), revision=revision,
+                        xml_hash=_xml_canonical_hash(feature_map) if feature_map else None,
+                        policy=CONTEXT_POLICY, kernel=CONTEXT_KERNEL)
+    except (OSError, ValueError, ET.ParseError):
+        return None
+    return hashlib.sha256(json.dumps(identity, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+
+
 def _handle_user_prompt(event: dict[str, Any]) -> None:
     cwd = Path(event.get("cwd") or os.getcwd()).resolve()
     session_id = str(event.get("session_id") or "unknown")
     prompt = str(event.get("prompt") or "")
     signals = _context_gate_signals(prompt)
 
-    feature_map, _ = _find_feature_map(cwd)
+    feature_map, matches = _find_feature_map(cwd)
     summary: dict[str, Any] = {}
+    error = None
     if feature_map:
         parsed, error = _parse_feature_map(feature_map)
         if not error and parsed:
@@ -451,19 +484,24 @@ def _handle_user_prompt(event: dict[str, Any]) -> None:
         decision, decision_warning = provider.context_decide(selected_context_mode, summary, prompt, signals)
 
     state = _load_state(session_id)
+    key = _context_policy_key(event, cwd, feature_map, matches, summary, error)
+    include_policy = (key is None or state.get("context_policy_key") != key
+                      or state.get("context_policy_session") != session_id)
     state["last_context_signals"] = signals
     state.pop("last_context_decision", None)
     if decision:
         state["last_context_decision"] = decision
-    _save_state(session_id, state)
-
-    context = _context_gate_context(prompt, summary, signals, decision, decision_warning)
+    context = _context_gate_context(prompt, summary, signals, decision, decision_warning,
+                                    include_policy=include_policy)
     _emit({
         "hookSpecificOutput": {
             "hookEventName": "UserPromptSubmit",
             "additionalContext": context,
         }
     })
+    state["context_policy_key"] = key
+    state["context_policy_session"] = session_id
+    _save_state(session_id, state)
 
 
 def _handle_session_start(event: dict[str, Any]) -> None:
@@ -471,6 +509,8 @@ def _handle_session_start(event: dict[str, Any]) -> None:
     root = _git_root(cwd) or cwd
     session_id = str(event.get("session_id") or "unknown")
     feature_map, matches = _find_feature_map(cwd)
+    # Every SessionStart (including resume/clear/compact) discards emission reuse.
+    # The next UserPromptSubmit carries the full policy again.
     state: dict[str, Any] = {
         "session_id": session_id,
         "root": str(root),

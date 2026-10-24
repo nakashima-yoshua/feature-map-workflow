@@ -6,6 +6,7 @@ import io
 import json
 import os
 import tempfile
+import copy
 import urllib.error
 import unittest
 from unittest.mock import patch, MagicMock
@@ -26,6 +27,103 @@ from decision_provider import (  # noqa: E402
     context_mode,
     get_decision_provider,
 )
+
+
+class HookContextReuseTests(unittest.TestCase):
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        self.map = self.root / "feature-map.xml"
+        self.map.write_text('<featureMap><meta><feature>F</feature></meta>'
+                            '<goal><scope>S</scope><exclude>X</exclude></goal></featureMap>', encoding="utf-8")
+        self.state = {}
+        self.emissions = []
+        patches = [
+            patch.object(feature_map_hook, "_find_feature_map", return_value=(self.map, [self.map])),
+            patch.object(feature_map_hook, "_git_root", return_value=self.root),
+            patch.object(feature_map_hook, "_run", return_value="fixture-revision"),
+            patch.object(feature_map_hook, "_git_changed_files", return_value=[]),
+            patch.object(feature_map_hook, "get_decision_provider", return_value=OffDecisionProvider()),
+            patch.object(feature_map_hook, "_load_state", side_effect=lambda _: copy.deepcopy(self.state)),
+            patch.object(feature_map_hook, "_save_state", side_effect=self.save),
+            patch.object(feature_map_hook, "_emit", side_effect=self.emissions.append),
+        ]
+        for item in patches:
+            item.start()
+            self.addCleanup(item.stop)
+
+    def save(self, _, state):
+        self.state = copy.deepcopy(state)
+
+    def prompt(self, **extra):
+        event = dict(cwd=str(self.root), session_id="fixture", prompt="Inspect selected feature")
+        event.update(extra)
+        feature_map_hook._handle_user_prompt(event)
+        return self.emissions[-1]["hookSpecificOutput"]["additionalContext"]
+
+    def test_first_and_repeat_preserve_a_safety_kernel(self):
+        first = self.prompt()
+        repeat = self.prompt()
+        self.assertIn("1) Reuse conversation", first)
+        self.assertNotIn("1) Reuse conversation", repeat)
+        for guarantee in ("scope", "authority", "acceptance", "local evidence", "one question", "no authority"):
+            self.assertIn(guarantee, repeat)
+        self.assertLess(len(repeat.encode()), len(first.encode()))
+
+    def test_lifecycle_events_invalidate_repeat_cache(self):
+        for source in ("startup", "resume", "compact", "clear"):
+            with self.subTest(source=source):
+                self.prompt()
+                feature_map_hook._handle_session_start(dict(cwd=str(self.root), session_id="fixture", source=source))
+                self.assertIn("1) Reuse conversation", self.prompt())
+
+    def test_unknown_or_lost_state_never_suppresses_full_policy(self):
+        for sid in ("", "unknown"):
+            self.assertIn("1) Reuse conversation", self.prompt(session_id=sid))
+            self.assertIn("1) Reuse conversation", self.prompt(session_id=sid))
+        self.prompt()
+        self.state = {}
+        self.assertIn("1) Reuse conversation", self.prompt())
+
+    def test_target_content_and_policy_changes_reinsert(self):
+        self.prompt()
+        self.map.write_text(self.map.read_text(encoding="utf-8").replace("<scope>S", "<scope>NEW"), encoding="utf-8")
+        self.assertIn("Feature Map scope: NEW", self.prompt())
+        self.prompt()
+        with patch.object(feature_map_hook, "CONTEXT_POLICY", feature_map_hook.CONTEXT_POLICY + "\nPolicy revision."):
+            self.assertIn("Policy revision.", self.prompt())
+        self.prompt()
+        with patch.object(feature_map_hook, "_run", return_value="different-revision"):
+            self.assertIn("1) Reuse conversation", self.prompt())
+        self.assertIn("1) Reuse conversation", self.prompt(cwd=str(self.root / "different-target")))
+
+    def test_repeat_keeps_new_warning_and_ambiguity_signals(self):
+        self.prompt()
+        repeat = self.prompt(prompt="本番の権限を変更")
+        self.assertIn("authority", repeat)
+        self.assertIn("Local ambiguity signals", repeat)
+        rendered = feature_map_hook._context_gate_context("", {}, [], None, "Provider unavailable", include_policy=False)
+        self.assertIn("Provider unavailable", rendered)
+        self.assertIn("no authority", rendered)
+
+    def test_parse_failure_or_ambiguous_target_is_not_cached(self):
+        self.prompt()
+        self.map.write_text("<broken", encoding="utf-8")
+        self.assertIn("1) Reuse conversation", self.prompt())
+        self.assertIn("1) Reuse conversation", self.prompt())
+        with patch.object(feature_map_hook, "_find_feature_map", return_value=(None, [self.map, self.root / "other.xml"])):
+            self.assertIn("1) Reuse conversation", self.prompt())
+            self.assertIn("1) Reuse conversation", self.prompt())
+
+    def test_lost_persistence_and_failed_emission_do_not_mark_policy_delivered(self):
+        with patch.object(feature_map_hook, "_save_state"):
+            self.assertIn("1) Reuse conversation", self.prompt())
+            self.assertIn("1) Reuse conversation", self.prompt())
+        with patch.object(feature_map_hook, "_emit", side_effect=OSError("closed pipe")):
+            with self.assertRaises(OSError):
+                self.prompt()
+        self.assertIn("1) Reuse conversation", self.prompt())
 
 
 class DecisionProviderSelectionTests(unittest.TestCase):
