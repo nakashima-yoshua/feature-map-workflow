@@ -4,6 +4,8 @@ All notable user-visible changes are documented here.
 
 ## Unreleased
 
+- Require complete v2 checkpoints before importing PASS; retain the canonical case expectation, normalize case IDs, reject future active verification dates and unsupported cross-session Excel cases, and preserve session roles/stop/cleanup in supported workbooks. v1 run-level metadata remains compatible.
+
 - Prioritize individual conditions by changed program guarantees and consequential impact; preserve old-plan failures and scope amendments, reuse sufficient evidence and review preparation cost before expanding fixtures or automation.
 
 - Add optional Human Work Plan v2 with versioned procedures, selective trials, dependency/restart checks, complete condition mappings and measured effort references; render shared operations with independent checkpoints in briefs and functional-test Excel while retaining v1 plans/results.
