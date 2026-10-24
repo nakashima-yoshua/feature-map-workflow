@@ -33,7 +33,7 @@ links are not a recursive loading list. History belongs in Git /
 
 Common entries: [map contract](skills/feature-map-workflow/references/feature-map-contract.md),
 [lifecycle overview](skills/feature-map-workflow/references/development-lifecycle.md),
-[test strategy](skills/feature-map-workflow/references/test-strategy.md),
+[changed guarantees, condition priority and test layers](skills/feature-map-workflow/references/test-strategy.md),
 [human work](skills/feature-map-workflow/references/human-work-direction.md),
 [evidence/audit](skills/feature-map-workflow/references/evidence-storage.md).
 

@@ -15,6 +15,15 @@ Keep diagrams in per-feature XML and human HTML, not a global content collection
 
 ## Session batching procedure
 
+Before batching, reduce both cases and their input conditions to changed program
+guarantees and significant affected regression using [Test Strategy](test-strategy.md#select-changed-behavior-before-selecting-cases).
+Consolidating all old cases without reviewing their value merely makes an oversized
+plan easier to execute. Separate environment readiness from functional judgments;
+reuse existing accepted evidence instead of opening another human session. If
+setup/locator repair repeatedly produces no functional evidence, stop at the
+planned review point and choose a working environment, narrower sufficient
+boundary or explicit blocker. Do not extend free-form UI exploration indefinitely.
+
 1. List requested verification IDs; separate deterministic automation from human interaction and human business judgment.
 2. Determine actual environment, revision, operator role, approved expected result, test-data initialization, evidence and cleanup for each case.
 3. Run authorized machine preflight and prepare isolated fixtures/evidence capture **before** inviting a person. Do not assert preflight was done merely because the run sheet lists it.

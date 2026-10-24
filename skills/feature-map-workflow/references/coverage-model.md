@@ -20,6 +20,15 @@ Use these primary denominators:
 
 ## Denominator rule
 
+For change verification, first intersect candidate coverage with the authorized
+change and its consequential impact paths; then select risk-significant input
+conditions using [Test Strategy](test-strategy.md#select-changed-behavior-before-selecting-cases).
+Keep the original inventory and the old-to-revised disposition so a smaller
+denominator cannot hide failures or unverified changed guarantees. Report selected
+conditions and their statuses separately from excluded conditions and preparation
+checks. Existing program-test evidence may cover rules absent from the customer
+Excel; a workbook alone does not establish complete change coverage.
+
 Add an item to a denominator when changing that condition can produce a meaningfully different:
 
 - business result;

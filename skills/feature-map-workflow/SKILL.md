@@ -55,7 +55,7 @@ only when needed.
 | Keep, repair or migrate one slice | [Incremental Modernization](references/incremental-modernization.md) |
 | Business/data/ER relationships | [Three Complementary Views](references/three-view-understanding.md) |
 | Choose diagrams | [Diagram Selection](references/diagram-selection.md) |
-| Test placement/coverage | [Test Strategy](references/test-strategy.md) and [Coverage Model](references/coverage-model.md) |
+| Changed guarantees/condition priority; test layers | [Test Strategy](references/test-strategy.md) and [Coverage Model](references/coverage-model.md) |
 | Test execution and Result v1 | [AI-assisted Testing](references/ai-assisted-testing.md) |
 | Human sessions; selective trials | [Human Work Direction](references/human-work-direction.md) |
 | Customer Excel | [Functional Test Excel](references/functional-test-excel.md) |

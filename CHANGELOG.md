@@ -4,6 +4,8 @@ All notable user-visible changes are documented here.
 
 ## Unreleased
 
+- Prioritize individual conditions by changed program guarantees and consequential impact; preserve old-plan failures and scope amendments, reuse sufficient evidence and review preparation cost before expanding fixtures or automation.
+
 - Centralize condition modeling, mandatory checks, test/automation adoption and human exit/budget decisions in the test strategy; reuse existing v1/v2 checkpoints without a new solver or required fields.
 
 - Route lifecycle phases and Human Work Plan v2 details on demand; keep one task index and canonical definitions instead of repeated full guidance.

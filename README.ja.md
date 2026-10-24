@@ -33,7 +33,7 @@ READMEは片言語、ガイドは現在の問いに必要な節だけ読みま�
 
 主な入口は、[XMLの契約](skills/feature-map-workflow/references/feature-map-contract.md)、
 [工程の全体像](skills/feature-map-workflow/references/development-lifecycle.md)、
-[テスト戦略](skills/feature-map-workflow/references/test-strategy.md)、
+[変更・影響範囲に応じた条件選定とテスト戦略](skills/feature-map-workflow/references/test-strategy.md)、
 [人の作業手順](skills/feature-map-workflow/references/human-work-direction.md)、
 [証跡保存・監査](skills/feature-map-workflow/references/evidence-storage.md)です。
 
