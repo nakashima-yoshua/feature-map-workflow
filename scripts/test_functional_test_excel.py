@@ -103,7 +103,7 @@ class WorkbookTests(unittest.TestCase):
                         "--revision","sha-test","--output",self.root/"other.xlsx")
         self.assertNotEqual(0,failed.returncode)
 
-    def v2_plan(self, name="v2.xlsx", mutate=None):
+    def v2_plan(self, name="v2.xlsx", mutate=None, environment=None):
         tree=ET.parse(self.xml)
         if tree.getroot().find("./verify/case[@id='V-TWO']") is None:
             c=ET.SubElement(tree.getroot().find("verify"),"case",id="V-TWO",type="error",status="not-run")
@@ -124,9 +124,18 @@ class WorkbookTests(unittest.TestCase):
         source=self.root/"human-plan.json"
         source.write_text(json.dumps(plan),encoding="utf-8")
         target=self.root/name
+        extra=["--environment",environment] if environment is not None else []
         run=self.cli("plan","--template",self.template,"--feature-map",self.xml,
-                     "--revision","sha-test","--human-plan",source,"--output",target)
+                     "--revision","sha-test","--human-plan",source,"--output",target,*extra)
         return target,run
+
+    def test_v2_environment_matches_procedure_applicability_and_cover(self):
+        target,run=self.v2_plan()
+        self.assertEqual(0,run.returncode,run.stderr)
+        self.assertEqual("fictional-isolated",load_workbook(target)["表紙"]["D19"].value)
+        target,run=self.v2_plan(name="incompatible.xlsx",environment="other-environment")
+        self.assertNotEqual(0,run.returncode)
+        self.assertFalse(target.exists())
 
     def test_v2_shared_operations_project_to_independent_pending_case_rows(self):
         target,run=self.v2_plan()
@@ -143,9 +152,16 @@ class WorkbookTests(unittest.TestCase):
             self.assertTrue(all(w[sheet][f"H{row}"].value is None for row in (16,17)))
 
     def test_v2_rejects_revision_or_row_overflow_before_creating_workbook(self):
+        def overflow(plan):
+            operation=plan["sessions"][0]["steps"][-1]
+            original=operation["checks"][0]
+            for number in range(3,8):
+                check=dict(original,stepNo=number,conditionId=f"EXTRA-{number}")
+                operation["checks"].append(check)
+                plan["requiredConditions"][check["caseId"]].append(check["conditionId"])
         for index,mutate in enumerate((
             lambda p:p.update(sourceRevision="different"),
-            lambda p:p["sessions"][0]["steps"][1]["checks"][0].update(stepNo=7),
+            overflow,
         )):
             target,run=self.v2_plan(name=f"bad-{index}.xlsx",mutate=mutate)
             self.assertNotEqual(0,run.returncode)

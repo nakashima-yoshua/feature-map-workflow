@@ -130,6 +130,15 @@ class VerificationBriefTests(unittest.TestCase):
                 self.save_plan(p)
                 self.assertNotEqual(0, self.run_brief("--plan", str(self.plan)).returncode)
 
+    def test_v2_case_step_numbers_must_follow_actual_operation_order(self):
+        plan = self.v2_plan()
+        plan["sessions"][0]["steps"][0]["checks"][0]["stepNo"] = 2
+        plan["sessions"][0]["steps"][1]["checks"][0]["stepNo"] = 1
+        self.save_plan(plan)
+        run = self.run_brief("--plan", str(self.plan))
+        self.assertNotEqual(0, run.returncode)
+        self.assertFalse((self.dir / "verification-brief.html").exists())
+
     def test_v2_measurements_require_finite_nonnegative_observations_and_reference(self):
         p = self.v2_plan()
         p["measurements"] = {"reference": "fictional:timing/1", "minutes": {"setup": 3, "waiting": 2}}

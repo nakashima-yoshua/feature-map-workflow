@@ -77,6 +77,7 @@ def normalize_v2(raw, case_ids, source_revision=None):
         procedures[pid] = part
 
     seen_sessions, seen_operations, bindings, conditions, covered = set(), set(), set(), set(), set()
+    last_numbers = {}
     selected = set(case_ids)
     required = plan.get("requiredConditions")
     if not isinstance(required, dict) or set(required) != selected:
@@ -135,6 +136,9 @@ def normalize_v2(raw, case_ids, source_revision=None):
                 number = check.get("stepNo")
                 if type(number) is not int or number < 1:
                     raise ValueError(f"{oid}: stepNo must be a positive integer")
+                if number != last_numbers.get(cid, 0) + 1:
+                    raise ValueError(f"{oid}: case stepNo must follow operation order consecutively from 1")
+                last_numbers[cid] = number
                 if "status" in check:
                     raise ValueError("Work plan checks cannot contain execution results")
                 binding = (cid, number)

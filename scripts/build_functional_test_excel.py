@@ -215,6 +215,8 @@ def create_plan(args):
     raw_plan = load_json(args.human_plan) if args.human_plan else None
     procedure_plan = (normalize_v2(raw_plan, [c.get("id") for c in cases.values()], args.revision)
                       if isinstance(raw_plan, dict) and raw_plan.get("version") == 2 else None)
+    if procedure_plan and args.environment is not None and args.environment != procedure_plan["environment"]:
+        raise ValueError("Workbook environment does not match procedure applicability")
     checkpoints = case_checkpoints(procedure_plan) if procedure_plan else {}
     if any(check["stepNo"] > 6 for entries in checkpoints.values() for _, _, check in entries):
         raise ValueError("Workbook supports six steps per case; split the case without dropping checks")
@@ -229,7 +231,7 @@ def create_plan(args):
     cover["D9"] = cell_text(xml_text(root, "./meta/system"))
     cover["D11"] = cell_text(xml_text(root, "./goal/purpose"))
     cover["D15"] = cell_text(xml_text(root, "./goal/scope"))
-    cover["D19"] = cell_text(args.environment or "検証環境未確定")
+    cover["D19"] = cell_text(procedure_plan["environment"] if procedure_plan else args.environment or "検証環境未確定")
     cover["K19"] = cell_text(args.revision)
     for slot, case in cases.items():
         ws = book[f"FT-{slot:02d}"]
@@ -424,7 +426,7 @@ def main():
     a.add_argument("--revision", required=True, help="Exact tested source revision")
     a.add_argument("--output", required=True, type=Path)
     a.add_argument("--project", default="")
-    a.add_argument("--environment", default="")
+    a.add_argument("--environment")
     a.add_argument("--human-plan", type=Path)
     a.add_argument("--use-case")
     a.add_argument("--case", action="append", default=[])

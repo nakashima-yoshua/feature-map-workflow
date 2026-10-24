@@ -102,7 +102,8 @@ The work-plan generators do not perform this conversion or execute those tools.
   or restore data. Check actual prerequisites/reset and stop affected downstream work
   on failure; preserve the failed attempt and use a new execution identity on rerun.
 - Each operation's nonempty `checks[]` maps case-specific `caseId`, `conditionId`,
-  positive `stepNo`, authoritative `requirementRef` (including agreed version),
+  `stepNo` consecutive from 1 in actual per-case operation order, authoritative
+  `requirementRef` (including agreed version),
   `expected` and `capture`. A case/step and case/condition pair must be unique.
   Identifiers cannot contain whitespace or `|`. Shared operations have independent
   checkpoints for each case; sharing login, navigation or observation never shares PASS.
@@ -146,6 +147,8 @@ projects checkpoints back to their own case/`stepNo` rows and preserves pending
 human judgment. Its v2 rows retain `CONDITION:... | OPERATION:... | PROCEDURE:...`
 trace labels; mapped Result v1 checks must carry the matching `conditionId` as well
 as `stepNo` and actual evidence. Existing v1 books/results retain their behavior.
+The Excel cover uses the validated v2 environment; an explicit incompatible
+`--environment` is rejected rather than relabeling procedures for another target.
 There are six rows per case: split a larger case explicitly; never truncate or
 silently discard checkpoints. Evidence may be captured together only when each
 case's observation and native result remain independently attributable. The current
