@@ -13,10 +13,12 @@ import json
 import re
 import tempfile
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from human_work_plan import normalize_v2
 
 MAX_INPUT = 2 * 1024 * 1024

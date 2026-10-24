@@ -74,6 +74,12 @@ and consolidate a safe route -> review/try affected parts of the consolidated pl
 [Development Lifecycle](development-lifecycle.md) for the preceding feature-sized
 data/design/implementation loop and the later QA/release/operation boundaries.
 
+During necessary screen trials, AI can identify operations and observation points;
+after stabilization, prefer deterministic project-native execution and evidence
+capture. Follow [the automation transition](ai-assisted-testing.md#from-screen-trials-to-deterministic-regression)
+for Web/Playwright and Windows/FlaUI suitability, waits, reset and recovery checks.
+The work-plan generators do not perform this conversion or execute those tools.
+
 ### Minimal data contract
 
 - Retain `environment`, `sourceRevision`, `preflight` and sessions with `id`, `title`,

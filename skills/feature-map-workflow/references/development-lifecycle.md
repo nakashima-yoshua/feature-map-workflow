@@ -53,6 +53,12 @@ procedures or only trial their changed part. An execution already satisfying the
 formal identity, oracle, reproducibility and evidence conditions may be considered
 for formal use; the trial label alone neither disqualifies nor approves it.
 
+AI-led screen trials can clarify unknown operations; stable procedures should move
+to deterministic, project-native execution/assertions/evidence where practical.
+Use the existing [AI-assisted testing transition](ai-assisted-testing.md#from-screen-trials-to-deterministic-regression)
+to assess Playwright or FlaUI on actual controls. Keep judgment-heavy exceptions
+explicit; free AI exploration is not the default recurring regression mechanism.
+
 ### Tailoring and stop conditions
 
 A small, low-risk change may reuse existing design, fixtures and evidence routes,
