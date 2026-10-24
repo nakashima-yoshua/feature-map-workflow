@@ -220,6 +220,8 @@ def create_plan(args):
     checkpoints = case_checkpoints(procedure_plan) if procedure_plan else {}
     if any(check["stepNo"] > 6 for entries in checkpoints.values() for _, _, check in entries):
         raise ValueError("Workbook supports six steps per case; split the case without dropping checks")
+    if any(len({session["id"] for session, _, _ in entries}) > 1 for entries in checkpoints.values()):
+        raise ValueError("Excel cannot represent one case across sessions; split the case explicitly without dropping checkpoints")
     work = {} if procedure_plan else human_steps(args.human_plan)
     if set(work) - {c.get("id") for c in cases.values()}:
         raise ValueError("Human Work Plan includes unselected verification IDs")
@@ -258,14 +260,16 @@ def create_plan(args):
         ws["B12"] = cell_text(f"{cid}：仕様上の期待結果を人が確認してから採用する")
         ws["B16"] = cell_text(step.get("action") or xml_text(case, "condition"))
         ws["C16"] = cell_text(xml_text(focus, "input"))
-        if re.search(r"DB|テーブル|登録|更新|行|INSERT|UPDATE|DELETE", expected, re.I):
-            ws["E16"] = cell_text(expected)
-        else:
-            ws["D16"] = cell_text(expected)
+        case_column = "E" if re.search(r"DB|テーブル|登録|更新|行|INSERT|UPDATE|DELETE", expected, re.I) else "D"
+        ws[f"{case_column}16"] = cell_text(expected)
         if procedure_plan:
             entries = checkpoints[cid]
-            ws["B8"] = plan_cell(" / ".join(dict.fromkeys(
-                setup for session, _, _ in entries for setup in session["sharedSetup"])))
+            session = entries[0][0]
+            ws["B8"] = plan_cell(
+                f'SESSION:{session["id"]} / 担当: {session["actor"]}\n'
+                f'共通準備: {" / ".join(session["sharedSetup"])}\n'
+                f'停止条件: {" / ".join(session["stopOn"])}\n'
+                f'終了・片付け: {" / ".join(session["cleanup"])}')
             ws["B10"] = plan_cell(" / ".join(f'{step["id"]}: {step["procedure"]["resetBefore"]}'
                                              for _, step, _ in entries))
             # The v1 case row is replaced by individually mapped planned checkpoints.
@@ -285,6 +289,11 @@ def create_plan(args):
                 ws[f"C{row}"] = plan_cell(operation["data"])
                 column = "E" if re.search(r"DB|テーブル|登録|更新|行|INSERT|UPDATE|DELETE", check["expected"], re.I) else "D"
                 ws[f"{column}{row}"] = plan_cell(check["expected"])
+            # A procedure is not allowed to silently replace the case-wide oracle.
+            address = f"{case_column}16"
+            checkpoint = ws[address].value
+            ws[address] = plan_cell(f"ケース全体の期待結果: {expected}"
+                                    + (f"\nこの確認点の期待結果: {checkpoint}" if checkpoint else ""))
     book.calculation.fullCalcOnLoad = True
     book.calculation.forceFullCalc = True
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -331,6 +340,12 @@ def import_one(ws, record, path):
     if ws["B26"].value:
         raise ValueError("Existing run summary: no overwriting manual evidence")
     checks = {}
+    planned_v2 = {}
+    for number in range(1, 7):
+        value = str(ws[f"B{number + 15}"].value or "")
+        marker = re.match(r"^CONDITION:([^\s|]+) \| OPERATION:[^|]+ \| PROCEDURE:[^\n]*\n", value)
+        if marker:
+            planned_v2[number] = marker.group(1)
     for check in record.get("checks", []):
         if not isinstance(check, dict):
             raise ValueError("Invalid check")
@@ -343,13 +358,15 @@ def import_one(ws, record, path):
             raise ValueError("Each mapped check must identify a unique step, status and evidence")
         if not ws[f"B{step_no + 15}"].value:
             raise ValueError("Cannot import a result for an unplanned step")
-        marker = re.match(r"^CONDITION:([^\s|]+) \| OPERATION:", str(ws[f"B{step_no + 15}"].value))
-        if marker and check.get("conditionId") != marker.group(1):
+        if step_no in planned_v2 and check.get("conditionId") != planned_v2[step_no]:
             raise ValueError("Result conditionId does not match the planned checkpoint")
         checks[step_no] = check
     if record["status"] == "not-run" and checks:
         raise ValueError("Not-run result cannot include executed steps")
-    if record["status"] == "passed" and any(c["status"] != "passed" for c in checks.values()):
+    if record["status"] == "passed" and planned_v2 and set(checks) != set(planned_v2):
+        raise ValueError("PASS requires every planned v2 checkpoint with matching conditionId and evidence")
+    if record["status"] == "passed" and any(c.get("status") in {"failed", "blocked", "not-run"}
+                                             for c in record.get("checks", [])):
         raise ValueError("Run PASS conflicts with a failing/blocked step")
     all_evidence = record.get("evidence", [])
     if not isinstance(all_evidence, list) or len(all_evidence) > 10:

@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 """Synthetic tests for the user-supplied fixed Excel functional-test layout."""
 import json
+import copy
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from datetime import date
+from unittest.mock import patch
 from xml.etree import ElementTree as ET
 from openpyxl import Workbook, load_workbook
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "skills/feature-map-workflow/scripts"))
+from human_work_plan import normalize_v2, case_checkpoints
 SCRIPT = ROOT / "scripts" / "build_functional_test_excel.py"
 
 class WorkbookTests(unittest.TestCase):
@@ -91,6 +96,11 @@ class WorkbookTests(unittest.TestCase):
         w=load_workbook(output)
         self.assertIsNone(w["FT-01"]["H16"].value)
         self.assertIn("R-1",w["FT-01"]["B26"].value)
+        base["checks"]=[dict(name="legacy observation",ok=True)]
+        p.write_text(json.dumps(base),encoding="utf-8")
+        legacy=self.root/"legacy-unmapped.xlsx"
+        self.assertEqual(0,self.cli("results","--workbook",target,"--result",p,"--output",legacy).returncode)
+        self.assertIsNone(load_workbook(legacy)["FT-01"]["H16"].value)
 
     def test_formula_injection_and_dtd_are_refused(self):
         tree=ET.parse(self.xml)
@@ -152,6 +162,9 @@ class WorkbookTests(unittest.TestCase):
             self.assertTrue(all(w[sheet][f"H{row}"].value is None for row in (16,17)))
 
     def test_v2_rejects_revision_or_row_overflow_before_creating_workbook(self):
+        def newline_ids(plan):
+            for session in plan["sessions"]:
+                for operation in session["steps"]:operation["id"]="\n"+operation["id"]
         def overflow(plan):
             operation=plan["sessions"][0]["steps"][-1]
             original=operation["checks"][0]
@@ -162,6 +175,7 @@ class WorkbookTests(unittest.TestCase):
         for index,mutate in enumerate((
             lambda p:p.update(sourceRevision="different"),
             overflow,
+            newline_ids,
         )):
             target,run=self.v2_plan(name=f"bad-{index}.xlsx",mutate=mutate)
             self.assertNotEqual(0,run.returncode)
@@ -198,6 +212,157 @@ class WorkbookTests(unittest.TestCase):
         notrun=self.root/"not-run.xlsx"
         self.assertEqual(0,self.cli("results","--workbook",target,"--result",source,"--output",notrun).returncode)
         self.assertIsNone(load_workbook(notrun)["FT-01"]["H16"].value)
+
+    def test_v2_pass_requires_all_planned_checkpoints(self):
+        target,run=self.v2_plan()
+        self.assertEqual(0,run.returncode,run.stderr)
+        for name in ("ready.txt","result.txt"):
+            (self.root/name).write_text("synthetic observation",encoding="utf-8")
+        checks=[dict(stepNo=1,conditionId="NORMAL-READY",status="passed",evidence=["ready.txt"]),
+                dict(stepNo=2,conditionId="NORMAL-RESULT",status="passed",evidence=["result.txt"])]
+        for count in (0,1,2):
+            with self.subTest(count=count):
+                record=dict(schemaVersion=1,runId="R-PASS",verifyCaseId="V-ONE",sourceRevision="sha-test",
+                            status="passed",checks=checks[:count],evidence=["ready.txt","result.txt"])
+                source=self.root/f"pass-{count}.json";source.write_text(json.dumps(record),encoding="utf-8")
+                output=self.root/f"pass-{count}.xlsx"
+                result=self.cli("results","--workbook",target,"--result",source,"--output",output)
+                if count<2:
+                    self.assertNotEqual(0,result.returncode)
+                    self.assertIn("every planned v2 checkpoint",result.stderr)
+                    self.assertFalse(output.exists())
+                else:
+                    self.assertEqual(0,result.returncode,result.stderr)
+                    ws=load_workbook(output)["FT-01"]
+                    self.assertEqual(["合格","合格"],[ws["H16"].value,ws["H17"].value])
+        record["checks"]=checks+[dict(status="failed",name="unmapped assertion")]
+        source=self.root/"contradictory.json";source.write_text(json.dumps(record),encoding="utf-8")
+        output=self.root/"contradictory.xlsx"
+        self.assertNotEqual(0,self.cli("results","--workbook",target,"--result",source,"--output",output).returncode)
+        self.assertFalse(output.exists())
+
+        legacy=load_workbook(target)
+        for row in (16,17):
+            cell=legacy["FT-01"][f"B{row}"]
+            cell.value=cell.value.replace("| OPERATION:","| OPERATION:\n")
+        legacy_target=self.root/"legacy-newline-id.xlsx";legacy.save(legacy_target)
+        record.update(checks=[],evidence=[])
+        source=self.root/"legacy-empty-pass.json";source.write_text(json.dumps(record),encoding="utf-8")
+        output=self.root/"legacy-empty-pass.xlsx"
+        rejected=self.cli("results","--workbook",legacy_target,"--result",source,"--output",output)
+        self.assertNotEqual(0,rejected.returncode)
+        self.assertIn("every planned v2 checkpoint",rejected.stderr)
+        self.assertFalse(output.exists())
+
+    def test_v1_free_text_prefix_is_not_a_v2_checkpoint(self):
+        for index,condition in enumerate(("CONDITION: user is authorized",
+                                           "CONDITION:X | OPERATION: described behavior")):
+            with self.subTest(condition=condition):
+                tree=ET.parse(self.xml);tree.getroot().find("./verify/case/condition").text=condition
+                tree.write(self.xml,encoding="utf-8")
+                target=self.root/f"legacy-plan-{index}.xlsx"
+                planned=self.cli("plan","--template",self.template,"--feature-map",self.xml,
+                                 "--revision","sha-test","--output",target)
+                self.assertEqual(0,planned.returncode,planned.stderr)
+                source=self.root/f"legacy-result-{index}.json"
+                source.write_text(json.dumps(dict(schemaVersion=1,runId="LEGACY",verifyCaseId="V-ONE",
+                                                  sourceRevision="sha-test",status="passed",checks=[],evidence=[])),encoding="utf-8")
+                output=self.root/f"legacy-import-{index}.xlsx"
+                result=self.cli("results","--workbook",target,"--result",source,"--output",output)
+                self.assertEqual(0,result.returncode,result.stderr)
+                self.assertIsNone(load_workbook(output)["FT-01"]["H16"].value)
+
+    def test_v2_keeps_authoritative_expectation_next_to_checkpoint(self):
+        def contradict(plan):
+            for session in plan["sessions"]:
+                for operation in session["steps"]:
+                    for check in operation["checks"]:
+                        if check["caseId"]=="V-TWO":check["expected"]="INVALID REQUEST IS ACCEPTED"
+        target,run=self.v2_plan(name="oracle.xlsx",mutate=contradict)
+        self.assertEqual(0,run.returncode,run.stderr)
+        ws=load_workbook(target)["FT-07"]
+        expected=" ".join(str(ws[f"{col}{row}"].value or "") for row in (16,17) for col in ("D","E"))
+        self.assertIn("Error without registration",expected)
+        self.assertIn("INVALID REQUEST IS ACCEPTED",expected)
+        self.assertIn("ケース全体の期待結果",expected)
+        self.assertEqual("未判定",ws["F6"].value)
+
+    def test_v2_case_id_normalization_is_shared_with_projections(self):
+        def whitespace(plan):
+            for session in plan["sessions"]:
+                for operation in session["steps"]:
+                    for check in operation["checks"]:
+                        if check["caseId"]=="V-ONE":check["caseId"]=" V-ONE "
+        target,run=self.v2_plan(name="normalized.xlsx",mutate=whitespace)
+        self.assertEqual(0,run.returncode,run.stderr)
+        raw=json.loads((self.root/"human-plan.json").read_text(encoding="utf-8"))
+        normalized=normalize_v2(raw,["V-ONE","V-TWO"],"sha-test")
+        self.assertEqual({"V-ONE","V-TWO"},set(case_checkpoints(normalized)))
+        self.assertTrue(any(c["caseId"]==" V-ONE " for s in raw["sessions"] for op in s["steps"] for c in op["checks"]))
+        self.assertTrue(all(c["caseId"] in {"V-ONE","V-TWO"} for s in normalized["sessions"] for op in s["steps"] for c in op["checks"]))
+        projection=subprocess.run(
+            [sys.executable,str(ROOT/"skills/feature-map-workflow/scripts/build_verification_brief.py"),
+             "--feature-map",str(self.xml),"--use-case","UC-ONE","--case","V-ONE",
+             "--plan",str(self.root/"human-plan.json"),"--format","json"],
+            capture_output=True,encoding="utf-8",timeout=20)
+        self.assertEqual(0,projection.returncode,projection.stderr)
+        context=json.loads(projection.stdout)
+        self.assertEqual(1,len(context["plan"]["sessions"]))
+        self.assertEqual(["V-ONE"],context["selectedCaseIds"])
+
+    def test_v2_reuse_rejects_future_verification_date(self):
+        self.v2_plan()
+        raw=json.loads((self.root/"human-plan.json").read_text(encoding="utf-8"))
+        raw["sessions"][0]["steps"][0]["trial"]=dict(mode="reuse",reason="dated trial",recordRef="fictional:trial")
+        class FixedDate(date):
+            @classmethod
+            def today(cls):return cls(2026,10,24)
+        with patch("human_work_plan.date",FixedDate):
+            raw["procedures"][0]["verifiedAt"]="2026-10-24"
+            normalize_v2(raw,["V-ONE","V-TWO"],"sha-test")
+            raw["procedures"][0]["verifiedAt"]="2026-10-25"
+            with self.assertRaisesRegex(ValueError,"future"):
+                normalize_v2(raw,["V-ONE","V-TWO"],"sha-test")
+
+    def test_v2_excel_rejects_cross_session_case_and_keeps_roles(self):
+        def split(plan):
+            first=plan["sessions"][0];second=copy.deepcopy(first)
+            second["id"]="SECOND";second["actor"]="operator2"
+            second["steps"]=first["steps"][1:];first["steps"]=first["steps"][:1]
+            first.update(sharedSetup=["FIRST SETUP"],stopOn=["FIRST STOP"],cleanup=["FIRST CLEANUP"])
+            second.update(sharedSetup=["SECOND SETUP"],stopOn=["SECOND STOP"],cleanup=["SECOND CLEANUP"])
+            for operation in second["steps"]:
+                operation["dependsOn"]=[];operation["restartFrom"]=operation["id"]
+            for part in plan["procedures"][1:]:part["appliesTo"]["actor"]="operator2"
+            plan["sessions"]=[first,second]
+        target,run=self.v2_plan(name="cross-session.xlsx",mutate=split)
+        self.assertNotEqual(0,run.returncode)
+        self.assertIn("across sessions",run.stderr)
+        self.assertFalse(target.exists())
+        raw=json.loads((self.root/"human-plan.json").read_text(encoding="utf-8"))
+        self.assertEqual(2,len(normalize_v2(raw,["V-ONE","V-TWO"],"sha-test")["sessions"]))
+        target,run=self.v2_plan(name="roles.xlsx")
+        self.assertEqual(0,run.returncode,run.stderr)
+        raw=json.loads((self.root/"human-plan.json").read_text(encoding="utf-8"));session=raw["sessions"][0]
+        context=load_workbook(target)["FT-01"]["B8"].value
+        for value in [session["id"],session["actor"],*session["stopOn"],*session["cleanup"]]:
+            self.assertIn(value,context)
+        def separate_cases(plan):
+            first=plan["sessions"][0];second=copy.deepcopy(first)
+            first["steps"]=first["steps"][:2]
+            first["steps"][0]["checks"]=[c for c in first["steps"][0]["checks"] if c["caseId"]=="V-ONE"]
+            second["id"]="SECOND"
+            second["steps"]=[second["steps"][0],second["steps"][2]]
+            opening=second["steps"][0];opening["id"]="OP-OPEN-SECOND";opening["restartFrom"]=opening["id"]
+            opening["checks"]=[c for c in opening["checks"] if c["caseId"]=="V-TWO"]
+            second["steps"][1]["dependsOn"]=[opening["id"]]
+            second["steps"][1]["restartFrom"]=opening["id"]
+            plan["sessions"]=[first,second]
+        target,run=self.v2_plan(name="separate-sessions.xlsx",mutate=separate_cases)
+        self.assertEqual(0,run.returncode,run.stderr)
+        book=load_workbook(target)
+        self.assertNotIn("SESSION:SECOND",book["FT-01"]["B8"].value)
+        self.assertIn("SESSION:SECOND",book["FT-07"]["B8"].value)
 
 if __name__=="__main__":
     unittest.main()

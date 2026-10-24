@@ -31,7 +31,7 @@ def objects(item, key, where):
 
 def identifier(item, key, where):
     value = string(item, key, where)
-    if re.search(r"[\s|]", value):
+    if item[key] != value or re.search(r"[\s|]", value):
         raise ValueError(f"{where}.{key} cannot contain whitespace or a pipe")
     return value
 
@@ -62,9 +62,11 @@ def normalize_v2(raw, case_ids, source_revision=None):
             raise ValueError(f"{pid}: unknown procedure lifecycle status")
         if part.get("status") == "active":
             try:
-                date.fromisoformat(string(part, "verifiedAt", pid))
+                verified = date.fromisoformat(string(part, "verifiedAt", pid))
             except ValueError as exc:
                 raise ValueError(f"{pid}: active procedure needs a valid verifiedAt date") from exc
+            if verified > date.today():
+                raise ValueError(f"{pid}: active procedure verifiedAt cannot be in the future")
         for field in ("parallelSafe", "destructive"):
             if type(part.get(field)) is not bool:
                 raise ValueError(f"{pid}.{field} must be boolean")
@@ -128,6 +130,7 @@ def normalize_v2(raw, case_ids, source_revision=None):
                 string(trial, "recordRef", oid + ".trial")
             for check in objects(step, "checks", oid):
                 cid = string(check, "caseId", oid)
+                check["caseId"] = cid  # All downstream projections use the validated ID.
                 if cid not in selected:
                     raise ValueError(f"{oid}: unknown or unselected case ID {cid}")
                 for field in ("conditionId", "requirementRef", "expected", "capture"):
