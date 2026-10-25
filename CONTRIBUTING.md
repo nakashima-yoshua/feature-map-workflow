@@ -28,6 +28,13 @@ Avoid broad framework additions unless they remove more complexity than they add
 5. Update `CHANGELOG.md` for user-visible changes.
 6. Open a pull request with the behavior change, reason, and verification evidence.
 
+For changes to the optional module runtime, also run
+`python scripts/test_workflow_orchestrator.py` and, on a Docker-enabled host,
+`python scripts/test_workflow_compose.py --store <private-directory-outside-the-repository>`.
+The Compose check runs an offline success and a real assertion failure, retaining
+their evidence. No API credential or live DB is required. Keep database/Windows
+capabilities blocked until separately implemented and verified.
+
 ## Pull requests
 
 A pull request should explain:
