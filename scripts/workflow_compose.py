@@ -139,11 +139,13 @@ def _compose(run: Path, *args: str, overrides: list[Path] | None = None) -> int:
 
 
 def compose(run: Path, *args: str, overrides: list[Path] | None = None) -> int:
-    if not args or args[0] != "up":
+    if not args or args[0] not in {"up", "down"}:
         return _compose(run, *args, overrides=overrides)
     fd = lock(run / "deployment/launcher.lock")
     os.close(fd)
     try:
+        if args[0] == "down":
+            return _compose(run, *args, overrides=overrides)
         try:
             return _compose(run, *args, overrides=overrides)
         finally:

@@ -143,6 +143,10 @@ python3 scripts/workflow_compose.py resume --run <run>
 python3 scripts/workflow_compose.py down --run <run>
 ```
 
+Use `stop` to cancel a running workflow; its owning launcher performs container
+cleanup. Explicit `down` also acquires the launcher lock and is rejected while
+another launcher owns the run. It cannot stop that owner's containers.
+
 `resume` accepts unchanged configuration/runtime/input and reuses completed
 evidence. It does not resubmit dispatched requests or replay a claimed worker job.
 HALT and human-review-required runs are terminal. A new attempt needs a new run;
@@ -150,8 +154,10 @@ preserve the prior one and its reason in the project's existing change record.
 
 After an abrupt host/process failure, stale `state/orchestrator.lock` or
 `deployment/launcher.lock` files may remain.
-First stop this exact Compose project and prove its containers/processes are gone.
-The operator may then remove only those stale locks and resume with the same runtime.
+First prove the host launcher process is gone before removing only its stale
+`deployment/launcher.lock`. Then use `down` to stop any remaining containers.
+Prove all run containers/processes are gone before removing a stale
+`state/orchestrator.lock` and resuming. Never remove a living owner's lock.
 A request written before interruption can finish once or its existing result can
 be adopted. A missing request, partially imported evidence or a claimed job with
 no result HALTs rather than guessing/replaying. Inspect it, retain it, and create

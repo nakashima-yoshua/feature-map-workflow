@@ -404,6 +404,32 @@ class ProcessTests(RunFixture):
 
 
 class ComposePolicyTests(unittest.TestCase):
+    def test_explicit_down_requires_and_releases_launcher_ownership(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run = Path(temp) / "run-down"
+            (run / "deployment").mkdir(parents=True)
+            owner = run / "deployment/launcher.lock"
+            owner.touch()
+            with patch("workflow_compose._compose", side_effect=AssertionError("Must not stop the other owner")):
+                with self.assertRaisesRegex(Halt, "owned"):
+                    compose(run, "down", "--remove-orphans")
+            self.assertTrue(owner.exists())
+            owner.unlink()
+            operations = []
+            def stop(run_path, *args, **kwargs):
+                self.assertEqual(run, run_path)
+                self.assertTrue(owner.exists())
+                operations.append(args)
+                return 0
+            with patch("workflow_compose._compose", side_effect=stop):
+                self.assertEqual(0, compose(run, "down", "--remove-orphans"))
+            self.assertEqual([("down", "--remove-orphans")], operations)
+            self.assertFalse(owner.exists())
+            with patch("workflow_compose._compose", side_effect=Halt("Synthetic stop failure")):
+                with self.assertRaisesRegex(Halt, "Synthetic"):
+                    compose(run, "down")
+            self.assertFalse(owner.exists())
+
     def test_external_or_duplicate_overrides_are_not_execution_authority(self):
         with self.assertRaisesRegex(Halt, "reviewed"):
             reviewed_overrides([Path("/tmp/hostile-compose.yaml")])
