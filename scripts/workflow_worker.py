@@ -7,12 +7,13 @@ import json
 import os
 import platform
 import shutil
+import sys
 import tempfile
 import time
 from pathlib import Path
 
 from task_runner import CodexProposer, Halt, digest, process, redact, safe_file
-from workflow_contract import ROLES, atomic_json, file_hash, inputs, read, tree, validate
+from workflow_contract import ROOT, ROLES, atomic_json, file_hash, inputs, read, tree, validate
 from workflow_orchestrator import fingerprint
 
 
@@ -57,7 +58,9 @@ class Worker:
                    "FMW_OUTPUT_DIR": str(artifacts), "DOTNET_CLI_HOME": temp,
                    "DOTNET_CLI_TELEMETRY_OPTOUT": "1", "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1"}
             # Candidate is a read-only mount; all build outputs must go to FMW_OUTPUT_DIR/tmp.
-            code, log = process(step["argv"], self.run / "candidate", step["seconds"], env=env,
+            command = [sys.executable, str(ROOT / "scripts/workflow_sandbox.py"),
+                       "--source", str(self.run / "candidate"), "--temporary", temp, "--", *step["argv"]]
+            code, log = process(command, self.run / "candidate", step["seconds"], env=env,
                                 stop_requested=self.stopped)
             (result_dir / "log.txt").write_text(redact(log), encoding="utf-8")
             selected = {}

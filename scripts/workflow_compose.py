@@ -9,19 +9,104 @@ import subprocess
 from pathlib import Path
 
 from task_runner import Halt, redact
-from workflow_contract import ROOT
+from workflow_contract import ROOT, read
 from workflow_orchestrator import Workflow, prepare
 
 COMPOSE = ROOT / "runtime/compose.yaml"
+OVERRIDES = {"compose.codex.yaml", "compose.dotnet.yaml"}
+
+
+def reviewed_overrides(paths: list[Path]) -> set[str]:
+    names = set()
+    for path in paths:
+        resolved = path.resolve()
+        if path.is_symlink() or resolved.parent != ROOT / "runtime" or resolved.name not in OVERRIDES or resolved.name in names:
+            raise Halt("Only distinct reviewed repository Compose overrides are supported", "permission")
+        names.add(resolved.name)
+    return names
+
+
+def validate_effective(data: dict, run: Path, overrides: set[str], config: dict) -> None:
+    """Validate the rendered execution boundary, not just filenames or YAML text."""
+    services = data.get("services", {})
+    if set(services) != {"orchestrator", "ai", "build"}:
+        raise Halt("Compose must contain exactly the three approved services", "permission")
+    codex = "compose.codex.yaml" in overrides
+    if codex != any(step["mode"] == "codex" for step in config["steps"]):
+        raise Halt("Live AI configuration and credential/network override must match", "permission")
+    expected_user = str(os.getuid() if hasattr(os, "getuid") else 1000) + ":" + str(os.getgid() if hasattr(os, "getgid") else 1000)
+    allowed_fields = {"build", "cap_drop", "command", "cpus", "init", "mem_limit", "network_mode", "pids_limit",
+                      "read_only", "restart", "security_opt", "tmpfs", "user", "volumes", "environment", "secrets", "entrypoint"}
+    for role, service in services.items():
+        if set(service) - allowed_fields or not service.get("read_only") or service.get("cap_drop") != ["ALL"] or \
+                service.get("security_opt") != ["no-new-privileges:true"] or service.get("user") != expected_user or service.get("entrypoint") is not None:
+            raise Halt("Compose privilege/root/identity boundary differs from policy", "permission")
+        if service.get("network_mode") != ("bridge" if role == "ai" and codex else "none"):
+            raise Halt("Worker networking differs from the approved role", "permission")
+        if not service.get("init") or service.get("restart") != "no" or not 1 <= service.get("pids_limit", 0) <= 128 or \
+                not 1 <= service.get("mem_limit", 0) <= 2 * 1024**3 or not 0 < service.get("cpus", 0) <= 1:
+            raise Halt("Compose lifecycle/resource bounds are invalid", "budget")
+        if service.get("tmpfs") != ["/tmp:size=512m,mode=1777"]:
+            raise Halt("Only the bounded private temporary filesystem is supported", "permission")
+        dockerfile = "runtime/Dockerfile.ai" if role == "ai" and codex else "runtime/Dockerfile.dotnet" if (
+            role == "build" and "compose.dotnet.yaml" in overrides) else "runtime/Dockerfile"
+        build = service.get("build", {})
+        if set(build) != {"context", "dockerfile"} or Path(build["context"]).resolve() != ROOT or build["dockerfile"] != dockerfile:
+            raise Halt("Compose build input differs from the reviewed image", "permission")
+        if role == "orchestrator":
+            mounts = {"/run/state": ("state", False), "/run/candidate": ("candidate", False),
+                      "/run/requests": ("requests", False), "/run/results": ("results", True)}
+            command = ["scripts/workflow_orchestrator.py", "serve", "--run", "/run"]
+        else:
+            mounts = {"/run/state/config.json": ("state/config.json", True),
+                      "/run/state/identity.json": ("state/identity.json", True), "/run/candidate": ("candidate", True),
+                      "/run/requests": ("requests", True), "/run/results/" + role: ("results/" + role, False)}
+            command = ["scripts/workflow_worker.py", role, "--run", "/run"]
+        actual = service.get("volumes", [])
+        if service.get("command") != command or len(actual) != len(mounts):
+            raise Halt("Compose command or mount set differs from policy", "permission")
+        seen = set()
+        for volume in actual:
+            target = volume.get("target")
+            if target not in mounts or target in seen or volume.get("type") != "bind":
+                raise Halt("Unexpected Compose mount", "permission")
+            seen.add(target)
+            source, readonly = mounts[target]
+            if Path(volume.get("source", "")).resolve() != (run / source).resolve() or bool(volume.get("read_only")) != readonly:
+                raise Halt("Compose mount source/access differs from policy", "permission")
+        if role == "ai" and codex:
+            if service.get("environment") != {"FMW_CODEX_KEY_FILE": "/run/secrets/codex_api_key"}:
+                raise Halt("Only the fixed AI credential reference may be configured", "permission")
+            secrets = service.get("secrets", [])
+            if len(secrets) != 1 or secrets[0].get("source") != "codex_api_key" or secrets[0].get("target") != "codex_api_key":
+                raise Halt("AI must receive exactly its own credential secret", "permission")
+        elif service.get("environment") or service.get("secrets"):
+            raise Halt("Credentials/environment must not be shared with this role", "permission")
+    if codex:
+        secrets = data.get("secrets", {})
+        if set(secrets) != {"codex_api_key"} or set(secrets["codex_api_key"]) != {"name", "file"}:
+            raise Halt("Unexpected secret definition", "permission")
+        path = Path(secrets["codex_api_key"]["file"])
+        if path.is_symlink() or path.resolve().is_relative_to(ROOT) or path.resolve().is_relative_to(run.resolve()) or \
+                not path.is_file() or not 1 <= path.stat().st_size <= 16384:
+            raise Halt("Use an existing private AI credential file outside source/run stores", "permission")
+    elif data.get("secrets"):
+        raise Halt("Offline execution must have no credential secret", "permission")
 
 
 def compose(run: Path, *args: str, overrides: list[Path] | None = None) -> int:
+    approved = reviewed_overrides(overrides or [])
     name = "fmw-" + run.name.removeprefix("run-")
     argv = ["docker", "compose", "--project-name", name, "-f", str(COMPOSE)]
     for path in overrides or []:
         argv += ["-f", str(path.resolve())]
     env = {**os.environ, "FMW_RUN_DIR": str(run.resolve()), "FMW_UID": str(os.getuid() if hasattr(os, "getuid") else 1000),
            "FMW_GID": str(os.getgid() if hasattr(os, "getgid") else 1000)}
+    if args and args[0] == "up":
+        rendered = subprocess.run([*argv, "config", "--format", "json"], env=env, capture_output=True, text=True, timeout=30)
+        if rendered.returncode:
+            raise Halt("Compose rendering failed before execution", "environment")
+        validate_effective(json.loads(rendered.stdout), run, approved, read(run / "state/config.json"))
     return subprocess.call([*argv, *args], env=env)
 
 

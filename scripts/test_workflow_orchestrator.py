@@ -18,6 +18,7 @@ from workflow_contract import atomic_json
 import workflow_contract as contract
 from workflow_orchestrator import Workflow, orchestrate, prepare
 from workflow_worker import Worker
+from workflow_compose import reviewed_overrides, validate_effective
 
 EXAMPLE = contract.ROOT / "examples/module-workflow"
 
@@ -55,6 +56,8 @@ class ContractTests(unittest.TestCase):
             lambda c: c["steps"][0].update(mode="codex", proposal=None),
             lambda c: c["steps"][2].update(argv="python check_behavior.py"),
             lambda c: c["steps"].__setitem__(0, "not an object"),
+            lambda c: c["steps"][3].update(outputs=[], argv=["/bin/true"]),
+            lambda c: c["steps"][3].pop("verification_result"),
         ]
         for change in changes:
             config = self.config()
@@ -109,7 +112,11 @@ class RunFixture(unittest.TestCase):
         for name in step["outputs"]:
             path = out / "files" / name
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(b"synthetic observation\n")
+            if name == step.get("verification_result"):
+                atomic_json(path, {"status": "passed", "checks": [
+                    {"name": "synthetic external assertion", "expected": 2, "observed": 2, "passed": True}]})
+            else:
+                path.write_bytes(b"synthetic observation\n")
         files = contract.tree(out)
         record = {"version": 1, "run_id": self.run.name, "step": sid,
                   "request_hash": "wrong" if corrupt else digest(request),
@@ -220,6 +227,29 @@ class RunTests(RunFixture):
             self.workflow.tick()
         self.assertFalse((self.run / "candidate/requirements.md").exists())
 
+    def test_empty_native_checks_do_not_turn_zero_exit_into_verification(self):
+        self.workflow.tick()
+        Worker(self.run, "ai").once()
+        self.workflow.tick()
+        self.workflow.tick()
+        Worker(self.run, "ai").once()
+        self.workflow.tick()
+        self.workflow.tick()
+        self.result()  # Build, not functional verification.
+        self.workflow.tick()
+        self.workflow.tick()
+        self.result()
+        path = self.run / "results/build/verify/files/result.json"
+        atomic_json(path, {"status": "passed", "checks": []})
+        record_path = path.parents[1] / "record.json"
+        record = contract.read(record_path)
+        record["files"]["files/result.json"] = contract.file_hash(path)
+        atomic_json(record_path, record)
+        with self.assertRaisesRegex(Halt, "native checks"):
+            self.workflow.tick()
+        self.assertEqual("failed", self.workflow.state["steps"]["verify"]["status"])
+        self.assertFalse((self.run / "requests/build/package.json").exists())
+
     def test_change_after_verification_invalidates_the_old_pass(self):
         self.drive()
         # Simulate a later adopted edit. Earlier verification keeps its old identity.
@@ -320,7 +350,7 @@ class RunTests(RunFixture):
 class ProcessTests(RunFixture):
     def test_real_build_process_reports_failure_and_bounded_timeout(self):
         self.config["steps"] = [{"id": "check", "module": "unit-test", "runner": "build", "needs": [],
-                                 "inputs": ["app.py"], "outputs": [], "seconds": 2,
+                                 "inputs": ["app.py"], "outputs": ["result.json"], "verification_result": "result.json", "seconds": 2,
                                  "mode": "command", "argv": [sys.executable, "-c", "raise SystemExit(7)"]}]
         self.config["verification_steps"] = ["check"]
         self.run = self.prepare()
@@ -339,6 +369,74 @@ class ProcessTests(RunFixture):
         result = contract.read(self.run / "results/build/check/record.json")
         self.assertEqual("blocked", result["status"])
         self.assertIn("timed out", result["reason"])
+
+    def test_build_child_cannot_forge_worker_results_or_read_requests(self):
+        self.config["steps"] = [{"id": "check", "module": "security-verification", "runner": "build", "needs": [],
+                                 "inputs": ["app.py"], "outputs": ["result.json"], "verification_result": "result.json", "seconds": 5,
+                                 "mode": "command", "argv": [sys.executable, "-c", "pass"]}]
+        self.config["verification_steps"] = ["check"]
+        attack = "from pathlib import Path; import os,json; checks={}; root=Path.cwd().parent; " \
+                 "targets=[root/'results/build/future',root/'requests/build/check.json']; " \
+                 "\nfor p in targets:\n try:\n  p.mkdir() if p.suffix=='' else p.read_bytes()\n  checks[str(p)]=False\n except OSError:\n  checks[str(p)]=True\n" \
+                 "\nPath(os.environ['FMW_OUTPUT_DIR'],'result.json').write_text(json.dumps(checks))\nraise SystemExit(0 if all(checks.values()) else 1)"
+        self.config["steps"][0]["argv"] = [sys.executable, "-c", attack]
+        self.run = self.prepare()
+        self.workflow = Workflow(self.run)
+        self.workflow.tick()
+        Worker(self.run, "build").once()
+        result = contract.read(self.run / "results/build/check/record.json")
+        self.assertEqual("passed", result["status"], result)
+        native = contract.read(self.run / "results/build/check/files/result.json")
+        self.assertTrue(all(native.values()))
+
+    def test_zero_exit_without_declared_result_is_blocked(self):
+        self.config["steps"] = [{"id": "check", "module": "unit-test", "runner": "build", "needs": [],
+                                 "inputs": ["app.py"], "outputs": ["result.json"], "verification_result": "result.json", "seconds": 5,
+                                 "mode": "command", "argv": [sys.executable, "-c", "pass"]}]
+        self.config["verification_steps"] = ["check"]
+        self.run = self.prepare()
+        self.workflow = Workflow(self.run)
+        self.workflow.tick()
+        Worker(self.run, "build").once()
+        result = contract.read(self.run / "results/build/check/record.json")
+        self.assertEqual("blocked", result["status"])
+        self.assertIn("output is missing", result["reason"])
+
+
+class ComposePolicyTests(unittest.TestCase):
+    def test_external_or_duplicate_overrides_are_not_execution_authority(self):
+        with self.assertRaisesRegex(Halt, "reviewed"):
+            reviewed_overrides([Path("/tmp/hostile-compose.yaml")])
+        approved = contract.ROOT / "runtime/compose.codex.yaml"
+        with self.assertRaises(Halt):
+            reviewed_overrides([approved, approved])
+
+    def test_effective_network_privilege_and_extra_host_mount_are_rejected(self):
+        run = Path("/synthetic/run").resolve()
+        user = str(os.getuid() if hasattr(os, "getuid") else 1000) + ":" + str(os.getgid() if hasattr(os, "getgid") else 1000)
+        def service(role):
+            mounts = {"state": ("/run/state", False), "candidate": ("/run/candidate", False),
+                      "requests": ("/run/requests", False), "results": ("/run/results", True)} if role == "orchestrator" else {
+                      "state/config.json": ("/run/state/config.json", True), "state/identity.json": ("/run/state/identity.json", True),
+                      "candidate": ("/run/candidate", True), "requests": ("/run/requests", True),
+                      "results/" + role: ("/run/results/" + role, False)}
+            return {"build": {"context": str(contract.ROOT), "dockerfile": "runtime/Dockerfile"},
+                    "read_only": True, "cap_drop": ["ALL"], "user": user, "security_opt": ["no-new-privileges:true"],
+                    "network_mode": "none", "init": True, "restart": "no", "cpus": 1, "pids_limit": 128,
+                    "mem_limit": 1024**3, "tmpfs": ["/tmp:size=512m,mode=1777"],
+                    "command": ["scripts/workflow_orchestrator.py", "serve", "--run", "/run"] if role == "orchestrator" else ["scripts/workflow_worker.py", role, "--run", "/run"],
+                    "volumes": [{"type": "bind", "source": str(run / source), "target": target, "read_only": ro}
+                                for source, (target, ro) in mounts.items()]}
+        data = {"services": {role: service(role) for role in ("orchestrator", "ai", "build")}}
+        config = contract.read(EXAMPLE / "workflow.json")
+        validate_effective(data, run, set(), config)
+        for change in (lambda d: d["services"]["build"].update(network_mode="bridge"),
+                       lambda d: d["services"]["build"].update(privileged=True),
+                       lambda d: d["services"]["build"]["volumes"].append({"type": "bind", "source": "/private", "target": "/credentials"})):
+            altered = copy.deepcopy(data)
+            change(altered)
+            with self.assertRaises(Halt):
+                validate_effective(altered, run, set(), config)
 
 
 if __name__ == "__main__":

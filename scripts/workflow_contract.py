@@ -136,7 +136,7 @@ def validate(config: Any) -> dict:
         if not isinstance(step, dict):
             raise Halt("Step must be a structured object", "specification")
         common = {"id", "module", "runner", "needs", "inputs", "outputs", "seconds", "mode"}
-        fields = {"proposal"} if step.get("mode") == "recorded-proposal" else {"argv"} if step.get("mode") == "command" else set()
+        fields = {"proposal"} if step.get("mode") == "recorded-proposal" else {"argv", "verification_result"} if step.get("mode") == "command" else set()
         if not common <= step.keys() or step.keys() - common - fields:
             raise Halt("Missing or unknown step fields", "specification")
         sid = identifier(step["id"])
@@ -167,6 +167,10 @@ def validate(config: Any) -> dict:
         seen[sid] = step
     if any(sid not in seen or seen[sid]["runner"] != "build" for sid in config["verification_steps"]):
         raise Halt("Required verification must name selected Build/Test steps", "specification")
+    for sid in config["verification_steps"]:
+        step = seen[sid]
+        if "verification_result" not in step or path_name(step["verification_result"]) not in step["outputs"]:
+            raise Halt("Required verification needs a declared native check-result file", "specification")
     return config
 
 

@@ -58,7 +58,7 @@ def main() -> int:
     behavior = read(success.run / "state/evidence/verify/files/result.json")
     assert behavior["status"] == "passed" and behavior["checks"][0]["observed"] == 2
     isolation = read(success.run / "state/evidence/isolation/files/isolation.json")
-    assert all(isolation.values()), isolation
+    assert isolation["status"] == "passed" and all(check["passed"] for check in isolation["checks"]), isolation
     with ZipFile(success.run / "state/evidence/package/files/candidate.zip") as archive:
         assert set(archive.namelist()) == {"app.py", "requirements.md"}
         assert b"return 2" in archive.read("app.py")

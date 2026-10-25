@@ -20,7 +20,7 @@ from workflow_contract import (CATALOG, MAX_FILE, ROOT, TERMINAL, catalog, file_
 
 def fingerprint() -> dict:
     names = ["task_runner.py", "workflow_contract.py", "workflow_orchestrator.py", "workflow_worker.py",
-             "workflow_compose.py"]
+             "workflow_compose.py", "workflow_sandbox.py"]
     return {"runtime": {name: file_hash(ROOT / "scripts" / name) for name in names},
             "catalog": file_hash(CATALOG),
             "deployment": {p.name: file_hash(p) for p in sorted((ROOT / "runtime").iterdir())
@@ -104,6 +104,10 @@ class Workflow:
     def halt(self, exc: Exception):
         self.state["status"] = "HALT"
         self.state["reason"] = redact(str(exc))[:1000]
+        if self.state["index"] < len(self.config["steps"]):
+            sid = self.config["steps"][self.state["index"]]["id"]
+            if self.state["steps"][sid]["status"] in {"dispatched", "passed"}:
+                self.state["steps"][sid]["status"] = "blocked"
         self.save()
 
     def tick(self) -> bool:
@@ -171,7 +175,7 @@ class Workflow:
         actual.pop("started.json", None)
         previous_bytes = sum(item["bytes"] for saved in self.state["steps"].values()
                              for item in saved.get("sealed", {}).values())
-        if actual != result["files"] or previous_bytes + sum(x["bytes"] for x in actual.values()) > self.config["max_artifact_bytes"]:
+        if actual != result["files"] or previous_bytes + sum(x["bytes"] for x in actual.values()) + file_hash(result_path)["bytes"] > self.config["max_artifact_bytes"]:
             raise Halt("Worker artifact hash/size mismatch", "integrity")
         sealed = self.run / "state/evidence" / sid
         sealed.mkdir(parents=True)  # Never overwrite a possibly partial previous import.
@@ -188,6 +192,16 @@ class Workflow:
             raise Halt("Worker " + result["status"] + ": " + str(result["reason"]), "execution")
         if any("files/" + name not in actual for name in step["outputs"]):
             raise Halt("Required output artifact is missing", "verification")
+        if sid in self.config["verification_steps"]:
+            native = read(safe_file(sealed / "files", step["verification_result"]))
+            checks = native.get("checks") if isinstance(native, dict) else None
+            if not isinstance(native, dict) or native.get("status") != "passed" or not isinstance(checks, list) or not checks or any(
+                    not isinstance(check, dict) or not isinstance(check.get("name"), str) or not check["name"].strip()
+                    or check.get("passed") is not True or "expected" not in check or "observed" not in check
+                    for check in checks):
+                record["status"] = "failed"
+                self.save()
+                raise Halt("Required native checks do not support PASS", "verification")
         if role == "ai":
             proposal = read(sealed / "files/proposal.json")
             apply_proposal(self.run / "candidate", self.config["allowed_paths"], proposal)

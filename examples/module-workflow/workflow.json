@@ -34,12 +34,14 @@
     },
     {
       "id": "verify", "module": "unit-test", "runner": "build",
+      "verification_result": "result.json",
       "needs": ["build"], "inputs": ["app.py", "spec.md", "check_behavior.py"],
       "outputs": ["result.json"], "seconds": 15,
       "mode": "command", "argv": ["python", "check_behavior.py"]
     },
     {
       "id": "isolation", "module": "security-verification", "runner": "build",
+      "verification_result": "isolation.json",
       "needs": ["verify"], "inputs": ["check_isolation.py"], "outputs": ["isolation.json"], "seconds": 15,
       "mode": "command", "argv": ["python", "check_isolation.py"]
     },
