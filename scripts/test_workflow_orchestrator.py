@@ -348,10 +348,19 @@ class RunTests(RunFixture):
 
 @unittest.skipUnless(os.name == "posix", "Approved command process groups require Linux")
 class ProcessTests(RunFixture):
+    def setUp(self):
+        super().setUp()
+        # Hosted CI's control interpreter may live in /opt/hostedtoolcache.
+        # Execute the fixture with the same /usr runtime boundary as our images;
+        # do not widen production Landlock grants for a test harness installation.
+        choices = (Path(sys.executable), Path("/usr/local/bin/python3"), Path("/usr/bin/python3"))
+        self.command_python = next((str(p) for p in choices if p.is_file() and p.resolve().is_relative_to(Path("/usr"))), None)
+        self.assertIsNotNone(self.command_python, "Process tests require Python in the image's /usr runtime boundary")
+
     def test_real_build_process_reports_failure_and_bounded_timeout(self):
         self.config["steps"] = [{"id": "check", "module": "unit-test", "runner": "build", "needs": [],
                                  "inputs": ["app.py"], "outputs": ["result.json"], "verification_result": "result.json", "seconds": 2,
-                                 "mode": "command", "argv": [sys.executable, "-c", "raise SystemExit(7)"]}]
+                                 "mode": "command", "argv": [self.command_python, "-c", "raise SystemExit(7)"]}]
         self.config["verification_steps"] = ["check"]
         self.run = self.prepare()
         self.workflow = Workflow(self.run)
@@ -360,7 +369,7 @@ class ProcessTests(RunFixture):
         result = contract.read(self.run / "results/build/check/record.json")
         self.assertEqual("failed", result["status"])
         self.assertIn("7", result["reason"])
-        self.config["steps"][0]["argv"] = [sys.executable, "-c", "import time; time.sleep(5)"]
+        self.config["steps"][0]["argv"] = [self.command_python, "-c", "import time; time.sleep(5)"]
         self.config["steps"][0]["seconds"] = 1
         self.run = self.prepare()
         self.workflow = Workflow(self.run)
@@ -373,13 +382,13 @@ class ProcessTests(RunFixture):
     def test_build_child_cannot_forge_worker_results_or_read_requests(self):
         self.config["steps"] = [{"id": "check", "module": "security-verification", "runner": "build", "needs": [],
                                  "inputs": ["app.py"], "outputs": ["result.json"], "verification_result": "result.json", "seconds": 5,
-                                 "mode": "command", "argv": [sys.executable, "-c", "pass"]}]
+                                 "mode": "command", "argv": [self.command_python, "-c", "pass"]}]
         self.config["verification_steps"] = ["check"]
         attack = "from pathlib import Path; import os,json; checks={}; root=Path.cwd().parent; " \
                  "targets=[root/'results/build/future',root/'requests/build/check.json']; " \
                  "\nfor p in targets:\n try:\n  p.mkdir() if p.suffix=='' else p.read_bytes()\n  checks[str(p)]=False\n except OSError:\n  checks[str(p)]=True\n" \
                  "\nPath(os.environ['FMW_OUTPUT_DIR'],'result.json').write_text(json.dumps(checks))\nraise SystemExit(0 if all(checks.values()) else 1)"
-        self.config["steps"][0]["argv"] = [sys.executable, "-c", attack]
+        self.config["steps"][0]["argv"] = [self.command_python, "-c", attack]
         self.run = self.prepare()
         self.workflow = Workflow(self.run)
         self.workflow.tick()
@@ -392,7 +401,7 @@ class ProcessTests(RunFixture):
     def test_zero_exit_without_declared_result_is_blocked(self):
         self.config["steps"] = [{"id": "check", "module": "unit-test", "runner": "build", "needs": [],
                                  "inputs": ["app.py"], "outputs": ["result.json"], "verification_result": "result.json", "seconds": 5,
-                                 "mode": "command", "argv": [sys.executable, "-c", "pass"]}]
+                                 "mode": "command", "argv": [self.command_python, "-c", "pass"]}]
         self.config["verification_steps"] = ["check"]
         self.run = self.prepare()
         self.workflow = Workflow(self.run)
