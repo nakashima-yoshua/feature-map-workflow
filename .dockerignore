@@ -1,0 +1,11 @@
+**
+!scripts/
+!scripts/task_runner.py
+!scripts/workflow_*.py
+!skills/
+!skills/feature-map-workflow/
+!skills/feature-map-workflow/assets/
+!skills/feature-map-workflow/assets/task-modules.json
+!runtime/
+!runtime/Dockerfile*
+!runtime/compose*.yaml

@@ -1,0 +1,15 @@
+# Explicit opt-in only. Never add the secret to other services or the build context.
+# Review/limit model endpoint egress on the host before enabling the network.
+services:
+  ai:
+    build:
+      context: ..
+      dockerfile: runtime/Dockerfile.ai
+    network_mode: bridge
+    environment:
+      FMW_CODEX_KEY_FILE: /run/secrets/codex_api_key
+    secrets:
+      - codex_api_key
+secrets:
+  codex_api_key:
+    file: ${FMW_CODEX_KEY_FILE:?Select an existing private credential file outside the repository}
