@@ -10,7 +10,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 from workflow_contract import ROOT, atomic_json, read, tree
-from workflow_compose import COMPOSE, compose
+from workflow_compose import compose
 from workflow_orchestrator import Workflow, prepare
 
 
@@ -19,7 +19,7 @@ def execute(config_path: Path, store: Path) -> Workflow:
     print("Compose run: " + str(run), flush=True)
     env = {**os.environ, "FMW_RUN_DIR": str(run), "FMW_UID": str(os.getuid() if hasattr(os, "getuid") else 1000),
            "FMW_GID": str(os.getgid() if hasattr(os, "getgid") else 1000)}
-    rendered = subprocess.run(["docker", "compose", "-f", str(COMPOSE), "config", "--format", "json"],
+    rendered = subprocess.run(["docker", "compose", "-f", str(run / "deployment/context/runtime/compose.yaml"), "config", "--format", "json"],
                               env=env, check=True, capture_output=True, text=True, timeout=30)
     services = json.loads(rendered.stdout)["services"]
     for name, service in services.items():
@@ -33,11 +33,7 @@ def execute(config_path: Path, store: Path) -> Workflow:
         assert mounts["/run/requests"]["read_only"]
         assert "/run/state" not in mounts
         assert "/run/results/" + ("build" if role == "ai" else "ai") not in mounts
-    try:
-        code = compose(run, "up", "--build", "--abort-on-container-exit", "--exit-code-from", "orchestrator")
-    finally:
-        cleanup = compose(run, "down", "--remove-orphans")
-    assert cleanup == 0, "Compose cleanup failed; run is preserved"
+    code = compose(run, "up", "--build", "--abort-on-container-exit", "--exit-code-from", "orchestrator")
     workflow = Workflow(run)
     workflow.verify()
     assert code == (0 if workflow.state["status"] == "HUMAN_REVIEW_REQUIRED" else 2), workflow.state

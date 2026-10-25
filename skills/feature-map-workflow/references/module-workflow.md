@@ -148,9 +148,10 @@ evidence. It does not resubmit dispatched requests or replay a claimed worker jo
 HALT and human-review-required runs are terminal. A new attempt needs a new run;
 preserve the prior one and its reason in the project's existing change record.
 
-After an abrupt host/process failure, a stale `state/orchestrator.lock` may remain.
+After an abrupt host/process failure, stale `state/orchestrator.lock` or
+`deployment/launcher.lock` files may remain.
 First stop this exact Compose project and prove its containers/processes are gone.
-The operator may then remove only that lock and resume with the same runtime.
+The operator may then remove only those stale locks and resume with the same runtime.
 A request written before interruption can finish once or its existing result can
 be adopted. A missing request, partially imported evidence or a claimed job with
 no result HALTs rather than guessing/replaying. Inspect it, retain it, and create
@@ -187,6 +188,12 @@ the rendered service commands, mount sources/access, users, resource limits,
 networking, build context and credential placement before starting services.
 An arbitrary external Compose file is not execution authority. Preserve the same
 approved overrides when resuming a nonterminal run.
+The host freezes the known runtime/Dockerfile/Compose inputs into the run before
+launch, then starts from its validated rendered JSON and that frozen build context.
+Original repository edits after validation cannot change the executed definition.
+The rendered contract hash is sealed into the run identity before any service
+starts. A launcher lock covers build/start/stop; a second launcher cannot stop the
+first owner's containers. Runtime snapshots are not mounted into the services.
 
 For .NET Linux builds add `--override runtime/compose.dotnet.yaml`. This supplies
 .NET 10 SDK/Python; it does not make .NET Framework or Windows UI tests run on
@@ -212,6 +219,7 @@ Each private `<run>` owns:
 | Location | Content / writer |
 | --- | --- |
 | `state/config.json`, `state/identity.json`, `state/baseline/` | Frozen configuration, exact source revision, source/config/runtime/deployment hashes; host creates |
+| `deployment/context/`, `deployment/execution-compose.json` | Read-only copies of known build inputs and validated rendered deployment; host freezes and hashes them |
 | `state/state.json`, `requests/` | Checkpoints, dispatch identity and stop control; Orchestrator/operator writes |
 | `candidate/` | Reviewed-scope proposal application; Orchestrator writes |
 | `results/ai/`, `results/build/` | Separate worker claims, logs and declared output files |

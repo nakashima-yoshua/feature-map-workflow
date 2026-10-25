@@ -23,6 +23,8 @@ Repository API、実DB変更、Windows実行、本番構築、merge、deploy、�
   Build子プロセスにはLandlock ABI 3以降で実行環境・候補の読み取りと私有一時領域だけを許可し、
   Workerの依頼・結果保存先も隠す。未対応カーネルでは実行しない。
   Compose追加設定は同梱の承認対象だけを選べ、起動前に展開後のmount・通信・権限を検査する。
+  起動にはrun専用の固定runtime/build contextと検査済みCompose JSONを使い、検査後の元ファイル変更を混入させない。
+  起動処理も単一所有者に限定し、実際の展開設定をrunのidentityへ結び付ける。
 - **BEH-004 変更制御**：AIは構造化された変更案だけを返す。Orchestratorだけが候補へ適用する。
   変更可能パスを明記し、仕様・テスト・Feature Map・制御設定は保護する。
   全変更案を検査してから書き込む。候補の生成と元リポジトリの変更は分ける。

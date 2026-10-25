@@ -18,13 +18,51 @@ from workflow_contract import (CATALOG, MAX_FILE, ROOT, TERMINAL, catalog, file_
                                atomic_json, layout, lock, path_name, read, tree, validate)
 
 
-def fingerprint() -> dict:
+DEFINITIONS = ("Dockerfile", "Dockerfile.ai", "Dockerfile.dotnet", "compose.yaml", "compose.codex.yaml", "compose.dotnet.yaml")
+
+
+def fingerprint(root: Path = ROOT) -> dict:
     names = ["task_runner.py", "workflow_contract.py", "workflow_orchestrator.py", "workflow_worker.py",
              "workflow_compose.py", "workflow_sandbox.py"]
-    return {"runtime": {name: file_hash(ROOT / "scripts" / name) for name in names},
-            "catalog": file_hash(CATALOG),
-            "deployment": {p.name: file_hash(p) for p in sorted((ROOT / "runtime").iterdir())
-                           if p.name.startswith("Dockerfile") or p.name.endswith(".yaml")}}
+    return {"runtime": {name: file_hash(root / "scripts" / name) for name in names},
+            "catalog": file_hash(root / "skills/feature-map-workflow/assets/task-modules.json"),
+            "deployment": {name: file_hash(root / "runtime" / name) for name in DEFINITIONS}}
+
+
+def freeze_runtime(run: Path, root: Path = ROOT) -> tuple[dict, dict]:
+    """Copy only known control inputs, then bind the actual copied bytes to identity."""
+    captured = fingerprint(root)
+    selected = {"scripts/" + name: item for name, item in captured["runtime"].items()}
+    selected.update({"runtime/" + name: item for name, item in captured["deployment"].items()})
+    selected["skills/feature-map-workflow/assets/task-modules.json"] = captured["catalog"]
+    selected[".dockerignore"] = file_hash(root / ".dockerignore")
+    context = run / "deployment/context"
+    context.mkdir(parents=True)
+    for name, expected in selected.items():
+        source = safe_file(root, name)
+        target = safe_file(context, name)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, target)
+        if file_hash(target) != expected:
+            raise Halt("Runtime changed during snapshot; no deployment was started", "integrity")
+        target.chmod(0o444)
+    if tree(context) != selected or fingerprint(context) != captured:
+        raise Halt("Runtime snapshot does not match captured inputs", "integrity")
+    for directory in sorted((p for p in context.rglob("*") if p.is_dir()), reverse=True):
+        directory.chmod(0o555)
+    context.chmod(0o555)
+    return captured, selected
+
+
+def verify_runtime_snapshot(run: Path) -> Path:
+    context = run / "deployment/context"
+    identity = read(run / "state/identity.json")
+    if "deployment_snapshot" not in identity or tree(context) != identity["deployment_snapshot"] or \
+            fingerprint(context) != identity["implementation"]:
+        raise Halt("Frozen runtime is missing/changed; preserve this run and create a new one", "integrity")
+    if "execution_hash" in identity and digest(read(run / "deployment/execution-compose.json")) != identity["execution_hash"]:
+        raise Halt("Frozen execution contract changed", "integrity")
+    return context
 
 
 def prepare(repo: Path, config_path: Path, store: Path) -> Path:
@@ -65,8 +103,10 @@ def prepare(repo: Path, config_path: Path, store: Path) -> Path:
     inputs(baseline, config["protected_paths"])
     shutil.copytree(baseline, run / "candidate", dirs_exist_ok=True)
     atomic_json(run / "state/config.json", config)
+    implementation, deployment = freeze_runtime(run)
     identity = {"run_id": run.name, "source_revision": revision, "source_subdir": config["source_subdir"],
-                "config_hash": digest(config), "baseline": baseline_tree, "implementation": fingerprint()}
+                "config_hash": digest(config), "baseline": baseline_tree, "implementation": implementation,
+                "deployment_snapshot": deployment}
     atomic_json(run / "state/identity.json", identity)
     state = {"version": 1, "run_id": run.name, "identity_hash": digest(identity), "status": "PREPARED",
              "started_at": None, "index": 0, "candidate": baseline_tree,
@@ -94,6 +134,8 @@ class Workflow:
             raise Halt("Baseline changed", "integrity")
         if tree(self.run / "candidate") != self.state["candidate"]:
             raise Halt("Candidate changed outside an adopted proposal", "integrity")
+        if (self.run / "deployment").exists():  # Host/audit view; bootstrap inputs are not mounted into services.
+            verify_runtime_snapshot(self.run)
         for sid, record in self.state["steps"].items():
             if "sealed" in record and tree(self.run / "state/evidence" / sid) != record["sealed"]:
                 raise Halt("Adopted evidence changed", "integrity")

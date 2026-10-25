@@ -9,8 +9,9 @@ import subprocess
 from pathlib import Path
 
 from task_runner import Halt, redact
-from workflow_contract import ROOT, read
-from workflow_orchestrator import Workflow, prepare
+from workflow_contract import ROOT, atomic_json, lock, read
+from task_runner import digest
+from workflow_orchestrator import Workflow, prepare, verify_runtime_snapshot
 
 COMPOSE = ROOT / "runtime/compose.yaml"
 OVERRIDES = {"compose.codex.yaml", "compose.dotnet.yaml"}
@@ -55,7 +56,7 @@ def validate_effective(data: dict, run: Path, overrides: set[str], config: dict)
         dockerfile = "runtime/Dockerfile.ai" if role == "ai" and codex else "runtime/Dockerfile.dotnet" if (
             role == "build" and "compose.dotnet.yaml" in overrides) else "runtime/Dockerfile"
         build = service.get("build", {})
-        if set(build) != {"context", "dockerfile"} or Path(build["context"]).resolve() != ROOT or build["dockerfile"] != dockerfile:
+        if set(build) != {"context", "dockerfile"} or Path(build["context"]).resolve() != (run / "deployment/context").resolve() or build["dockerfile"] != dockerfile:
             raise Halt("Compose build input differs from the reviewed image", "permission")
         if role == "orchestrator":
             mounts = {"/run/state": ("state", False), "/run/candidate": ("candidate", False),
@@ -98,12 +99,13 @@ def validate_effective(data: dict, run: Path, overrides: set[str], config: dict)
         raise Halt("Offline execution must have no credential secret", "permission")
 
 
-def compose(run: Path, *args: str, overrides: list[Path] | None = None) -> int:
+def _compose(run: Path, *args: str, overrides: list[Path] | None = None) -> int:
     approved = reviewed_overrides(overrides or [])
+    context = verify_runtime_snapshot(run)
     name = "fmw-" + run.name.removeprefix("run-")
-    argv = ["docker", "compose", "--project-name", name, "-f", str(COMPOSE)]
+    argv = ["docker", "compose", "--project-name", name, "-f", str(context / "runtime/compose.yaml")]
     for path in overrides or []:
-        argv += ["-f", str(path.resolve())]
+        argv += ["-f", str(context / "runtime" / path.name)]
     env = {**os.environ, "FMW_RUN_DIR": str(run.resolve()), "FMW_UID": str(os.getuid() if hasattr(os, "getuid") else 1000),
            "FMW_GID": str(os.getgid() if hasattr(os, "getgid") else 1000)}
     if args and args[0] == "up":
@@ -111,7 +113,44 @@ def compose(run: Path, *args: str, overrides: list[Path] | None = None) -> int:
         if rendered.returncode:
             raise Halt("Compose rendering failed before execution", "environment")
         validate_effective(json.loads(rendered.stdout), run, approved, read(run / "state/config.json"))
+        data = json.loads(rendered.stdout)
+        execution = {"name": name, "services": data["services"]}
+        if data.get("secrets"):
+            execution["secrets"] = data["secrets"]
+        frozen = run / "deployment/execution-compose.json"
+        if frozen.exists():
+            if read(frozen) != execution:
+                raise Halt("Rendered execution contract changed; create a new run", "integrity")
+        else:
+            atomic_json(frozen, execution)
+            frozen.chmod(0o444)
+        identity = read(run / "state/identity.json")
+        if "execution_hash" not in identity:
+            state = read(run / "state/state.json")
+            if state["status"] != "PREPARED" or state["started_at"] is not None:
+                raise Halt("Execution identity can only be sealed before the first launch", "integrity")
+            identity["execution_hash"] = digest(execution)
+            state["identity_hash"] = digest(identity)
+            atomic_json(run / "state/identity.json", identity)
+            atomic_json(run / "state/state.json", state)
+        verify_runtime_snapshot(run)
+        argv = ["docker", "compose", "--project-name", name, "-f", str(frozen)]
     return subprocess.call([*argv, *args], env=env)
+
+
+def compose(run: Path, *args: str, overrides: list[Path] | None = None) -> int:
+    if not args or args[0] != "up":
+        return _compose(run, *args, overrides=overrides)
+    fd = lock(run / "deployment/launcher.lock")
+    os.close(fd)
+    try:
+        try:
+            return _compose(run, *args, overrides=overrides)
+        finally:
+            if _compose(run, "down", "--remove-orphans") != 0:
+                raise Halt("Compose cleanup failed; inspect this run's containers", "environment")
+    finally:
+        (run / "deployment/launcher.lock").unlink()
 
 
 def main() -> int:
@@ -138,16 +177,13 @@ def main() -> int:
         if workflow.state["status"] in {"HALT", "HUMAN_REVIEW_REQUIRED"}:
             print(json.dumps({"status": workflow.state["status"], "reason": "Terminal runs are not replayed."}))
             return 0 if workflow.state["status"] == "HUMAN_REVIEW_REQUIRED" else 2
-        try:
-            code = compose(run, "up", "--build", "--abort-on-container-exit", "--exit-code-from", "orchestrator",
-                           overrides=args.override)
-        finally:
-            cleanup = compose(run, "down", "--remove-orphans", overrides=args.override)
+        code = compose(run, "up", "--build", "--abort-on-container-exit", "--exit-code-from", "orchestrator",
+                       overrides=args.override)
         final = Workflow(run)
         final.verify()
         print(json.dumps({"run": str(run), "status": final.state["status"],
                           "manifest_sha256": final.state.get("manifest_sha256")}, ensure_ascii=False))
-        return 0 if code == cleanup == 0 and final.state["status"] == "HUMAN_REVIEW_REQUIRED" else 2
+        return 0 if code == 0 and final.state["status"] == "HUMAN_REVIEW_REQUIRED" else 2
     except (Halt, OSError, ValueError, KeyError, TypeError) as exc:
         print(json.dumps({"status": "HALT", "reason": redact(str(exc))[:1000]}))
         return 2

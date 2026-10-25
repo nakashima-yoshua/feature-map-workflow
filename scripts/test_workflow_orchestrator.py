@@ -16,9 +16,9 @@ from unittest.mock import patch
 from task_runner import Halt, digest
 from workflow_contract import atomic_json
 import workflow_contract as contract
-from workflow_orchestrator import Workflow, orchestrate, prepare
+from workflow_orchestrator import Workflow, freeze_runtime, orchestrate, prepare, verify_runtime_snapshot
 from workflow_worker import Worker
-from workflow_compose import reviewed_overrides, validate_effective
+from workflow_compose import compose, reviewed_overrides, validate_effective
 
 EXAMPLE = contract.ROOT / "examples/module-workflow"
 
@@ -411,8 +411,7 @@ class ComposePolicyTests(unittest.TestCase):
         with self.assertRaises(Halt):
             reviewed_overrides([approved, approved])
 
-    def test_effective_network_privilege_and_extra_host_mount_are_rejected(self):
-        run = Path("/synthetic/run").resolve()
+    def effective(self, run):
         user = str(os.getuid() if hasattr(os, "getuid") else 1000) + ":" + str(os.getgid() if hasattr(os, "getgid") else 1000)
         def service(role):
             mounts = {"state": ("/run/state", False), "candidate": ("/run/candidate", False),
@@ -420,14 +419,18 @@ class ComposePolicyTests(unittest.TestCase):
                       "state/config.json": ("/run/state/config.json", True), "state/identity.json": ("/run/state/identity.json", True),
                       "candidate": ("/run/candidate", True), "requests": ("/run/requests", True),
                       "results/" + role: ("/run/results/" + role, False)}
-            return {"build": {"context": str(contract.ROOT), "dockerfile": "runtime/Dockerfile"},
+            return {"build": {"context": str(run / "deployment/context"), "dockerfile": "runtime/Dockerfile"},
                     "read_only": True, "cap_drop": ["ALL"], "user": user, "security_opt": ["no-new-privileges:true"],
                     "network_mode": "none", "init": True, "restart": "no", "cpus": 1, "pids_limit": 128,
                     "mem_limit": str(1024**3), "tmpfs": ["/tmp:size=512m,mode=1777"],
                     "command": ["scripts/workflow_orchestrator.py", "serve", "--run", "/run"] if role == "orchestrator" else ["scripts/workflow_worker.py", role, "--run", "/run"],
                     "volumes": [{"type": "bind", "source": str(run / source), "target": target, "read_only": ro}
                                 for source, (target, ro) in mounts.items()]}
-        data = {"services": {role: service(role) for role in ("orchestrator", "ai", "build")}}
+        return {"services": {role: service(role) for role in ("orchestrator", "ai", "build")}}
+
+    def test_effective_network_privilege_and_extra_host_mount_are_rejected(self):
+        run = Path("/synthetic/run").resolve()
+        data = self.effective(run)
         config = contract.read(EXAMPLE / "workflow.json")
         validate_effective(data, run, set(), config)
         for change in (lambda d: d["services"]["build"].update(network_mode="bridge"),
@@ -437,6 +440,58 @@ class ComposePolicyTests(unittest.TestCase):
             change(altered)
             with self.assertRaises(Halt):
                 validate_effective(altered, run, set(), config)
+
+    def test_mutating_original_yaml_and_build_context_after_validation_cannot_change_execution(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            run = base / "run-snapshot"
+            contract.layout(run)
+            # A temporary source tree, never the working repository or its originals.
+            original = base / "original"
+            first = base / "first-capture"
+            freeze_runtime(first)
+            shutil.copytree(first / "deployment/context", original)
+            for p in original.rglob("*"):
+                p.chmod(0o755 if p.is_dir() else 0o644)
+            original.chmod(0o755)
+            implementation, snapshot = freeze_runtime(run, original)
+            identity = {"implementation": implementation, "deployment_snapshot": snapshot}
+            atomic_json(run / "state/identity.json", identity)
+            atomic_json(run / "state/state.json", {"status": "PREPARED", "started_at": None,
+                                                   "identity_hash": digest(identity)})
+            atomic_json(run / "state/config.json", contract.read(EXAMPLE / "workflow.json"))
+            data = self.effective(run)
+            launched = []
+            def render(argv, **kwargs):
+                self.assertEqual(run / "deployment/context/runtime/compose.yaml", Path(argv[argv.index("-f") + 1]))
+                # Simulate another source writer during the validation/start boundary.
+                (original / "runtime/compose.yaml").write_text("services: {build: {privileged: true}}", encoding="utf-8")
+                (original / "runtime/Dockerfile").write_text("FROM unreviewed-image\n", encoding="utf-8")
+                (original / "scripts/workflow_worker.py").write_text("unreviewed runtime\n", encoding="utf-8")
+                return subprocess.CompletedProcess(argv, 0, json.dumps(data), "")
+            def execute(argv, **kwargs):
+                action = "up" if "up" in argv else "down"
+                launched.append(action)
+                if action == "up":
+                    path = Path(argv[argv.index("-f") + 1])
+                    self.assertEqual(run / "deployment/execution-compose.json", path)
+                    execution = contract.read(path)
+                    self.assertEqual(data["services"], execution["services"])
+                    context = Path(execution["services"]["build"]["build"]["context"])
+                    self.assertEqual(run / "deployment/context", context)
+                    self.assertNotIn("unreviewed", (context / "runtime/Dockerfile").read_text())
+                    self.assertEqual(digest(execution), contract.read(run / "state/identity.json")["execution_hash"])
+                    verify_runtime_snapshot(run)
+                return 0
+            with patch("workflow_compose.ROOT", original), patch("workflow_compose.COMPOSE", original / "runtime/compose.yaml"), \
+                    patch("workflow_compose.subprocess.run", side_effect=render), patch("workflow_compose.subprocess.call", side_effect=execute):
+                self.assertEqual(0, compose(run, "up", "--build"))
+            self.assertEqual(["up", "down"], launched)
+            verify_runtime_snapshot(run)
+            (run / "deployment/launcher.lock").touch()
+            with patch("workflow_compose.subprocess.call", side_effect=AssertionError("Must not stop the other owner")):
+                with self.assertRaisesRegex(Halt, "owned"):
+                    compose(run, "up", "--build")
 
 
 if __name__ == "__main__":
