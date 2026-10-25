@@ -1,0 +1,83 @@
+# Host lifecycle only: python scripts/workflow_compose.py start ...
+# No daemon socket, host ports, credential HOME or privileged mode.
+x-runtime: &runtime
+  build:
+    context: ..
+    dockerfile: runtime/Dockerfile
+  user: "${FMW_UID:-1000}:${FMW_GID:-1000}"
+  read_only: true
+  network_mode: none
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  pids_limit: 128
+  mem_limit: 1g
+  cpus: 1
+  tmpfs:
+    - /tmp:size=512m,mode=1777
+  restart: "no"
+  init: true
+
+services:
+  orchestrator:
+    <<: *runtime
+    command: [scripts/workflow_orchestrator.py, serve, --run, /run]
+    volumes:
+      - type: bind
+        source: ${FMW_RUN_DIR:?Set FMW_RUN_DIR}/state
+        target: /run/state
+      - type: bind
+        source: ${FMW_RUN_DIR:?Set FMW_RUN_DIR}/candidate
+        target: /run/candidate
+      - type: bind
+        source: ${FMW_RUN_DIR:?Set FMW_RUN_DIR}/requests
+        target: /run/requests
+      - type: bind
+        source: ${FMW_RUN_DIR:?Set FMW_RUN_DIR}/results
+        target: /run/results
+        read_only: true
+  ai:
+    <<: *runtime
+    command: [scripts/workflow_worker.py, ai, --run, /run]
+    volumes:
+      - type: bind
+        source: ${FMW_RUN_DIR:?Set FMW_RUN_DIR}/state/config.json
+        target: /run/state/config.json
+        read_only: true
+      - type: bind
+        source: ${FMW_RUN_DIR:?Set FMW_RUN_DIR}/state/identity.json
+        target: /run/state/identity.json
+        read_only: true
+      - type: bind
+        source: ${FMW_RUN_DIR:?Set FMW_RUN_DIR}/candidate
+        target: /run/candidate
+        read_only: true
+      - type: bind
+        source: ${FMW_RUN_DIR:?Set FMW_RUN_DIR}/requests
+        target: /run/requests
+        read_only: true
+      - type: bind
+        source: ${FMW_RUN_DIR:?Set FMW_RUN_DIR}/results/ai
+        target: /run/results/ai
+  build:
+    <<: *runtime
+    command: [scripts/workflow_worker.py, build, --run, /run]
+    volumes:
+      - type: bind
+        source: ${FMW_RUN_DIR:?Set FMW_RUN_DIR}/state/config.json
+        target: /run/state/config.json
+        read_only: true
+      - type: bind
+        source: ${FMW_RUN_DIR:?Set FMW_RUN_DIR}/state/identity.json
+        target: /run/state/identity.json
+        read_only: true
+      - type: bind
+        source: ${FMW_RUN_DIR:?Set FMW_RUN_DIR}/candidate
+        target: /run/candidate
+        read_only: true
+      - type: bind
+        source: ${FMW_RUN_DIR:?Set FMW_RUN_DIR}/requests
+        target: /run/requests
+        read_only: true
+      - type: bind
+        source: ${FMW_RUN_DIR:?Set FMW_RUN_DIR}/results/build
+        target: /run/results/build

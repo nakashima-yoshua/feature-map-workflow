@@ -1,0 +1,446 @@
+{
+  "version": 1,
+  "modules": [
+    {
+      "number": 1,
+      "id": "request-intake",
+      "name": "要求受付",
+      "phase": "intake",
+      "phase_name": "要求受付・調査",
+      "fmw_phases": "1–2",
+      "default_runner": "ai"
+    },
+    {
+      "number": 2,
+      "id": "document-analysis",
+      "name": "要求文書解析",
+      "phase": "intake",
+      "phase_name": "要求受付・調査",
+      "fmw_phases": "1–2",
+      "default_runner": "ai"
+    },
+    {
+      "number": 3,
+      "id": "interview-questions",
+      "name": "ヒアリング項目生成",
+      "phase": "intake",
+      "phase_name": "要求受付・調査",
+      "fmw_phases": "1–2",
+      "default_runner": "ai"
+    },
+    {
+      "number": 4,
+      "id": "business-analysis",
+      "name": "現行業務分析",
+      "phase": "intake",
+      "phase_name": "要求受付・調査",
+      "fmw_phases": "1–2",
+      "default_runner": "ai"
+    },
+    {
+      "number": 5,
+      "id": "system-investigation",
+      "name": "既存システム調査",
+      "phase": "intake",
+      "phase_name": "要求受付・調査",
+      "fmw_phases": "1–2",
+      "default_runner": "ai"
+    },
+    {
+      "number": 6,
+      "id": "requirement-organizing",
+      "name": "課題・要求整理",
+      "phase": "intake",
+      "phase_name": "要求受付・調査",
+      "fmw_phases": "1–2",
+      "default_runner": "ai"
+    },
+    {
+      "number": 7,
+      "id": "business-requirements",
+      "name": "業務要件定義",
+      "phase": "requirements",
+      "phase_name": "要件定義",
+      "fmw_phases": "2",
+      "default_runner": "ai"
+    },
+    {
+      "number": 8,
+      "id": "functional-requirements",
+      "name": "機能要件定義",
+      "phase": "requirements",
+      "phase_name": "要件定義",
+      "fmw_phases": "2",
+      "default_runner": "ai"
+    },
+    {
+      "number": 9,
+      "id": "nonfunctional-requirements",
+      "name": "非機能要件定義",
+      "phase": "requirements",
+      "phase_name": "要件定義",
+      "fmw_phases": "2",
+      "default_runner": "ai"
+    },
+    {
+      "number": 10,
+      "id": "business-flow",
+      "name": "業務フロー生成",
+      "phase": "requirements",
+      "phase_name": "要件定義",
+      "fmw_phases": "2",
+      "default_runner": "ai"
+    },
+    {
+      "number": 11,
+      "id": "use-cases",
+      "name": "ユースケース生成",
+      "phase": "requirements",
+      "phase_name": "要件定義",
+      "fmw_phases": "2",
+      "default_runner": "ai"
+    },
+    {
+      "number": 12,
+      "id": "requirements-consistency",
+      "name": "要件整合性検証",
+      "phase": "requirements",
+      "phase_name": "要件定義",
+      "fmw_phases": "2",
+      "default_runner": "ai"
+    },
+    {
+      "number": 13,
+      "id": "requirements-agreement",
+      "name": "要件合意資料生成",
+      "phase": "requirements",
+      "phase_name": "要件定義",
+      "fmw_phases": "2",
+      "default_runner": "ai"
+    },
+    {
+      "number": 14,
+      "id": "architecture-design",
+      "name": "システム構成設計",
+      "phase": "basic-design",
+      "phase_name": "基本設計",
+      "fmw_phases": "3",
+      "default_runner": "ai"
+    },
+    {
+      "number": 15,
+      "id": "functional-decomposition",
+      "name": "機能分割設計",
+      "phase": "basic-design",
+      "phase_name": "基本設計",
+      "fmw_phases": "3",
+      "default_runner": "ai"
+    },
+    {
+      "number": 16,
+      "id": "screen-design",
+      "name": "画面設計",
+      "phase": "basic-design",
+      "phase_name": "基本設計",
+      "fmw_phases": "3",
+      "default_runner": "ai"
+    },
+    {
+      "number": 17,
+      "id": "report-design",
+      "name": "帳票設計",
+      "phase": "basic-design",
+      "phase_name": "基本設計",
+      "fmw_phases": "3",
+      "default_runner": "ai"
+    },
+    {
+      "number": 18,
+      "id": "data-model",
+      "name": "データモデル設計",
+      "phase": "basic-design",
+      "phase_name": "基本設計",
+      "fmw_phases": "3",
+      "default_runner": "ai"
+    },
+    {
+      "number": 19,
+      "id": "external-interface",
+      "name": "外部インターフェース設計",
+      "phase": "basic-design",
+      "phase_name": "基本設計",
+      "fmw_phases": "3",
+      "default_runner": "ai"
+    },
+    {
+      "number": 20,
+      "id": "security-design",
+      "name": "権限・セキュリティ設計",
+      "phase": "basic-design",
+      "phase_name": "基本設計",
+      "fmw_phases": "3",
+      "default_runner": "ai"
+    },
+    {
+      "number": 21,
+      "id": "processing-specification",
+      "name": "処理仕様生成",
+      "phase": "detailed-design",
+      "phase_name": "詳細設計",
+      "fmw_phases": "6",
+      "default_runner": "ai"
+    },
+    {
+      "number": 22,
+      "id": "physical-database-design",
+      "name": "データベース物理設計",
+      "phase": "detailed-design",
+      "phase_name": "詳細設計",
+      "fmw_phases": "6",
+      "default_runner": "ai"
+    },
+    {
+      "number": 23,
+      "id": "api-specification",
+      "name": "API・入出力仕様生成",
+      "phase": "detailed-design",
+      "phase_name": "詳細設計",
+      "fmw_phases": "6",
+      "default_runner": "ai"
+    },
+    {
+      "number": 24,
+      "id": "error-design",
+      "name": "エラー処理設計",
+      "phase": "detailed-design",
+      "phase_name": "詳細設計",
+      "fmw_phases": "6",
+      "default_runner": "ai"
+    },
+    {
+      "number": 25,
+      "id": "design-consistency",
+      "name": "設計整合性検証",
+      "phase": "detailed-design",
+      "phase_name": "詳細設計",
+      "fmw_phases": "6",
+      "default_runner": "ai"
+    },
+    {
+      "number": 26,
+      "id": "test-conditions",
+      "name": "テスト条件抽出",
+      "phase": "test-design",
+      "phase_name": "テスト設計",
+      "fmw_phases": "4–5,7–8",
+      "default_runner": "ai"
+    },
+    {
+      "number": 27,
+      "id": "expected-results",
+      "name": "期待結果定義",
+      "phase": "test-design",
+      "phase_name": "テスト設計",
+      "fmw_phases": "4–5,7–8",
+      "default_runner": "ai"
+    },
+    {
+      "number": 28,
+      "id": "test-cases",
+      "name": "テストケース生成",
+      "phase": "test-design",
+      "phase_name": "テスト設計",
+      "fmw_phases": "4–5,7–8",
+      "default_runner": "ai"
+    },
+    {
+      "number": 29,
+      "id": "test-data",
+      "name": "テストデータ生成",
+      "phase": "test-design",
+      "phase_name": "テスト設計",
+      "fmw_phases": "4–5,7–8",
+      "default_runner": "ai"
+    },
+    {
+      "number": 30,
+      "id": "requirement-test-mapping",
+      "name": "要件・テスト対応検証",
+      "phase": "test-design",
+      "phase_name": "テスト設計",
+      "fmw_phases": "4–5,7–8",
+      "default_runner": "ai"
+    },
+    {
+      "number": 31,
+      "id": "code-generation",
+      "name": "コード生成",
+      "phase": "implementation",
+      "phase_name": "実装",
+      "fmw_phases": "9",
+      "default_runner": "ai"
+    },
+    {
+      "number": 32,
+      "id": "database-implementation",
+      "name": "データベース実装",
+      "phase": "implementation",
+      "phase_name": "実装",
+      "fmw_phases": "9",
+      "default_runner": "database"
+    },
+    {
+      "number": 33,
+      "id": "build",
+      "name": "ビルド",
+      "phase": "implementation",
+      "phase_name": "実装",
+      "fmw_phases": "9",
+      "default_runner": "build"
+    },
+    {
+      "number": 34,
+      "id": "static-analysis",
+      "name": "静的解析",
+      "phase": "implementation",
+      "phase_name": "実装",
+      "fmw_phases": "9",
+      "default_runner": "build"
+    },
+    {
+      "number": 35,
+      "id": "implementation-repair",
+      "name": "実装修正",
+      "phase": "implementation",
+      "phase_name": "実装",
+      "fmw_phases": "9",
+      "default_runner": "ai"
+    },
+    {
+      "number": 36,
+      "id": "unit-test",
+      "name": "単体テスト実行",
+      "phase": "test-execution",
+      "phase_name": "テスト実行",
+      "fmw_phases": "9",
+      "default_runner": "build"
+    },
+    {
+      "number": 37,
+      "id": "integration-test",
+      "name": "結合テスト実行",
+      "phase": "test-execution",
+      "phase_name": "テスト実行",
+      "fmw_phases": "9",
+      "default_runner": "build"
+    },
+    {
+      "number": 38,
+      "id": "system-test",
+      "name": "システムテスト実行",
+      "phase": "test-execution",
+      "phase_name": "テスト実行",
+      "fmw_phases": "9",
+      "default_runner": "build"
+    },
+    {
+      "number": 39,
+      "id": "defect-analysis",
+      "name": "不具合解析",
+      "phase": "test-execution",
+      "phase_name": "テスト実行",
+      "fmw_phases": "9",
+      "default_runner": "ai"
+    },
+    {
+      "number": 40,
+      "id": "test-evidence",
+      "name": "テストエビデンス生成",
+      "phase": "test-execution",
+      "phase_name": "テスト実行",
+      "fmw_phases": "9",
+      "default_runner": "build"
+    },
+    {
+      "number": 41,
+      "id": "test-evaluation",
+      "name": "テスト結果評価",
+      "phase": "test-execution",
+      "phase_name": "テスト実行",
+      "fmw_phases": "9",
+      "default_runner": "ai"
+    },
+    {
+      "number": 42,
+      "id": "traceability",
+      "name": "要件トレーサビリティ検証",
+      "phase": "quality",
+      "phase_name": "品質保証",
+      "fmw_phases": "2–10,12",
+      "default_runner": "ai"
+    },
+    {
+      "number": 43,
+      "id": "security-verification",
+      "name": "セキュリティ検証",
+      "phase": "quality",
+      "phase_name": "品質保証",
+      "fmw_phases": "2–10,12",
+      "default_runner": "build"
+    },
+    {
+      "number": 44,
+      "id": "quality-evaluation",
+      "name": "品質評価",
+      "phase": "quality",
+      "phase_name": "品質保証",
+      "fmw_phases": "2–10,12",
+      "default_runner": "ai"
+    },
+    {
+      "number": 45,
+      "id": "deliverable-composition",
+      "name": "納品物構成",
+      "phase": "delivery-preparation",
+      "phase_name": "納品準備",
+      "fmw_phases": "10–11a",
+      "default_runner": "ai"
+    },
+    {
+      "number": 46,
+      "id": "operation-manual",
+      "name": "操作マニュアル生成",
+      "phase": "delivery-preparation",
+      "phase_name": "納品準備",
+      "fmw_phases": "10–11a",
+      "default_runner": "ai"
+    },
+    {
+      "number": 47,
+      "id": "migration-procedure",
+      "name": "導入・移行手順生成",
+      "phase": "delivery-preparation",
+      "phase_name": "納品準備",
+      "fmw_phases": "10–11a",
+      "default_runner": "ai"
+    },
+    {
+      "number": 48,
+      "id": "deliverable-verification",
+      "name": "納品物検証",
+      "phase": "delivery-preparation",
+      "phase_name": "納品準備",
+      "fmw_phases": "10–11a",
+      "default_runner": "build"
+    },
+    {
+      "number": 49,
+      "id": "delivery-package",
+      "name": "納品パッケージ生成",
+      "phase": "delivery",
+      "phase_name": "納品",
+      "fmw_phases": "10,12",
+      "default_runner": "build"
+    }
+  ]
+}
