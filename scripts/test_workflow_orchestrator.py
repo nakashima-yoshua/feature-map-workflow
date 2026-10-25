@@ -423,7 +423,7 @@ class ComposePolicyTests(unittest.TestCase):
             return {"build": {"context": str(contract.ROOT), "dockerfile": "runtime/Dockerfile"},
                     "read_only": True, "cap_drop": ["ALL"], "user": user, "security_opt": ["no-new-privileges:true"],
                     "network_mode": "none", "init": True, "restart": "no", "cpus": 1, "pids_limit": 128,
-                    "mem_limit": 1024**3, "tmpfs": ["/tmp:size=512m,mode=1777"],
+                    "mem_limit": str(1024**3), "tmpfs": ["/tmp:size=512m,mode=1777"],
                     "command": ["scripts/workflow_orchestrator.py", "serve", "--run", "/run"] if role == "orchestrator" else ["scripts/workflow_worker.py", role, "--run", "/run"],
                     "volumes": [{"type": "bind", "source": str(run / source), "target": target, "read_only": ro}
                                 for source, (target, ro) in mounts.items()]}

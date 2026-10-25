@@ -43,8 +43,12 @@ def validate_effective(data: dict, run: Path, overrides: set[str], config: dict)
             raise Halt("Compose privilege/root/identity boundary differs from policy", "permission")
         if service.get("network_mode") != ("bridge" if role == "ai" and codex else "none"):
             raise Halt("Worker networking differs from the approved role", "permission")
-        if not service.get("init") or service.get("restart") != "no" or not 1 <= service.get("pids_limit", 0) <= 128 or \
-                not 1 <= service.get("mem_limit", 0) <= 2 * 1024**3 or not 0 < service.get("cpus", 0) <= 1:
+        memory = service.get("mem_limit", 0)
+        if isinstance(memory, str) and memory.isdecimal():
+            memory = int(memory)  # Compose JSON represents byte limits as decimal strings.
+        if not service.get("init") or service.get("restart") != "no" or type(service.get("pids_limit")) is not int or \
+                not 1 <= service["pids_limit"] <= 128 or type(memory) is not int or not 1 <= memory <= 2 * 1024**3 or \
+                type(service.get("cpus")) not in {int, float} or not 0 < service["cpus"] <= 1:
             raise Halt("Compose lifecycle/resource bounds are invalid", "budget")
         if service.get("tmpfs") != ["/tmp:size=512m,mode=1777"]:
             raise Halt("Only the bounded private temporary filesystem is supported", "permission")
@@ -78,7 +82,7 @@ def validate_effective(data: dict, run: Path, overrides: set[str], config: dict)
             if service.get("environment") != {"FMW_CODEX_KEY_FILE": "/run/secrets/codex_api_key"}:
                 raise Halt("Only the fixed AI credential reference may be configured", "permission")
             secrets = service.get("secrets", [])
-            if len(secrets) != 1 or secrets[0].get("source") != "codex_api_key" or secrets[0].get("target") != "codex_api_key":
+            if len(secrets) != 1 or secrets[0].get("source") != "codex_api_key" or secrets[0].get("target") not in {"codex_api_key", "/run/secrets/codex_api_key"}:
                 raise Halt("AI must receive exactly its own credential secret", "permission")
         elif service.get("environment") or service.get("secrets"):
             raise Halt("Credentials/environment must not be shared with this role", "permission")
