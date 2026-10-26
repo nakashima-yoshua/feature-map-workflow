@@ -17,6 +17,8 @@ runtime journals and full test documents in their existing stores.
 
 1. Reuse conversation, source/tests/config/logs and existing maps. Find the feature,
    real entry point, accepted goal/scope/exclusions and done condition.
+   Establish who will use the deliverable, for which decision or action, and the
+   necessary level of detail from that context.
 2. Resolve material gaps locally. For low-risk reversible ambiguity, state a narrow
    assumption and proceed. If scope, authority, behavior, acceptance or major risk
    still depends on a missing fact, ask one question with the current interpretation
@@ -28,7 +30,10 @@ runtime journals and full test documents in their existing stores.
 4. Investigate enough business flow to understand consequences, but change only the
    approved slice. Consider no change. Prefer the concrete implementation; add
    abstractions only for present needs/two concrete uses or justified correctness,
-   safety, contract or operation needs. Stop at the accepted done condition.
+   safety, contract or operation needs. Work in small units with observable outcomes;
+   check assumptions with high rework cost before expanding dependent work, following
+   the lifecycle's [early feedback](references/development-lifecycle.md#early-feedback-before-expanding-work).
+   Stop at the accepted done condition.
 5. Preserve confirmed reusable business knowledge even without code changes.
    Separate observed legacy behavior, inferred relationships and approved intent;
    retain consequential unknowns under open/item with the cheapest next check.

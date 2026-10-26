@@ -4,6 +4,8 @@ All notable user-visible changes are documented here.
 
 ## Unreleased
 
+- Clarify deliverable users, intended decisions and necessary detail; use observable work units and early checks of costly assumptions without fixed time/progress checkpoints or extra approval rounds.
+
 - Add an opt-in 49-candidate module catalog and a serial Ubuntu/Docker workflow with separate AI/Build services, immutable input/configuration identity, protected expectations, bounded execution, retained evidence and human-review-required completion. Include offline success/failure examples, explicit Codex/.NET overrides and unavailable DB/Windows capability checks; existing Skill and single-task Runner remain independent.
 
 - Require complete v2 checkpoints before importing PASS; retain the canonical case expectation, normalize case IDs, reject future active verification dates and unsupported cross-session Excel cases, and preserve session roles/stop/cleanup in supported workbooks. v1 run-level metadata remains compatible.
