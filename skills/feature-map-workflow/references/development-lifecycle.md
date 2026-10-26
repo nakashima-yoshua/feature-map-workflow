@@ -52,6 +52,32 @@ next feature-sized iteration. Include important invalid states; never derive the
 oracle from the implementation's answer. Select security/privacy, transaction,
 nonfunctional, regression and change-impact checks according to actual risk.
 
+### Early feedback before expanding work
+
+Use the existing purpose, scope and acceptance baseline to establish the deliverable's
+user, intended decision or action, and necessary detail. Reuse available answers;
+apply the [Context Gate](context-gate.md) only for material unresolved gaps.
+
+Choose the next small unit by its observable outcome and what evidence is needed
+to continue. Check assumptions whose correction would cause substantial rework
+before expanding dependent work. Use the cheapest sufficient outline, representative
+scenario or minimal implementation; do not require fixed 15-minute units or a
+30-percent completion checkpoint.
+
+| Work | Early check | Basis for continuing |
+| --- | --- | --- |
+| Decision material | Outline and one representative comparison | The content and detail answer the intended decision; resolve material ambiguity with the decision owner before polishing the full document. |
+| Screen change | One representative input/display flow with specification-derived expectations | Observe whether the selected behavior matches the accepted specification before repeating the pattern across the screen. A mock establishes only what it actually shows. |
+| Investigation | One actual entry point and its relevant source/data path | Confirm that the path addresses the target scenario before broadening the investigation; retain unverified dependencies as unknowns. |
+
+Existing specifications, source and tests can resolve checks within authorized work;
+seek human judgment only where business meaning, scope, authority or material risk
+remains unresolved. A clear low-risk change needs no separate checkpoint or new
+approval round. Keep transient plans and feedback in the existing task record;
+only durable feature knowledge belongs in XML. Early feedback does not replace
+required verification, revision-bound review or human acceptance. Stop when the
+accepted done condition and required checks are satisfied.
+
 ### Tailoring and stop conditions
 
 Reuse current designs, fixtures and procedures. Skip trials for known unchanged
