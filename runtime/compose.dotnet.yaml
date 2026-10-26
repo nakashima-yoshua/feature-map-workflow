@@ -1,0 +1,8 @@
+# Optional installed SDK; the project's approved argv must redirect bin/obj/cache
+# into /tmp or FMW_OUTPUT_DIR. Restore packages separately in a reviewed image.
+services:
+  build:
+    build:
+      context: ..
+      dockerfile: runtime/Dockerfile.dotnet
+    mem_limit: 2g

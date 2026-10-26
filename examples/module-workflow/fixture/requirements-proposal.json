@@ -1,0 +1,4 @@
+{
+  "status": "change",
+  "changes": [{"path": "requirements.md", "content": "# Requirement summary\n\nREQ-VALUE: value() returns integer 2.\nCanonical expectation: spec.md / REQ-VALUE.\nThis generated summary does not authorize changes to the specification.\n"}]
+}

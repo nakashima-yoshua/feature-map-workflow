@@ -62,6 +62,7 @@ FMWのHTMLを再解析したりモデルへ渡したりして、ケース・操�
 | 外部の限定判断補助。既定off、既存Jev設定は維持 | [Decision Providers](skills/feature-map-workflow/references/decision-providers.md) |
 | テストツール導入・合成データの実行例 | [導入ガイド](examples/ai-assisted-testing/README.md) |
 | Linux bubblewrapでの単一タスク試行 | [Runner契約](skills/feature-map-workflow/references/autonomous-task-runner.md)、[信頼境界](skills/feature-map-workflow/references/ai-trust-controls.md) |
+| 選択式49候補・Linuxコンテナでの直列実行 | [モジュール実行基盤](skills/feature-map-workflow/references/module-workflow.md)、[オフライン合成例](examples/module-workflow/README.md)。DB・Windows実行は未対応 |
 | 任意のself-hosted PoC | [Agents API](skills/feature-map-workflow/references/agents-api.md) |
 | API・キュー・Projectionの設計案。実行サービスは未同梱 | [Repository Coordination](skills/feature-map-workflow/references/repository-coordination.md) |
 

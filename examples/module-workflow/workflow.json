@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "workflow_id": "synthetic-value-repair",
+  "purpose": "Summarize fixed requirements and repair a synthetic function before producing a reviewed candidate.",
+  "source_subdir": "examples/module-workflow/fixture",
+  "contract_ref": "spec.md",
+  "acceptance": ["REQ-VALUE: value() returns integer 2", "Build, behavior and container-isolation checks pass"],
+  "invariants": ["INV-VALUE: no external side effects", "Specification and independent checks remain unchanged"],
+  "exclude": ["Live AI, DB or UI calls", "Approval, publication, merge, deployment and customer delivery"],
+  "risk": "LOW",
+  "allowed_paths": ["app.py", "requirements.md"],
+  "protected_paths": ["spec.md", "check_behavior.py", "check_isolation.py", "package_candidate.py", "requirements-proposal.json", "code-proposal.json"],
+  "max_seconds": 180,
+  "max_artifact_bytes": 2097152,
+  "external_input_allowed": false,
+  "verification_steps": ["verify", "isolation"],
+  "steps": [
+    {
+      "id": "requirements", "module": "functional-requirements", "runner": "ai",
+      "needs": [], "inputs": ["spec.md", "requirements-proposal.json"],
+      "outputs": ["proposal.json"], "seconds": 15,
+      "mode": "recorded-proposal", "proposal": "requirements-proposal.json"
+    },
+    {
+      "id": "implementation", "module": "code-generation", "runner": "ai",
+      "needs": ["requirements"], "inputs": ["spec.md", "app.py", "check_behavior.py", "requirements.md", "code-proposal.json"],
+      "outputs": ["proposal.json"], "seconds": 15,
+      "mode": "recorded-proposal", "proposal": "code-proposal.json"
+    },
+    {
+      "id": "build", "module": "build", "runner": "build",
+      "needs": ["implementation"], "inputs": ["app.py"], "outputs": [], "seconds": 15,
+      "mode": "command", "argv": ["python", "-c", "import ast,pathlib; ast.parse(pathlib.Path('app.py').read_text())"]
+    },
+    {
+      "id": "verify", "module": "unit-test", "runner": "build",
+      "verification_result": "result.json",
+      "needs": ["build"], "inputs": ["app.py", "spec.md", "check_behavior.py"],
+      "outputs": ["result.json"], "seconds": 15,
+      "mode": "command", "argv": ["python", "check_behavior.py"]
+    },
+    {
+      "id": "isolation", "module": "security-verification", "runner": "build",
+      "verification_result": "isolation.json",
+      "needs": ["verify"], "inputs": ["check_isolation.py"], "outputs": ["isolation.json"], "seconds": 15,
+      "mode": "command", "argv": ["python", "check_isolation.py"]
+    },
+    {
+      "id": "package", "module": "delivery-package", "runner": "build",
+      "needs": ["verify", "isolation"], "inputs": ["app.py", "requirements.md", "package_candidate.py"],
+      "outputs": ["candidate.zip"], "seconds": 15,
+      "mode": "command", "argv": ["python", "package_candidate.py"]
+    }
+  ]
+}

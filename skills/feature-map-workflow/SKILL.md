@@ -71,6 +71,7 @@ only when needed.
 | Hook configuration | [Codex Hooks](references/codex-hooks.md) |
 | Optional advice | [Decision Providers](references/decision-providers.md), then [Jev](references/jev.md) if selected |
 | Authorized bounded runner | [Autonomous Task Runner](references/autonomous-task-runner.md) and [AI Trust Controls](references/ai-trust-controls.md) |
+| Optional selected-module serial containers | [Module Workflow](references/module-workflow.md); fixed project configuration, separate from the single-task Runner |
 | Optional Agents API | [Agents API](references/agents-api.md) |
 | Bounded query/aggregate | [Programmatic Tool Calling](references/programmatic-tool-calling.md) |
 | Coordination architecture proposal | [Repository Coordination](references/repository-coordination.md), an architecture contract rather than a bundled service |

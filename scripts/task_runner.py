@@ -408,6 +408,45 @@ class CodexProposer:
         return read_json(output)
 
 
+def apply_proposal(worktree: Path, allowed_paths: list[str], proposal: Any) -> None:
+    if not isinstance(proposal, dict) or set(proposal) != {"status", "changes"} or \
+            not isinstance(proposal["status"], str) or proposal["status"] not in {"change", "no_change", "blocked"} or not isinstance(proposal["changes"], list):
+        raise Halt("Proposal is not the reviewed data contract; approval fields are forbidden", "permission")
+    if proposal["status"] != "change":
+        if proposal["changes"]:
+            raise Halt("Non-change proposal includes edits", "permission")
+        if proposal["status"] == "blocked":
+            raise Halt("Agent reports unresolved context; human judgment required", "specification")
+        return
+    if not proposal["changes"]:
+        raise Halt("Empty change proposal", "specification")
+    edits = []
+    seen = set()
+    total = 0
+    for change in proposal["changes"]:
+        if not isinstance(change, dict) or set(change) != {"path", "content"}:
+            raise Halt("Invalid edit record", "permission")
+        name = relative(change["path"])
+        if name not in allowed_paths or name in seen:
+            raise Halt("Proposed edit exceeds approved paths", "permission")
+        seen.add(name)
+        path = safe_file(worktree, name)
+        content = change["content"]
+        if content is not None and (not isinstance(content, str) or sensitive(content)):
+            raise Halt("Invalid or sensitive proposed content", "permission")
+        total += len((content or "").encode())
+        if total > MAX_CONTENT or path.is_dir():
+            raise Halt("Edit size or file type exceeds the boundary", "permission")
+        edits.append((path, content))
+    # Validate the complete proposal before the first write.
+    for path, content in edits:
+        if content is None:
+            path.unlink(missing_ok=True)
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content, encoding="utf-8")
+
+
 class Runner:
     def __init__(self, repo: Path, directory: Path, config: dict[str, Any], state: dict[str, Any], sandbox=None):
         self.repo, self.directory, self.config, self.state = repo, directory, config, state
@@ -586,42 +625,7 @@ class Runner:
         return result
 
     def apply(self, proposal: Any):
-        if not isinstance(proposal, dict) or set(proposal) != {"status", "changes"} or \
-                not isinstance(proposal["status"], str) or proposal["status"] not in {"change", "no_change", "blocked"} or not isinstance(proposal["changes"], list):
-            raise Halt("Proposal is not the reviewed data contract; approval fields are forbidden", "permission")
-        if proposal["status"] != "change":
-            if proposal["changes"]:
-                raise Halt("Non-change proposal includes edits", "permission")
-            if proposal["status"] == "blocked":
-                raise Halt("Agent reports unresolved context; human judgment required", "specification")
-            return
-        if not proposal["changes"]:
-            raise Halt("Empty change proposal", "specification")
-        edits = []
-        seen = set()
-        total = 0
-        for change in proposal["changes"]:
-            if not isinstance(change, dict) or set(change) != {"path", "content"}:
-                raise Halt("Invalid edit record", "permission")
-            name = relative(change["path"])
-            if name not in self.config["allowed_paths"] or name in seen:
-                raise Halt("Proposed edit exceeds approved paths", "permission")
-            seen.add(name)
-            path = safe_file(self.worktree, name)
-            content = change["content"]
-            if content is not None and (not isinstance(content, str) or sensitive(content)):
-                raise Halt("Invalid or sensitive proposed content", "permission")
-            total += len((content or "").encode())
-            if total > MAX_CONTENT or path.is_dir():
-                raise Halt("Edit size or file type exceeds the boundary", "permission")
-            edits.append((path, content))
-        # Validate the complete proposal before the first write.
-        for path, content in edits:
-            if content is None:
-                path.unlink(missing_ok=True)
-            else:
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(content, encoding="utf-8")
+        apply_proposal(self.worktree, self.config["allowed_paths"], proposal)
 
     def report(self):
         state = self.state

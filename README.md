@@ -65,6 +65,7 @@ contents. Treat maps, indexes and evidence as potentially confidential.
 | Bounded external advice (default off; legacy Jev compatible) | [Decision Providers](skills/feature-map-workflow/references/decision-providers.md) |
 | Test installer / synthetic execution | [setup and example](examples/ai-assisted-testing/README.md) |
 | Linux bubblewrap single-task Runner | [execution contract](skills/feature-map-workflow/references/autonomous-task-runner.md) and [trust controls](skills/feature-map-workflow/references/ai-trust-controls.md) |
+| Selected modules from 49 candidates, serial Linux containers | [module runtime](skills/feature-map-workflow/references/module-workflow.md), [offline example](examples/module-workflow/README.md); DB/Windows execution not implemented |
 | Optional self-hosted Agents API PoC | [integration](skills/feature-map-workflow/references/agents-api.md) |
 | Repository Coordination architecture proposal, no bundled service | [proposal](skills/feature-map-workflow/references/repository-coordination.md) |
 
