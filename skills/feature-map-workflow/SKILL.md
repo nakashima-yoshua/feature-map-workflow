@@ -12,13 +12,18 @@ business expectations. Feature Map XML keeps durable rules, scenarios, invariant
 decisions, boundaries, source/evidence references and material unknowns that are
 costly to reconstruct. Git owns history. Keep fixtures, raw logs, queues, leases,
 runtime journals and full test documents in their existing stores.
+Treat the agreed post-task target (deliverable, repository, evidence, maintenance
+and next-task entry point) as the planning reference; progressively refine it
+without inventing physical file paths during requirements.
 
 ## Workflow
 
 1. Reuse conversation, source/tests/config/logs and existing maps. Find the feature,
    real entry point, accepted goal/scope/exclusions and done condition.
    Establish who will use the deliverable, for which decision or action, and the
-   necessary level of detail from that context.
+   necessary level of detail from that context. Describe the post-task target
+   and its observable completion condition before choosing activities; check
+   existing outputs and evidence to avoid reproducing already-satisfied work.
 2. Resolve material gaps locally. For low-risk reversible ambiguity, state a narrow
    assumption and proceed. If scope, authority, behavior, acceptance or major risk
    still depends on a missing fact, ask one question with the current interpretation
@@ -33,7 +38,9 @@ runtime journals and full test documents in their existing stores.
    safety, contract or operation needs. Work in small units with observable outcomes;
    check assumptions with high rework cost before expanding dependent work, following
    the lifecycle's [early feedback](references/development-lifecycle.md#early-feedback-before-expanding-work).
-   Stop at the accepted done condition.
+   Reuse existing locations; progressively refine logical outputs into physical
+   files, checks and handoff references only when justified. Stop at the accepted
+   done condition, including the required continuation-ready state.
 5. Preserve confirmed reusable business knowledge even without code changes.
    Separate observed legacy behavior, inferred relationships and approved intent;
    retain consequential unknowns under open/item with the cheapest next check.
@@ -42,7 +49,11 @@ runtime journals and full test documents in their existing stores.
    current XML against assets/feature-map.xsd; repair the smallest failing node.
    Create a missing map with scripts/init_feature_map.py. Review the map at completion,
    update changed knowledge or confirm no durable delta is needed.
-7. Return the delta, exact evidence/revision and remaining decisions. Never promote
+7. At handoff, compare the agreed target to actual deliverables, Git/PR/CI,
+   durable knowledge, evidence and a fresh-start path for the next authorized
+   task. Distinguish delivery-ready, accepted/closed and continuation-ready;
+   never infer approval or merge/deploy authority from these checks.
+   Return the delta, exact evidence/revision and remaining decisions. Never promote
    a plan, mock, diagram or discovered route into runtime proof or human approval.
 
 ## Choose the relevant guide
@@ -55,6 +66,7 @@ only when needed.
 | --- | --- |
 | Map boundaries, states, index | [Feature Map Contract](references/feature-map-contract.md) |
 | Lifecycle overview; selected phase only | [Development Lifecycle](references/development-lifecycle.md) |
+| Target-first refinement, Git structure and next-task handoff | [Target State and Handoff](references/target-state-and-handoff.md) |
 | Legacy investigation | [Legacy Analysis](references/legacy-analysis.md) |
 | Target path and fixtures | [Target Reachability](references/target-reachability.md) |
 | Keep, repair or migrate one slice | [Incremental Modernization](references/incremental-modernization.md) |
@@ -111,6 +123,10 @@ only when needed.
   human decision. Unavailable checks/review are NOT_RUN. Passing CI/AI review grants
   no approval, merge, deploy or privilege change. HIGH/CRITICAL work remains
   human-led outside the bounded runner; candidate status is HUMAN_REVIEW_REQUIRED.
+- **Target-state integrity:** check actual outputs and evidence against the agreed
+  target instead of counting documents or phases. Keep unknowns and skipped steps
+  explicit when material. Git cleanliness, file existence and a CI pass alone
+  are not proof of acceptance, reproducibility or future operability.
 - **Total cost and meaning:** preserve tests, recovery and human work; optimize
   through accepted delivery, not model speed. Learn common methods across different
   completed tasks, not automatic repeats. Prefer revising/retiring existing guidance;

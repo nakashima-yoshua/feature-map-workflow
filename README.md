@@ -37,6 +37,10 @@ Common entries: [map contract](skills/feature-map-workflow/references/feature-ma
 [human work](skills/feature-map-workflow/references/human-work-direction.md),
 [evidence/audit](skills/feature-map-workflow/references/evidence-storage.md).
 
+## Plan from the post-task target
+
+Define the usable post-task result and acceptance criteria in requirements; progressively refine behavior, logical responsibility and necessary paths during specification and design. Implement only the gap from current state, then inspect Git, evidence, maintenance and next-task re-entry at closure. No mandatory new folder layout or tracking file is introduced. See [Target State and Handoff](skills/feature-map-workflow/references/target-state-and-handoff.md).
+
 ## Where information belongs
 
 Accepted requirements own business expectations; source/tests own implementation;

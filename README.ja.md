@@ -37,6 +37,10 @@ READMEは片言語、ガイドは現在の問いに必要な節だけ読みま�
 [人の作業手順](skills/feature-map-workflow/references/human-work-direction.md)、
 [証跡保存・監査](skills/feature-map-workflow/references/evidence-storage.md)です。
 
+## 完成状態から逆算する
+
+要求では納品後の目標状態と完成条件を定義し、仕様では振る舞い、設計では責務と必要なファイル配置を具体化します。実装・検証では現在状態との差分だけを埋め、完了時にはGit・証跡・保守情報・次案件の再開経路も確認します。ファイル構造の一律変更や新しい管理台帳は必須ではありません。[目標状態と引き継ぎ](skills/feature-map-workflow/references/target-state-and-handoff.md)を参照してください。
+
 ## 情報の保存先を分ける
 
 業務の期待結果は合意済み仕様、実装はソース・テスト、永続的な知識と重要な未決事項は
