@@ -1,0 +1,28 @@
+name: Standalone Core
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Install Core validation dependency only
+        run: python -m pip install lxml
+      - name: Exercise standalone Core (no Docker, Jev, paid AI, MCP or .NET)
+        run: python scripts/test_core_profile.py
+      - name: Regression tests for standalone index and XSLT
+        run: python scripts/test_build_feature_index.py
