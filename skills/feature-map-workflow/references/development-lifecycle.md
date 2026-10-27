@@ -6,6 +6,19 @@ Feature Map is the cross-phase knowledge index. Source/tests, accepted specifica
 native results, approvals, release artifacts and Git history retain their own authority.
 Both catchup and change use this lifecycle; no new mode or enforced state machine is added.
 
+## Target-first progressive refinement
+
+The agreed post-task state is the organizing reference, including the deliverable,
+repository, evidence, maintainability and entry point for the next authorized
+change. Requirements define outcomes and acceptance, specifications refine
+behavior and observations, designs refine ownership and physical paths where
+needed, and implementation/verification establishes actual revisions and proof.
+The current-state/target-state difference determines necessary work; previously
+satisfied outputs need not be recreated. Revisit target assumptions as evidence
+arrives rather than forcing premature paths or a fixed waterfall. Phase IDs and
+existing authority boundaries remain unchanged. See
+[Target State and Handoff](target-state-and-handoff.md).
+
 ## Lifecycle
 
 This is a standard proposal to tailor by feature and risk, not project approval of
@@ -22,7 +35,7 @@ Purpose / scope / risk / exclusions
   -> selective trials on the actual product + consolidated work plan
   -> required formal verification + individual judgments and evidence
   -> QA evaluation + human risk disposition and release/delivery authorization
-  -> release / handoff / preserved evidence
+  -> release / handoff / preserved evidence + continuation-ready baseline
   -> operational feedback to requirements, procedures and regression tests
 ```
 
@@ -44,7 +57,7 @@ Feedback to an earlier phase is allowed whenever new evidence contradicts an ass
 | Trial and work-plan preparation | 5 and the manual-verification handoff in 9 | Actual operations or reusable procedures -> only necessary trials, per-operation checkpoints, dependency/reset/restart plan and its validity review |
 | Formal verification | 9 and the verification input to 12 | Valid plan, authorized environment and candidate -> per-case/condition results, exact revision and original evidence; seal after runs rather than waiting until delivery |
 | QA evaluation and authorization | 9–10 and 12 | Results and gaps -> QA conclusion, unresolved defects/risks, human disposition and applicable release/delivery authorization |
-| Release and handoff | 10–12, including conditional 11a | Authorized candidate -> artifact digest, as-built references, customer-safe materials, handoff/acceptance and archived evidence |
+| Release and handoff | 10–12, including conditional 11a | Authorized candidate -> artifact digest, as-built references, customer-safe materials, handoff/acceptance, archived evidence and next-task re-entry references |
 | Operation and learning | 1–2/7/9 on a subsequent authorized change | Incident/observation -> corrected specification, minimal regression and applicable procedure knowledge |
 
 Prepare enough specification-derived data and independent expected results for the
