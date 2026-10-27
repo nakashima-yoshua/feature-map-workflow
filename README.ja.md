@@ -7,6 +7,10 @@
 業務ルール・判断・参照先・未解決事項の索引です。
 既存ツールから始め、Hooks・外部の判断補助・テスト支援・Runnerは必要時だけ使います。
 
+## 利用構成を選ぶ
+
+[Core／AI Assist／Automation](docs/deployment-profiles.md)は独立した利用構成です。CoreはPython 3.10以降と、ローカルXSD検証用の`lxml`だけで動作します。Docker、Jev、有料AI、.NET、MCPは不要です。AI支援と自動化は明示的に選んだときだけ使い、Docker必須なのはComposeモジュール実行経路です。CoreのCIはLinux、Windows、macOSで独立して実行します。
+
 ## 1機能から始める
 
 Python 3.10以降を使い、リポジトリのルートで実行します。保存先は許可された場所へ変えます。
