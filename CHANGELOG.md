@@ -4,6 +4,8 @@ All notable user-visible changes are documented here.
 
 ## Unreleased
 
+- Clarify affected-phase re-entry after responsibility or delivery-format changes, persisted-state verification and fixed-revision source/DB package checks.
+
 - Separate opt-in Core, AI Assist and Automation deployment profiles; add standalone no-MCP XSD validation and cross-platform offline Core smoke tests without Docker/Jev/paid AI.
 
 - Clarify deliverable users, intended decisions and necessary detail; use observable work units and early checks of costly assumptions without fixed time/progress checkpoints or extra approval rounds.
