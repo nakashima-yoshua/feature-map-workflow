@@ -34,7 +34,7 @@ For every phase, distinguish:
 
 **Input:** request, business context, current behavior, constraints.
 
-**Activity:** identify purpose, done condition, included/excluded scope, business rules, invariants, and material use cases. For an investigated legacy feature, record reusable business understanding even if no migration follows. Distinguish observed current behavior from business-confirmed desired behavior; unresolved intent is not silently promoted into a requirement.
+**Activity:** identify purpose, done condition, included/excluded scope, business rules, invariants, and material use cases. Define the desired *post-task outcome* and observable acceptance, including relevant maintenance and continuation needs; do not require file paths or a fixed repository layout yet. For an investigated legacy feature, record reusable business understanding even if no migration follows. Distinguish observed current behavior from business-confirmed desired behavior; unresolved intent is not silently promoted into a requirement.
 
 **Durable Feature Map delta:** `goal`, `useCase`, `knowledge/rule`, `knowledge/invariant`, `knowledge/constraint`, unresolved `open` items.
 
@@ -50,7 +50,7 @@ For every phase, distinguish:
 
 **Input:** bounded requirements and current architecture.
 
-**Activity:** identify entry points, responsibility boundaries, data/API direction, external systems, state transitions, and non-obvious design decisions. If modernization is considered, distinguish the wider understanding boundary from the smallest safe migration boundary. Compare leaving code unchanged, modifying legacy code, and migrating one functional slice; justify the chosen option with coexistence, verification and operating costs. For a legacy feature addition, optionally use the [A/B/C boundary comparison](incremental-modernization.md#optional-abc-decision-for-a-legacy-feature-addition) here; keep A (local change) first and introduce only justified Application/Domain or replacement boundaries. For data-backed legacy features, use [Three Complementary Views](three-view-understanding.md) when useful: connect business flow, data flow and evidence-backed ER to the same scenario and source/data references; do not invent FK/cardinality facts or create a whole-schema diagram.
+**Activity:** refine the same target into logical deliverable owners, likely existing repository modules/locations, entry points, responsibility boundaries, data/API direction, external systems, state transitions, and non-obvious design decisions. Avoid inventing directories before inspecting conventions. If modernization is considered, distinguish the wider understanding boundary from the smallest safe migration boundary. Compare leaving code unchanged, modifying legacy code, and migrating one functional slice; justify the chosen option with coexistence, verification and operating costs. For a legacy feature addition, optionally use the [A/B/C boundary comparison](incremental-modernization.md#optional-abc-decision-for-a-legacy-feature-addition) here; keep A (local change) first and introduce only justified Application/Domain or replacement boundaries. For data-backed legacy features, use [Three Complementary Views](three-view-understanding.md) when useful: connect business flow, data flow and evidence-backed ER to the same scenario and source/data references; do not invent FK/cardinality facts or create a whole-schema diagram.
 
 **Durable Feature Map delta:** `sourceMap`, compact `diagrams`, `decision`, `constraint`, `invariant`.
 
@@ -110,7 +110,7 @@ explicitly not-run.
 
 **Input:** basic design, scenarios, test boundaries.
 
-**Activity:** settle transaction boundaries, error handling, important algorithms, DB effects, external I/O, and implementation decisions that cannot be inferred cheaply from code.
+**Activity:** refine logical outputs into concrete source/test/configuration paths where justified by the existing repository, and settle transaction boundaries, error handling, important algorithms, DB effects, external I/O, and implementation decisions that cannot be inferred cheaply from code. Preserve the accepted outcome while leaving reversible details open if their early choice adds no value.
 
 **Durable Feature Map delta:** only non-obvious `decision`, `invariant`, `constraint`, or source navigation changes.
 
@@ -158,7 +158,7 @@ explicitly not-run.
 
 **Input:** implementable design and test plan.
 
-**Activity:** implement the smallest safe change and run build, static checks, and relevant tests. For a migrated slice, keep surrounding legacy contracts unchanged unless separately approved and verify old/new observable outputs and data effects with equivalent isolated inputs wherever feasible. Before requesting human review, conduct a **separate-context, read-only AI diff review** using `REVIEW.md` and `code-review.md` when available, checking the accepted change, important invariants and actual evidence. Triage concrete Important findings and cap AI review/fix passes at **three**; if review is unavailable, record NOT_RUN and hand the risk to a human rather than claiming AI approval.
+**Activity:** compare the refined target to actual paths and current evidence, reuse already satisfied parts, implement the smallest safe change and run build, static checks, and relevant tests. For a migrated slice, keep surrounding legacy contracts unchanged unless separately approved and verify old/new observable outputs and data effects with equivalent isolated inputs wherever feasible. Before requesting human review, conduct a **separate-context, read-only AI diff review** using `REVIEW.md` and `code-review.md` when available, checking the accepted change, important invariants and actual evidence. Triage concrete Important findings and cap AI review/fix passes at **three**; if review is unavailable, record NOT_RUN and hand the risk to a human rather than claiming AI approval.
 
 **Durable Feature Map delta:** changed source/test references and newly confirmed durable knowledge only.
 
@@ -182,7 +182,7 @@ evidence. A plan or trial does not by itself establish QA acceptance.
 
 **Input:** CI-verified candidate, risk-tiered review summary, and the human approval/authority required by repository policy for the exact candidate revision.
 
-**Activity:** produce one immutable deployment artifact, migration/config contract, manifest, checksums, and release evidence as appropriate.
+**Activity:** produce one immutable deployment artifact, migration/config contract, manifest, checksums, and release evidence as appropriate. Identify exact source commit, actual release artifact and rollback/operating references; do not equate a prepared package with deployment.
 
 **Durable Feature Map delta:** normally references only; release artifacts remain canonical outside the XML.
 
@@ -198,7 +198,7 @@ evidence. A plan or trial does not by itself establish QA acceptance.
 
 **Input:** current source/tests, Feature Map, verification evidence, release evidence.
 
-**Activity:** render role-specific views from existing truth rather than rewriting specifications from scratch. Check that the Feature Map already preserves newly understood business purpose, scenarios, rules, data/state effects and unresolved intent. If not, patch the durable knowledge now; document observed behavior separately from approved intent.
+**Activity:** render role-specific views from existing truth rather than rewriting specifications from scratch. Check that a future maintainer can navigate from the entry point through the agreed behavior, code/tests and revision-bound evidence without the previous conversation. Check that the Feature Map already preserves newly understood business purpose, scenarios, rules, data/state effects and unresolved intent. If not, patch the durable knowledge now; document observed behavior separately from approved intent.
 
 **Durable Feature Map delta:** none merely for documentation appearance.
 
@@ -238,7 +238,7 @@ evidence mappings. Organization grants no sending authority or acceptance.
 
 **Input:** release package, acceptance evidence, unresolved items.
 
-**Activity:** verify done condition, required deliverables, and responsibility boundary. Confirm the investigated business flow is documented, the actual migrated/changed boundary is explicit, required evidence is available or honestly reported as not-run, and the Feature Map was updated or explicitly reviewed as already current.
+**Activity:** verify done condition, required deliverables, and responsibility boundary. Also verify the proportionate continuation-ready handoff: actual source baseline and branch/PR/CI disposition, reproducible setup/test entry points where required, persistent knowledge, original evidence references, remaining issues with owner/next action, and relevant recovery/backup limitations. A clean Git tree alone is insufficient. Keep delivery readiness, actual acceptance, and continuation readiness distinct; inspect/report only, never silently merge, delete branches, deploy or transmit. Confirm the investigated business flow is documented, the actual migrated/changed boundary is explicit, required evidence is available or honestly reported as not-run, and the Feature Map was updated or explicitly reviewed as already current.
 
 **Durable Feature Map delta:** final verification evidence and unresolved acceptance blockers.
 
@@ -248,7 +248,7 @@ evidence mappings. Organization grants no sending authority or acceptance.
 
 **HALT:** failed/blocked verification, missing acceptance evidence, or unresolved high-impact `open` item.
 
-**Output:** accepted delivery; Feature Map may move to `closed`.
+**Output:** accepted delivery (when actually authorized) and an inspectable next-task starting point, or explicit continuation blockers; Feature Map may move to `closed` only under its existing criteria. See [Target State and Handoff](target-state-and-handoff.md).
 
 For customer submission, use the exact package fixed in Phase 11a; any file
 change requires renewed affected checks and package reconciliation.
