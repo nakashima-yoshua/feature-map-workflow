@@ -4,6 +4,8 @@ All notable user-visible changes are documented here.
 
 ## Unreleased
 
+- Separate opt-in Core, AI Assist and Automation deployment profiles; add standalone no-MCP XSD validation and cross-platform offline Core smoke tests without Docker/Jev/paid AI.
+
 - Clarify deliverable users, intended decisions and necessary detail; use observable work units and early checks of costly assumptions without fixed time/progress checkpoints or extra approval rounds.
 
 - Add an opt-in 49-candidate module catalog and a serial Ubuntu/Docker workflow with separate AI/Build services, immutable input/configuration identity, protected expectations, bounded execution, retained evidence and human-review-required completion. Include offline success/failure examples, explicit Codex/.NET overrides and unavailable DB/Windows capability checks; existing Skill and single-task Runner remain independent.
