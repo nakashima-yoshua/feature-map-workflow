@@ -4,6 +4,8 @@ All notable user-visible changes are documented here.
 
 ## Unreleased
 
+- Clarify bilingual README audit/evidence navigation, the contributor XSD path and conditional Mermaid check, and Human Work Plan v2 headings; documentation only.
+
 - Clarify affected-phase re-entry after responsibility or delivery-format changes, persisted-state verification and fixed-revision source/DB package checks.
 
 - Separate opt-in Core, AI Assist and Automation deployment profiles; add standalone no-MCP XSD validation and cross-platform offline Core smoke tests without Docker/Jev/paid AI.
