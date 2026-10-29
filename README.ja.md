@@ -19,10 +19,10 @@ Python 3.10以降を使い、リポジトリのルートで実行します。保
 python skills/feature-map-workflow/scripts/init_feature_map.py --system Demo --feature Sample --mode catchup --purpose "Understand one business scenario" --output path/to/feature/feature-map.xml
 ```
 
-XMLとXSD/XSLTを配置します。既存XMLの上書きには明示的な --force が必要です。
+初期化スクリプトはXMLを作成し、XSD/XSLTを同じ場所へコピーします。既存XMLの上書きには明示的な `--force` が必要です。
 現行理解は catchup、合意した変更は change。実際の起動点・ソース・テスト・データを調べ、
 必要な知識だけ更新し、IDを保って現在のXMLをXSDで検証します。
-テストは別途実行し、実証跡を参照します。知識が現状と一致するならXMLは変更不要です。
+テストは別途実行し、実際の実行記録・証跡へリンクします。知識が現状と一致するならXMLは変更不要です。
 
 形式の例が必要なときだけ、[架空のパズル記録帳](examples/fictional-puzzle-log/README.md)、
 [架空の補充依頼](examples/fictional-stock-request/README.md)を参照します。
@@ -31,7 +31,7 @@ XMLとXSD/XSLTを配置します。既存XMLの上書きには明示的な --for
 ## 目的に合う手順を選ぶ
 
 入口は[SKILL.mdの選択表](skills/feature-map-workflow/SKILL.md#choose-the-relevant-guide)に統一しています。
-READMEは片言語、ガイドは現在の問いに必要な節だけ読みます。
+READMEは日本語版・英語版のどちらか一方を読み、ガイドは現在の問いに必要な節だけ参照します。
 リンク先を再帰的に全部読む必要はありません。
 過去経緯はGitと[CHANGELOG](CHANGELOG.md)に残し、版の調査時だけ参照します。
 
@@ -39,7 +39,8 @@ READMEは片言語、ガイドは現在の問いに必要な節だけ読みま�
 [工程の全体像](skills/feature-map-workflow/references/development-lifecycle.md)、
 [変更・影響範囲に応じた条件選定とテスト戦略](skills/feature-map-workflow/references/test-strategy.md)、
 [人の作業手順](skills/feature-map-workflow/references/human-work-direction.md)、
-[証跡保存・監査](skills/feature-map-workflow/references/evidence-storage.md)です。
+[証跡保存](skills/feature-map-workflow/references/evidence-storage.md)、
+[監査証跡の追跡](skills/feature-map-workflow/references/audit-evidence-traceability.md)です。
 
 ## 完成状態から逆算する
 
@@ -51,7 +52,7 @@ READMEは片言語、ガイドは現在の問いに必要な節だけ読みま�
 Feature Mapが持ちます。詳細データ・計画・ログ・画像・実行結果・リリース成果物は
 既存の保存先に置き、XMLからID・版で参照します。コード一覧や実行履歴を転記しません。
 
-Feature Map形式は1.3、XSDは1.1/1.2も扱います。AIは必要なXMLノードを取得し、
+現行のXSDはFeature Map形式1.3に対応し、1.1/1.2形式のXMLも検証できます。AIは必要なXMLノードを取得し、
 検証はXSDツールで行います。スキーマ全文や例は、関係する契約変更・エラーの確認時だけ読みます。
 
 **FMWのHTMLは人向けの出力に限定します。** AI・ツールはXML、構造化計画、
