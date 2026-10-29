@@ -39,7 +39,8 @@ Common entries: [map contract](skills/feature-map-workflow/references/feature-ma
 [lifecycle overview](skills/feature-map-workflow/references/development-lifecycle.md),
 [changed guarantees, condition priority and test layers](skills/feature-map-workflow/references/test-strategy.md),
 [human work](skills/feature-map-workflow/references/human-work-direction.md),
-[evidence/audit](skills/feature-map-workflow/references/evidence-storage.md).
+[evidence storage](skills/feature-map-workflow/references/evidence-storage.md),
+[audit traceability](skills/feature-map-workflow/references/audit-evidence-traceability.md).
 
 ## Plan from the post-task target
 
