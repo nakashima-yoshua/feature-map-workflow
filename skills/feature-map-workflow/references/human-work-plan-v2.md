@@ -22,7 +22,7 @@ capture. Follow [the automation transition](ai-assisted-testing.md#from-screen-t
 for Web/Playwright and Windows/FlaUI suitability, waits, reset and recovery checks.
 The work-plan generators do not perform this conversion or execute those tools.
 
-### Minimal data contract
+## Minimal data contract
 
 - Retain `environment`, `sourceRevision`, `preflight` and sessions with `id`, `title`,
   `actor`, `sharedSetup`, `stopOn`, `cleanup` and ordered `steps`.
@@ -69,7 +69,7 @@ to optimize the Harness.
 
 Use the [condition/cost strategy](test-strategy.md#condition-selection-and-verification-cost) as the single selection/exit policy. Reference the project decision record in existing preflight and stopOn; no plan fields or numeric gates are added.
 
-### Formal results, evidence and costs
+## Formal results, evidence and costs
 
 Exploratory trials and formal judgments are separate. A trial execution may be
 reused only if the agreed requirements, exact specification/implementation/plan,
