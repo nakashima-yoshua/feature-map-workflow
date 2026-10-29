@@ -24,7 +24,7 @@ Avoid broad framework additions unless they remove more complexity than they add
 1. Fork the repository and create a topic branch.
 2. Make the smallest coherent change.
 3. Run applicable local checks: `python scripts/test_xquery_result.py`, `python scripts/test_decision_provider.py`, `python scripts/test_task_runner.py`, `python scripts/test_package_plugin.py`, and `python scripts/validate_repository.py`. On a Linux host supporting bubblewrap, set `REQUIRE_RUNNER_SANDBOX=1` for runner tests; CI requires actual OS isolation. No live API calls are part of these tests.
-4. If you changed XML/XSD/XSLT, validate the affected maps against `feature-map.xsd` and confirm that the generated HTML contains the Mermaid blocks.
+4. If you changed XML/XSD/XSLT, validate the affected maps against their XSD (the bundled source is `skills/feature-map-workflow/assets/feature-map.xsd`). For maps containing Mermaid diagrams, also confirm that the generated HTML contains the corresponding Mermaid blocks.
 5. Update `CHANGELOG.md` for user-visible changes.
 6. Open a pull request with the behavior change, reason, and verification evidence.
 
