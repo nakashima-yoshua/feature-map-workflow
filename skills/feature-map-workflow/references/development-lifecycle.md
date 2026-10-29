@@ -48,6 +48,15 @@ a blocker; it never supplies missing proof or waives mandatory acceptance.
 
 Feedback to an earlier phase is allowed whenever new evidence contradicts an assumption. Do not force work through a gate merely to preserve phase order.
 
+A post-test change to responsibility, persisted state or the delivered operation
+returns only the affected slice to design/implementation/verification. Record the
+changed guarantee, reusable evidence and smallest missing check in the existing
+task record; follow [Test Strategy](test-strategy.md#reassess-evidence-after-responsibility-or-artifact-changes).
+It is not packaging-only merely because the business goal is unchanged. Before
+freezing source/DB assets, apply [Customer Deliverables](customer-deliverables.md).
+Workspace-specific database, designer, encoding and history procedures belong in
+the workspace adapter, not a second workflow or the generic Feature Map schema.
+
 | Work boundary | Existing phases | Entry and exit / minimum useful artifact |
 | --- | --- | --- |
 | Purpose and authorized slice | 1–2 | Request and context -> agreed goal, risk, scope and exclusions |

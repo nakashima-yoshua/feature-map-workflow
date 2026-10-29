@@ -1,5 +1,26 @@
 # Test Strategy
 
+## Reassess evidence after responsibility or artifact changes
+
+When logic moves across application/database boundaries after testing, update only
+affected requirement/design references and select evidence for the new caller,
+parameter/state transfer, final validation, persistence and transaction/error path.
+Passing the old implementation or the moved function alone does not prove the new
+connection. Reuse unchanged predicates and unaffected cases with a stated reason;
+do not restart the entire test plan.
+
+For imported or copied definitions, follow the value from deserialization through
+the editable copy and UI binding to the persisted record. Verify the required saved
+state even when the input requests the opposite state. A disabled display alone
+does not prove that the stored definition is disabled.
+
+If automatic migration becomes manual registration, unchanged query-result tests
+remain reusable for query semantics. Script execution evidence does not prove
+the new manual operation. Select the affected registration/constraint/retest/enable
+path according to accepted scope. Synthetic predicate fixtures alone do not prove
+representative business-data equivalence or recovery readiness. Keep implemented,
+component-tested, integrated and business-accepted conclusions separate.
+
 ## Purpose
 
 Place each behavior at the cheapest stable test layer that can prove it, while keeping end-to-end coverage focused on business flows.
