@@ -6,6 +6,14 @@ Keep one compact Feature Map XML per business feature. Source/tests own executab
 behavior; the map preserves durable business rules, decisions, references and unknowns.
 Start with existing tools. Hooks, external advice, test helpers and the Runner are optional.
 
+## Responsibility and repository boundary
+
+FMW owns durable **feature knowledge and traceability**, not general workflow execution,
+test orchestration, quality-gate decisions or release authorization. Existing optional
+runners and integrations remain available while candidates for separation are reviewed.
+See [Scope and Repository Boundaries](docs/scope-and-boundaries.md) (Japanese, with English summary)
+for ownership, current-component triage, and extraction criteria.
+
 ## Deployment profiles
 
 Use [Core / AI Assist / Automation](docs/deployment-profiles.md) independently. Core needs Python 3.10+ and only `lxml` for local XSD validation: no Docker, Jev, paid AI, .NET or MCP. AI Assist and Automation are explicit opt-ins; the Docker Compose module workflow is the only Docker-required path. CI checks the Core workflow separately on Linux, Windows and macOS.

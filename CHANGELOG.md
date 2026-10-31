@@ -4,6 +4,8 @@ All notable user-visible changes are documented here.
 
 ## Unreleased
 
+- Define FMW's feature-knowledge ownership, non-goals, Explore/Build/Improve relationship and criteria for extracting existing optional execution components; link bilingual READMEs and Skill entry point. Documentation only; no runtime or schema changes.
+
 - Clarify bilingual README audit/evidence navigation, the contributor XSD path and conditional Mermaid check, and Human Work Plan v2 headings; documentation only.
 
 - Clarify affected-phase re-entry after responsibility or delivery-format changes, persisted-state verification and fixed-revision source/DB package checks.

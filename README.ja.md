@@ -7,6 +7,13 @@
 業務ルール・判断・参照先・未解決事項の索引です。
 既存ツールから始め、Hooks・外部の判断補助・テスト支援・Runnerは必要時だけ使います。
 
+## FMWの責務と他リポジトリとの境界
+
+FMWは**機能単位の知識と根拠への参照**を管理します。汎用のワークフロー実行、
+テスト実行、総合品質判定、リリース承認は正本も責任主体も分けます。
+既存の任意Runner・連携機能は今回変更せず、移行は別途判断します。
+[責務定義・既存機能の棚卸し・分離判断基準](docs/scope-and-boundaries.md)を参照してください。
+
 ## 利用構成を選ぶ
 
 [Core／AI Assist／Automation](docs/deployment-profiles.md)は独立した利用構成です。CoreはPython 3.10以降と、ローカルXSD検証用の`lxml`だけで動作します。Docker、Jev、有料AI、.NET、MCPは不要です。AI支援と自動化は明示的に選んだときだけ使い、Docker必須なのはComposeモジュール実行経路です。CoreのCIはLinux、Windows、macOSで独立して実行します。
