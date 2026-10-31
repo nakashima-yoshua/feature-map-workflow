@@ -62,17 +62,17 @@ FMWは各プロセスに共通する機能知識を提供する。
 
 | 現行の対象 | 判定 | 方針・理由 |
 | --- | --- | --- |
-| `skills/feature-map-workflow/assets/feature-map.xsd`、XSLT、`scripts/init_feature_map.py`、`scripts/validate_feature_map.py`、`scripts/build_feature_index.py` | **維持** | 機能知識の定義・表示・検証というCoreの責務 |
+| `skills/feature-map-workflow/assets/feature-map.xsd`、XSLT、`skills/feature-map-workflow/scripts/init_feature_map.py`、`skills/feature-map-workflow/scripts/validate_feature_map.py`、`skills/feature-map-workflow/scripts/build_feature_index.py` | **維持** | 機能知識の定義・表示・検証というCoreの責務 |
 | `references/feature-map-contract.md`、`diagram-selection.md`、解析・知識更新のガイド | **維持** | 機能理解に必要なルールと小さな図の選択を案内する |
 | `hooks/feature_map_hook.py`、`xquery-mcp`連携 | **任意アダプターとして維持** | FMWの読み取り・検証・更新に直接つながる。Coreへの必須化はしない |
-| `scripts/build_verification_brief.py`、Excel生成、テスト支援ガイド・導入スクリプト | **当面維持・境界を監視** | FMW由来の人向け表示・受け渡しは有用。汎用テスト実行や独立した帳票製品に成長した時点で分離を再評価 |
+| `skills/feature-map-workflow/scripts/build_verification_brief.py`、Excel生成、テスト支援ガイド・導入スクリプト | **当面維持・境界を監視** | FMW由来の人向け表示・受け渡しは有用。汎用テスト実行や独立した帳票製品に成長した時点で分離を再評価 |
 | `scripts/task_runner.py`、`autonomous-task-runner.md` | **外部化候補** | 固定スコープの実行・隔離・チェックポイント・再試行は知識管理とは別の実行責務 |
 | `scripts/workflow_orchestrator.py`、`scripts/workflow_compose.py`、`runtime/`、`task-modules.json`、`module-workflow.md` | **外部化候補** | 選択式モジュールの実行・コンテナ・実行状態は汎用プロセス基盤の責務 |
 | `repository-coordination.md` | **設計案として維持、実装時は分離検討** | 現時点ではサービス未実装。キュー／Git書き込みの実体をFMWの正本にしない |
 | `agents-api.md`、外部Decision Provider連携 | **任意連携として維持・再評価** | 現行利用は維持。汎用エージェント制御・プロバイダー基盤へ発展する場合のみ独立性を検証 |
 | `audit-evidence-traceability.md` | **参照ガイドとして維持** | FMWを起点とした追跡は範囲内。包括的な監査サービスや証跡保管基盤は対象外 |
 
-上表のパスは特記がなければリポジトリルート基準で、`references/*.md` は `skills/feature-map-workflow/references/` 以下を指す。これは**責務の棚卸し**であり、削除・移動・非推奨化・稼働中機能の停止を決めたものではない。
+上表のパスは特記がなければリポジトリルート基準で、`references/*.md` は `skills/feature-map-workflow/references/` 以下を指し、`task-modules.json` は `skills/feature-map-workflow/assets/` 以下にある。これは**責務の棚卸し**であり、削除・移動・非推奨化・稼働中機能の停止を決めたものではない。
 
 ## 既存・候補リポジトリとの連携
 
