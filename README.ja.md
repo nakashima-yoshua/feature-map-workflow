@@ -46,6 +46,8 @@ READMEは日本語版・英語版のどちらか一方を読み、ガイドは�
 
 要求では納品後の目標状態と完成条件を定義し、仕様では振る舞い、設計では責務と必要なファイル配置を具体化します。実装・検証では現在状態との差分だけを埋め、完了時にはGit・証跡・保守情報・次案件の再開経路も確認します。ファイル構造の一律変更や新しい管理台帳は必須ではありません。[目標状態と引き継ぎ](skills/feature-map-workflow/references/target-state-and-handoff.md)を参照してください。
 
+新しいAIコーディングセッションで作業を再開する場合は、[長期セッションの引き継ぎ契約](skills/feature-map-workflow/references/long-running-sessions.md)と、読み取り専用の `scripts/build_session_brief.py` を任意に利用できます。既存のIssue、Feature Map、Git、テスト証跡を参照し、新しい進捗正本は作りません。
+
 ## 情報の保存先を分ける
 
 業務の期待結果は合意済み仕様、実装はソース・テスト、永続的な知識と重要な未決事項は
