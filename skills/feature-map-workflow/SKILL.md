@@ -15,6 +15,9 @@ runtime journals and full test documents in their existing stores.
 Treat the agreed post-task target (deliverable, repository, evidence, maintenance
 and next-task entry point) as the planning reference; progressively refine it
 without inventing physical file paths during requirements.
+For responsibility ownership and possible extraction of optional execution features,
+see [Scope and Repository Boundaries](../../docs/scope-and-boundaries.md). This
+does not change existing optional execution paths or authorize migration.
 
 ## Workflow
 
@@ -64,6 +67,7 @@ only when needed.
 
 | Task | Read |
 | --- | --- |
+| Repository scope, feature ownership and extraction triage | [Scope and Repository Boundaries](../../docs/scope-and-boundaries.md) |
 | Map boundaries, states, index | [Feature Map Contract](references/feature-map-contract.md) |
 | Lifecycle overview; selected phase only | [Development Lifecycle](references/development-lifecycle.md) |
 | Target-first refinement, Git structure and next-task handoff | [Target State and Handoff](references/target-state-and-handoff.md) |
