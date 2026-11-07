@@ -71,6 +71,7 @@ only when needed.
 | Map boundaries, states, index | [Feature Map Contract](references/feature-map-contract.md) |
 | Lifecycle overview; selected phase only | [Development Lifecycle](references/development-lifecycle.md) |
 | Target-first refinement, Git structure and next-task handoff | [Target State and Handoff](references/target-state-and-handoff.md) |
+| Fresh AI coding session recovery (optional, read-only) | [Long-running Sessions](references/long-running-sessions.md) |
 | Legacy investigation | [Legacy Analysis](references/legacy-analysis.md) |
 | Target path and fixtures | [Target Reachability](references/target-reachability.md) |
 | Keep, repair or migrate one slice | [Incremental Modernization](references/incremental-modernization.md) |
