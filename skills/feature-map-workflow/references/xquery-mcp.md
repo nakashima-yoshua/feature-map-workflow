@@ -5,11 +5,13 @@ The plugin pins `xquery-mcp` as a local .NET tool so an MCP-capable host can use
 ## Pinned dependency
 
 - Package: `xquery-mcp`
-- Version: `2.5.1`
+- Version: `2.9.0`
 - Runtime: .NET 10
 - License: Apache-2.0
 - Upstream: https://github.com/phoenixmldb/xquery-mcp
 - Documentation: https://phoenixml.dev/tools/xquery-mcp
+
+The structured `QueryResult` and `xml_validate_schema` contracts below were checked against upstream tag `v2.9.0`. Their implementing files are unchanged from `v2.5.1`.
 
 The plugin intentionally does not vendor the large self-contained platform binaries. Run the plugin setup script once to restore the pinned local .NET tool from NuGet.
 
@@ -26,7 +28,7 @@ The plugin intentionally does not vendor the large self-contained platform binar
 
 ## Structured QueryResult contract
 
-In xquery-mcp 2.5.1, `xpath_evaluate`, `xquery_evaluate`, and `xquery_validate` return a JSON object as MCP text content. The current shape is:
+In xquery-mcp 2.9.0, `xpath_evaluate`, `xquery_evaluate`, and `xquery_validate` return a JSON object as MCP text content. The current shape is:
 
 ```json
 {

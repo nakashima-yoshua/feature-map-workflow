@@ -84,7 +84,7 @@ own authority boundary.
 
 ### XML query and validation setup
 
-The manifest pins xquery-mcp **2.5.1**, requiring .NET 10 SDK. Restore only for this
+The manifest pins xquery-mcp **2.9.0**, requiring .NET 10 SDK. Restore only for this
 integration with ./scripts/setup-xquery-mcp.ps1 or bash ./scripts/setup-xquery-mcp.sh.
 The linked guide owns QueryResult normalization, empty-vs-failed results and the
 separate xml_validate_schema success contract.
