@@ -25,7 +25,7 @@
 | [architecture-decision-system](https://github.com/nakashima-yoshua/architecture-decision-system) | 設計規則・必要チェックの提案 | 必要チェックを入力候補にできるが、案件の必須条件化には権限者の採用が必要 |
 | [system-understanding-architecture](https://github.com/nakashima-yoshua/system-understanding-architecture) | 変更影響と理解の参照アーキテクチャ | 影響範囲の説明に利用。エンジンへ実装依存を持ち込まない |
 
-既存の [テスト戦略](../skills/feature-map-workflow/references/test-strategy.md#condition-selection-and-verification-cost) と [カバレッジモデル](../skills/feature-map-workflow/references/coverage-model.md) が方針の基準。二重のルール集を作らず、本書は**独立エンジンの境界・契約**に限定する。
+既存の [テスト戦略](../../skills/feature-map-workflow/references/test-strategy.md#condition-selection-and-verification-cost) と [カバレッジモデル](../../skills/feature-map-workflow/references/coverage-model.md) が方針の基準。二重のルール集を作らず、本書は**独立エンジンの境界・契約**に限定する。
 
 ## 2. 入力から出力への流れ
 
@@ -178,7 +178,7 @@ flowchart TD
   "excluded_candidates": [
     {"case_id": "TC-C", "reason": "redundant_claimed_coverage_and_higher_estimated_cost"}
   ],
-  "cost_estimate_minutes": 32,
+  "cost_estimate_minutes": 30,
   "warnings": [
     "coverage claims, oracles and setup reuse require independent review"
   ],
@@ -187,7 +187,7 @@ flowchart TD
 }
 ```
 
-上記の32分は**環境共有を認めないサンプル費用**（TC-A: 16分 + TC-B: 14分 = 30分）とは一致しないため、実装時には必ず費用項目の合計と出力の整合を検証する。**サンプル出力の計画費用は設計レビュー対象の値であり、このまま計算済み値として使用しない。**
+上記の30分は**環境共有を認めないサンプル費用**（TC-A: 16分 + TC-B: 14分）の合計。費用計算の内訳と出力値の一致を検証する。実行工数の実測値ではない。
 
 状態の区別:
 
