@@ -89,7 +89,7 @@ PTCは予測可能な読み取り・問い合わせ・集約に使い、書き�
 
 ### XML問い合わせ・検証の準備
 
-xquery-mcp **2.5.1** を固定し、.NET 10 SDKを使います。
+xquery-mcp **2.9.0** を固定し、.NET 10 SDKを使います。
 必要時だけ ./scripts/setup-xquery-mcp.ps1 または bash ./scripts/setup-xquery-mcp.sh で復元します。
 QueryResultの正規化、空と失敗の区別、xml_validate_schemaの成功契約は連携ガイドを正本とします。
 
