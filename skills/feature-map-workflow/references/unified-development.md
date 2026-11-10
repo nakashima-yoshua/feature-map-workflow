@@ -105,6 +105,11 @@ and recurrence prevention in existing records. Do not invent universal WIP limit
 metrics, documents or human gates.
 
 Delegate only where the active user and runtime instructions permit it and a
-bounded assignment adds value. Keep one writer per worktree, give any reviewer the
+bounded assignment adds value. Use the conditional [Development Delegation
+Contract](development-delegation-contract.md) for role and packet details. Keep one writer per worktree, give any reviewer the
 actual immutable inputs, and leave adoption and the final decision with the parent.
 Do not create a new agent, approval, artifact or metric merely because a phase exists.
+
+For migration or routing changes, use the synthetic [Development Workflow
+Evaluation Cases](development-workflow-evaluation-cases.md) where relevant;
+case outcomes are not a substitute for actual test or acceptance evidence.

@@ -51,3 +51,6 @@ new mandatory file format, database, service or parser dependency.
   old workflow. Preserve the original profile, version, dependencies and recovery
   procedure in an archive outside active discovery. A migration does not grant
   authority to modify unrelated projects or change their established decisions.
+
+For optional profile shape, role fallbacks, investigation and security mappings,
+see [Workspace Profile Examples And Compatibility](workspace-profile-examples.md).
