@@ -39,6 +39,14 @@ or recursively routes back to a workflow, stop the affected routing or store wri
 continue independent read-only investigation and report the gap. Generic FMW use
 without a workspace profile remains available under the actual repository rules.
 
+When the profile selects `software-development-standards`, use that skill and its
+`references/authoritative-source-model.md` before routing writers. Resolve the
+configured document profile and do not create phase documents by default. For an
+in-scope database change, apply its `references/database-change-lifecycle.md`
+from design and planning through verification, release and stabilization. If a
+required configured standard is unavailable, stop only the affected work and
+report the gap; do not invent another client's standard or extra authorization.
+
 ## Advance one useful slice
 
 Use [Development Lifecycle](development-lifecycle.md) phases as lookup keys, not
@@ -74,7 +82,10 @@ At consequential client decisions or blockers, provide a concise evidence-backed
 communication. At system-understanding questions, explain the relevant scenario,
 data and state path at the requested depth. Neither track creates a mandatory
 document or extra approval. Optional specialized skills are selected by semantic
-role from the profile; they do not become competing development workflows.
+role from the profile; they do not become competing development workflows. If an
+older profile omits these two support mappings, use the common `client-communication-support`
+and `system-understanding-support` skills when available, without inventing client
+settings, recipients, documents or approvals.
 
 ## Decisions, failures and retained state
 

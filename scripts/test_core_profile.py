@@ -65,6 +65,14 @@ class StandaloneCoreTests(unittest.TestCase):
         self.assertIn("independent review when material risk", lifecycle)
         self.assertIn("human decision where required by existing rules", review)
 
+    def test_configured_standards_remain_connected(self) -> None:
+        references = ROOT / "skills/feature-map-workflow/references"
+        contract = (references / "workspace-profile-contract.md").read_text(encoding="utf-8")
+        workflow = (references / "unified-development.md").read_text(encoding="utf-8")
+        self.assertIn("standards.common_skill", contract)
+        self.assertIn("authoritative-source-model.md", workflow)
+        self.assertIn("database-change-lifecycle.md", workflow)
+
     def test_init_validate_render_and_index(self) -> None:
         self.assertTrue(self.map.is_file())
         self.assertTrue(self.map.with_name("feature-map.xsd").is_file())

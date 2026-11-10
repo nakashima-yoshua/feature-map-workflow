@@ -17,10 +17,12 @@ new mandatory file format, database, service or parser dependency.
    identify the same skill, load it once. Do not invoke a retired development
    workflow, or route an adapter back to FMW.
 3. Map `lifecycle`, `quality_gates` and `workflow.gate_policy` onto the existing
-   FMW phases by evidence and actual decision mode. Phase IDs are navigation; a
-   gate is not automatically passed when a phase is visited. Missing gate policy
-   preserves existing project rules rather than waiving an established approval.
-4. Resolve `documents`, `paths`, `workflow.repository_adapter`, semantic
+   FMW phases by evidence and actual decision mode. Use a configured
+   `lifecycle.fmw_phase_mapping` when present. Phase IDs are navigation; a gate is
+   not automatically passed when a phase is visited. Missing gate policy preserves
+   existing project rules rather than waiving an established approval.
+4. Resolve `standards.common_skill`, the applicable document profile, `estimation`,
+   `documents`, `paths`, `workflow.repository_adapter`, semantic
    `workflow.child_skills`, and optional `system_analysis` from the workspace.
    Keep document IDs, customer terms, paths, encodings, estimation units and
    saved-connection aliases in the workspace; never copy credentials or originals.

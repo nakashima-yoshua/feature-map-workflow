@@ -26,6 +26,7 @@
     <invariant id="INV-PORTABLE">The project-local Skill snapshot resolves its core entry references without a neighboring checkout.</invariant>
     <invariant id="INV-PROFILE">Workspace-specific gates, stores and procedures are resolved from the applicable profile without reentering a retired workflow.</invariant>
     <invariant id="INV-REVIEW">Independent review applies when material risk, the active profile, contract or repository requires it.</invariant>
+    <invariant id="INV-STANDARDS">Configured document and database-change standards remain active through the FMW workflow.</invariant>
     <invariant id="INV-TEST">Test selection follows changed guarantees; starting state is adjusted only when required for reliable judgment.</invariant>
     <constraint id="CON-ARCHIVE">Preserve and verify old workflow assets and migrate their active consumers before removing their original folders.</constraint>
   </knowledge>
