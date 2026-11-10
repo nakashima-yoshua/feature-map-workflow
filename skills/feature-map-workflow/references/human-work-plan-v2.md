@@ -37,12 +37,16 @@ The work-plan generators do not perform this conversion or execute those tools.
   `appliesTo` values for `environment`, `sourceRevision`, `actor` and `data`.
   Retired parts cannot be selected; destructive operations cannot declare parallel
   safety. Equality is a planning check, never proof of actual runtime state or authority.
+- The existing `resetBefore` field remains a required nonempty instruction. When
+  the required state can be verified without adjustment, it may state "no reset
+  needed" and identify the state to check. It does not require a database restore.
 - Each operation has a unique `id`, exact `procedureId`/`procedureRevision`, `data`,
   `dependsOn` and `restartFrom`. Dependencies must precede it in the same session;
   restart is at this or an earlier operation. The generator displays a reviewed
   **serial order**. It does not schedule parallel work, infer a safe state transition
-  or restore data. Check actual prerequisites/reset and stop affected downstream work
-  on failure; preserve the failed attempt and use a new execution identity on rerun.
+  or restore data. Check actual prerequisites and any necessary adjustment; stop
+  affected downstream work on failure while continuing independent authorized cases.
+  Preserve the failed attempt and use a new execution identity on rerun.
 - Each operation's nonempty `checks[]` maps case-specific `caseId`, `conditionId`,
   `stepNo` consecutive from 1 in actual per-case operation order, authoritative
   `requirementRef` (including agreed version),

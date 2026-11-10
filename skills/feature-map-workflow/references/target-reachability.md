@@ -96,9 +96,9 @@ bubblewrap Task Runner.
 2. Find the **first blocking frontier**: the earliest expected gate that did not pass, or the earliest observed divergence. If no trace exists, capture a narrower, safe observation before guessing.
 3. Compare **expected predicate, actual bound values, retrieved row counts, exception/return reason, API request/response, and observed execution path**.
 4. Correct only the evidenced missing prerequisite or the route hypothesis; re-check downstream prerequisites affected by the change. Do not refactor business code as a shortcut.
-5. Rerun from a reset, controlled initial state. Bound investigation by scope and available budget; after repeated inconclusive attempts, report the blocker and cheapest next observation rather than looping.
+5. When an affected check must be rerun, confirm its required starting state and adjust only data that would otherwise interfere. Bound investigation by scope and available budget; after repeated inconclusive attempts, report the blocker and cheapest next observation rather than looping.
 
-For a 0-row SQL result, first check bound parameters, then isolate the failing WHERE/JOIN predicates with diagnostic read-only queries and DB metadata. For an unexpected API outcome, compare request/response contract and stub matching before changing application code. For asynchronous paths, distinguish “not yet observed” from “will never run”; use bounded waits and evidence of queue/job state.
+For a 0-row SQL result, first check bound parameters, then isolate the failing WHERE/JOIN predicates with diagnostic read-only queries and DB metadata. For an unexpected API outcome, compare request/response contract and stub matching before changing application code. When external results can cause updates or deletions, apply the [response completeness distinction](test-strategy.md#select-changed-behavior-before-selecting-cases): an empty result is not evidence that the response was complete. For asynchronous paths, distinguish “not yet observed” from “will never run”; use bounded waits and evidence of queue/job state.
 
 ## Proof levels and HALT
 
@@ -107,7 +107,7 @@ Report proof levels independently:
 1. **Route discovered**: source/metadata support a possible path; no execution proof.
 2. **Target reached**: trace proves the requested method/branch executed.
 3. **Behavior verified**: requested input, rows, output and/or side effects match assertions.
-4. **Reproducible**: reset + rerun produce the same outcome in the stated environment.
+4. **Reproducible**: when repeatability is required, a rerun under verified equivalent prerequisites produces the same outcome in the stated environment. Reset only what is needed to establish those prerequisites.
 
 Do not upgrade a level because a fixture was written, the EXE returned 0, a stub answered successfully, or one method was covered. A stub proves application behavior at the stub boundary, **not** live integration. A possible-only path is never counted as observed; record observed-only routes as unresolved.
 
@@ -128,7 +128,7 @@ Gate C5: partner API returns active customer (stubbed external boundary)
 Gate C6: no already-exported record exists (NOT EXISTS)
 ~~~
 
-If the first run stops after querying shipments with zero rows, C5 is **not yet tested**. Inspect bound site/status and C2-C3-C6 with read-only diagnostic queries. A synthetic READY shipment alone will not satisfy a missing product master, and adding data without checking C6 may invalidate the query. Once preflight passes, rerun and capture a trace at `InventoryBL.Calculate`, the actual input/branch, and the expected DB/file effect. Reset and repeat to justify reproducibility.
+If the first run stops after querying shipments with zero rows, C5 is **not yet tested**. Inspect bound site/status and C2-C3-C6 with read-only diagnostic queries. A synthetic READY shipment alone will not satisfy a missing product master, and adding data without checking C6 may invalidate the query. Once preflight passes, rerun and capture a trace at `InventoryBL.Calculate`, the actual input/branch, and the expected DB/file effect. If reproducibility is required, confirm equivalent prerequisites and repeat, adjusting only what is necessary.
 
 This example is illustrative, not evidence from a real target system. Do not copy its schema, business values, or executable command into another project without matching local source evidence.
 

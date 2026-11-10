@@ -349,7 +349,7 @@ def procedure_rows(session):
             f'<p>手順正本：{esc(part["sourceRef"])} / 状態：{esc(part["status"])} / '
             f'検証日：{esc(part.get("verifiedAt", "未検証"))}</p>'
             f'<p>データ：{esc(step["data"])}<br>前提：{esc(part["precondition"])}'
-            f'<br>初期化：{esc(part["resetBefore"])}<br>終了状態：{esc(part["postcondition"])}'
+            f'<br>実行前の状態確認・必要な調整：{esc(part["resetBefore"])}<br>終了状態：{esc(part["postcondition"])}'
             f'<br>復旧：{esc(part["recovery"])} / 再開位置：{esc(step["restartFrom"])}'
             f'<br>依存：{esc(", ".join(step["dependsOn"]) or "なし")}'
             f' / 並行可否の申告：{part["parallelSafe"]} / 破壊操作：{part["destructive"]}</p>'
@@ -415,8 +415,9 @@ def render(root: ET.Element, focus: ET.Element | None,
 
     if plan is None:
         sessions = ('<section><h2>4. 人の作業ディレクション</h2><p class="blocker">'
-                    'HALT：作業計画が未指定です。共通環境・操作・ケース間の初期化を'
-                    '確認するまで、人に実行依頼を出さないでください。</p>'
+                    '作業計画が未指定のため、この資料だけでは実行手順を確認できません。'
+                    '実行には、前提・操作・合意済みの期待結果・観測方法・必要な権限を満たす'
+                    '既存の試験表や手順を使用してください。</p>'
                     '<p>--plan で承認前の作業手順案を渡すと、検証IDを維持したまま'
                     '複数ケースを1回の作業セッションへまとめられます。</p></section>')
     else:
@@ -427,7 +428,7 @@ def render(root: ET.Element, focus: ET.Element | None,
                 c = case_by_id[step["caseId"]]
                 rows.append(
                     f"<li><strong>{esc(step['caseId'])}</strong>：{esc(step['action'])}"
-                    f"<p><b>ケースの初期化：</b>{esc(step['resetBefore'])}</p>"
+                    f"<p><b>実行前の状態確認・必要な調整：</b>{esc(step['resetBefore'])}</p>"
                     f"<p><b>期待結果：</b>{esc(text(c, 'expect'))}</p>"
                     f"<p><b>証跡取得：</b>{esc(step['capture'])}</p>"
                     "<p class='muted'>実測・判定は検証ID別に外部の記録へ残す"
@@ -439,7 +440,7 @@ def render(root: ET.Element, focus: ET.Element | None,
                 f'<article><h3>{esc(session["id"])}：{esc(session["title"])}'
                 f' <small>（担当：{esc(session["actor"])}）</small></h3>'
                 '<h4>共通準備（1回）</h4>' + li(session["sharedSetup"])
-                + '<h4>人が実施する順序・ケース別リセット</h4><ol>'
+                + '<h4>人が実施する順序・状態確認と必要な調整</h4><ol>'
                 + "".join(rows) + "</ol><h4>中止条件</h4>" + li(session["stopOn"])
                 + "<h4>終了時の復旧・片付け</h4>" + li(session["cleanup"])
                 + "</article>"
@@ -480,7 +481,8 @@ def render(root: ET.Element, focus: ET.Element | None,
                        "<p>Feature Mapの未解決事項はありません（実環境の安全性は別途確認）。</p>")
                     + "<p>ケースの合否は既存の結果契約・証跡により個別に管理し、"
                     "一括操作を理由に独立検証を省略しません。"
-                    "未知の期待結果、初期化失敗、環境違い、予期しないDB更新では作業を中止します。</p>"
+                    "期待結果が未確定、または必要な状態確認・調整に失敗した場合は、影響するケースを中止します。"
+                    "環境違いや予期しないDB更新では、安全を確認できるまで作業を停止します。</p>"
                     "</section>")
 
     loader = ""

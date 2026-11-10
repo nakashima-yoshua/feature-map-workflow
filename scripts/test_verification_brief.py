@@ -53,7 +53,7 @@ class VerificationBriefTests(unittest.TestCase):
         self.assertIn("H-RECEPTION", text)
         self.assertIn("V-SUBMIT", text)
         self.assertIn("V-REJECT", text)
-        self.assertIn("ケースの初期化", text)
+        self.assertIn("実行前の状態確認・必要な調整", text)
         self.assertIn("実測・判定は検証ID別", text)
         self.assertIn("sourceRevision", self.plan.read_text(encoding="utf-8"))
         self.assertIn("const fallback = false", text)
@@ -66,9 +66,30 @@ class VerificationBriefTests(unittest.TestCase):
         run = self.run_brief()
         self.assertEqual(run.returncode, 0, run.stderr)
         text = etree.tostring(self.document(), encoding="unicode", method="html")
-        self.assertIn("HALT：作業計画が未指定", text)
+        self.assertIn("この資料だけでは実行手順を確認できません", text)
+        self.assertIn("既存の試験表や手順", text)
+        self.assertIn("影響するケースを中止", text)
+        self.assertIn("安全を確認できるまで作業を停止", text)
         self.assertNotIn("H-RECEPTION", text)
         self.assertIn("2 cases, 3 diagrams, 0 directed sessions", run.stdout)
+
+    def test_plans_can_record_that_reset_is_unnecessary(self) -> None:
+        instruction = "初期化不要。必要な前提状態を確認する。"
+        for version in (1, 2):
+            with self.subTest(version=version):
+                if version == 1:
+                    plan = json.loads((EXAMPLE / "human-work-plan.example.json").read_text(encoding="utf-8"))
+                    plan["sessions"][0]["steps"][0]["resetBefore"] = instruction
+                else:
+                    plan = self.v2_plan()
+                    plan["procedures"][0]["resetBefore"] = instruction
+                self.save_plan(plan)
+                run = self.run_brief("--plan", str(self.plan), "--force")
+                self.assertEqual(0, run.returncode, run.stderr)
+                rendered = " ".join(self.document().itertext())
+                self.assertIn("実行前の状態確認・必要な調整", rendered)
+                self.assertIn(instruction, rendered)
+                self.assertNotIn("ケース別リセット", rendered)
 
     def v2_plan(self):
         return json.loads((EXAMPLE / "human-work-plan.v2.example.json").read_text(encoding="utf-8"))

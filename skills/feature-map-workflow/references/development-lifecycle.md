@@ -110,8 +110,8 @@ evidence and an actual adoption decision; do not automatically run every test tw
 The [procedure contract](human-work-plan-v2.md) owns these details.
 
 HALT affected advancement for a materially unagreed oracle, unknown authority,
-unsafe/non-resettable state, missing required evidence, failed required checks or
-unaccepted material risk. Project scales, thresholds and tailoring are human decisions.
+unsafe or uncontrolled required state, missing required evidence, failed required
+checks or unaccepted material risk. Project scales, thresholds and tailoring are human decisions.
 
 The [condition/cost strategy](test-strategy.md#condition-selection-and-verification-cost) owns condition selection, additions and exit/budget decisions; apply it during test preparation and QA handoff.
 
