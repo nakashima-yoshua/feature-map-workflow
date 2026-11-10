@@ -48,4 +48,4 @@ Do not overwrite a broader existing diagram when adding a narrow one. Retain sta
 
 ## Fully fictional example
 
-See [`examples/fictional-stock-request/feature-map.xml`](../../../examples/fictional-stock-request/feature-map.xml). The example demonstrates how the three views share a single `UC-SUBMIT` and the `REQUEST`, `REQUEST_LINE` and `ITEM` names while making **no claim** that a real database exists or that its behavior has been tested.
+See [`examples/fictional-stock-request/feature-map.xml`](https://github.com/nakashima-yoshua/feature-map-workflow/blob/59483868ab7912a37cc0f4b7eb962a0d20ce9b39/examples/fictional-stock-request/feature-map.xml). The example demonstrates how the three views share a single `UC-SUBMIT` and the `REQUEST`, `REQUEST_LINE` and `ITEM` names while making **no claim** that a real database exists or that its behavior has been tested.

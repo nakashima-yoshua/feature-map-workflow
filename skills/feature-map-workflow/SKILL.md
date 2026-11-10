@@ -1,6 +1,6 @@
 ---
 name: feature-map-workflow
-description: Use as the common software-development workflow for project intake, legacy analysis, requirements, design, implementation, testing and delivery, with per-project Feature Maps and workspace-specific rules.
+description: Use when software development needs project intake, legacy analysis, requirements, design, implementation, testing or delivery with per-project Feature Maps and workspace-specific rules.
 ---
 
 # Feature Map Workflow

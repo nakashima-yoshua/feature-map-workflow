@@ -48,14 +48,15 @@ class StandaloneCoreTests(unittest.TestCase):
                         ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
         self.assertEqual((ROOT / "docs/scope-and-boundaries.md").read_bytes(),
                          (installed / "references/scope-and-boundaries.md").read_bytes())
-        entry = installed / "SKILL.md"
-        links = re.findall(r"\]\(([^)#]+)(?:#[^)]*)?\)", entry.read_text(encoding="utf-8"))
-        self.assertTrue(links)
-        for link in links:
-            if "://" in link or link.startswith("mailto:"):
-                continue
-            with self.subTest(link=link):
-                self.assertTrue((entry.parent / link).is_file(), link)
+        markdown = list(installed.rglob("*.md"))
+        self.assertTrue(markdown)
+        for document in markdown:
+            links = re.findall(r"\]\(([^)#]+)(?:#[^)]*)?\)", document.read_text(encoding="utf-8"))
+            for link in links:
+                if "://" in link or link.startswith("mailto:"):
+                    continue
+                with self.subTest(document=document.relative_to(installed), link=link):
+                    self.assertTrue((document.parent / link).is_file(), link)
 
     def test_review_is_conditioned_on_actual_risk(self) -> None:
         references = ROOT / "skills/feature-map-workflow/references"

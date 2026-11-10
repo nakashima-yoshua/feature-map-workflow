@@ -62,8 +62,8 @@ See [Linux's Landlock contract](https://docs.kernel.org/userspace-api/landlock.h
 
 ## One project configuration
 
-Use [the offline example](../../../examples/module-workflow/workflow.json) as a
-complete configuration, not a global installation setting. It owns:
+Use [the upstream example](https://github.com/nakashima-yoshua/feature-map-workflow/blob/59483868ab7912a37cc0f4b7eb962a0d20ce9b39/examples/module-workflow/workflow.json) as a
+complete configuration, not a global installation setting. For an offline run, use the full upstream checkout at the linked revision. It owns:
 
 - `source_subdir`, `contract_ref`, purpose, exclusions, LOW risk, invariant and
   acceptance references, exact allowed/protected files;
