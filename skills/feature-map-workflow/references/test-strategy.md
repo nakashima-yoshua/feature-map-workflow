@@ -25,19 +25,19 @@ component-tested, integrated and business-accepted conclusions separate.
 
 Place each behavior at the cheapest stable test layer that can prove it, while keeping end-to-end coverage focused on business flows.
 
-The default order is:
+The test-design sequence is:
 
 ```text
-Business scenario
-  -> E2E
-  -> condition/state/boundary coverage at integration/service/DB level
-  -> residual unit tests only where lower-level isolation adds value
+Business scenario and changed guarantee
+  -> consider E2E where a consequential journey requires cross-boundary proof
+  -> choose the cheapest sufficient layer for each condition/state/boundary
+     (unit, integration/service/DB, UI, or another real boundary as required)
 ```
 
 Do not maximize test count. Minimize duplicated guarantees and untested behavior.
 
-This is test-design order; it does not require E2E-first execution or all detailed
-tests/data before implementation. The [lifecycle](development-lifecycle.md#lifecycle)
+This does not require an E2E case for every change, E2E-first execution, or all
+detailed tests/data before implementation. The [lifecycle](development-lifecycle.md#lifecycle)
 owns feature-sized iteration, independent data/oracles and risk-based tailoring.
 For unknown operations use [Human Work Direction](human-work-direction.md);
 its v2 contract owns trials, consolidation and total-cost measurements. Reuse known
@@ -70,6 +70,14 @@ registry. Keep a normal representative and only boundaries that change program
 behavior; do not multiply all text types, adjacent valid values, screens and roles
 into a Cartesian product. A shared dependency does not by itself make two input
 conditions equivalent.
+
+When external responses can drive updates or deletions, distinguish a confirmed
+complete empty result from a failure, missing page or partial response. Establish
+completeness from the verified interface contract; a success status or zero records
+alone is not proof. Select expected effects from the agreed specification and leave
+affected checks blocked when the contract or expectation is materially unresolved.
+Stubbed responses prove only behavior at that boundary; verify actual external
+integration separately when required.
 
 Distinguish these scopes:
 
@@ -120,6 +128,12 @@ Do not build a general recovery engine, broad DB clone or automation framework
 solely to get past one blocked case without an explicit cost/benefit decision.
 Keep required isolation, authorization and recovery; choose a cheaper safe route
 or leave the case blocked when those costs dominate.
+
+Once a case's required preconditions, action, expected result, observation method
+and authority are available, execute it. Do not wait for unrelated cases, an
+additional work-plan artifact or evidence formatting. A blocked or failed condition
+stops only its dependent work; continue independent cases within the authorized
+scope and preserve required project gates and acceptance obligations.
 
 Set a project-appropriate preparation/diagnosis budget and review point before
 another setup or automation attempt. At that point report functional conditions
@@ -252,7 +266,7 @@ Avoid tests for trivial property access, framework behavior, or mappings already
 
 Use only when automation cost is not justified or the behavior depends on human judgment, physical devices, unsupported legacy UI surfaces, or one-off acceptance. Record the observation and evidence.
 
-When manual work is necessary for several independent cases, apply [Human Work Direction](human-work-direction.md) to reduce the number of human sessions and environment/screen switches. Group shared setup, but require an independently verified fixture/reset, oracle, evidence and status for **each verification ID**. Do not substitute one combined PASS for distinct case results. Prefer machine preflight and evidence capture before human interaction; split cases whose side effects or approvals cannot safely coexist.
+When manual work is necessary for several independent cases, apply [Human Work Direction](human-work-direction.md) to reduce the number of human sessions and environment/screen switches. Group shared setup, but verify each case's starting state and any necessary adjustment, oracle, evidence and status for **each verification ID**. Do not substitute one combined PASS for distinct case results. Prefer machine preflight and evidence capture before human interaction; split cases whose side effects or approvals cannot safely coexist.
 
 ## Functional-test Excel deliverable
 
