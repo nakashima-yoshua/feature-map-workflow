@@ -52,10 +52,11 @@ reuse them rather than introducing an overlapping runner.
 4. **Implement**: respect allowed paths and existing design. An agent
    cannot change required tests, check definitions or approval criteria
    just to report success.
-5. **Verify/handoff**: use project-native tests and independent review,
-   associate results and evidence with the exact revision, and document
-   next work and unresolved blockers in the existing issue/PR. End in
-   human review; no implied merge, release or business acceptance.
+5. **Verify/handoff**: use project-native tests and focused review,
+   with independent or human review when the applicable risk or policy requires it.
+   Associate results and evidence with the exact revision, and document next work
+   and unresolved blockers in the existing issue/PR. Do not imply merge, release
+   or business acceptance.
 
 ## Read-only session brief
 
