@@ -57,6 +57,14 @@ class StandaloneCoreTests(unittest.TestCase):
             with self.subTest(link=link):
                 self.assertTrue((entry.parent / link).is_file(), link)
 
+    def test_review_is_conditioned_on_actual_risk(self) -> None:
+        references = ROOT / "skills/feature-map-workflow/references"
+        lifecycle = (references / "development-lifecycle.md").read_text(encoding="utf-8")
+        review = (references / "code-review.md").read_text(encoding="utf-8")
+        self.assertNotIn("use the existing independent revision-bound diff review", lifecycle)
+        self.assertIn("independent review when material risk", lifecycle)
+        self.assertIn("human decision where required by existing rules", review)
+
     def test_init_validate_render_and_index(self) -> None:
         self.assertTrue(self.map.is_file())
         self.assertTrue(self.map.with_name("feature-map.xsd").is_file())
