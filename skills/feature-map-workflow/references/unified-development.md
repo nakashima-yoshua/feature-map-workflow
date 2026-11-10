@@ -84,8 +84,9 @@ approver. A required human decision records the actual decision owner, candidate
 time and conditions. Reuse authorization that already covers the same scope and
 operation. Material evidence changes supersede only affected decisions and tests.
 
-For incidents or defects, record the affected behavior, evidence, containment,
-correction, regression and residual-risk disposition in the existing sources.
+For incidents or defects, apply [Defect Feedback Loop](defect-feedback-loop.md)
+when relevant; record the affected behavior, evidence, containment, correction,
+regression and residual-risk disposition in the existing sources.
 Stop only affected work for unexpected mandatory failures, critical unknown impact,
 unsafe state or missing required decisions; independent safe work may continue.
 For a critical incident, resume affected work only after containment, affected
@@ -93,10 +94,11 @@ requirements and checks, residual risk and the required human restart decision
 are established. Record whether preventive action and an effect check are needed.
 When retained files, data, logs, queues, retries or backups can accumulate, check
 ownership, bounded retention, cleanup, failure recovery, capacity and operational
-handoff; test an accumulated state when that risk makes it necessary.
+handoff; test an accumulated state when that risk makes it necessary. Use the
+conditional [Lifecycle Quality Review](lifecycle-quality-review.md) for details.
 
-When the workspace enables lean-flow controls, let ready work be pulled according
-to actual downstream capacity. Establish scope, acceptance, inputs, owner,
+When the workspace enables [Lean Flow](lean-flow-policy.md), let ready work be
+pulled according to actual downstream capacity. Establish scope, acceptance, inputs, owner,
 dependencies and a verification path before marking an item ready. Prefer small
 reviewable slices without breaking safe transaction boundaries; record blockers
 and recurrence prevention in existing records. Do not invent universal WIP limits,
