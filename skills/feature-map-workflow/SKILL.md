@@ -1,6 +1,6 @@
 ---
 name: feature-map-workflow
-description: Maintain one source-first Feature Map XML per business feature across legacy analysis, requirements, design, implementation, testing, delivery and audit. Use for entry-point/DB/API tracing, scoped modernization, evidence-backed diagrams, test procedures, customer deliverables, XML queries, optional hooks/decisions and explicitly requested workflow maintenance.
+description: Use as the common software-development workflow for project intake, legacy analysis, requirements, design, implementation, testing and delivery, with per-project Feature Maps and workspace-specific rules.
 ---
 
 # Feature Map Workflow
@@ -18,6 +18,15 @@ without inventing physical file paths during requirements.
 For responsibility ownership and possible extraction of optional execution features,
 see [Scope and Repository Boundaries](../../docs/scope-and-boundaries.md). This
 does not change existing optional execution paths or authorize migration.
+
+## Project and workspace routing
+
+Use [Unified Development Workflow](references/unified-development.md) as the
+common project workflow and resolve local mappings through the
+[Workspace Profile Contract](references/workspace-profile-contract.md). Maintain at least one map
+per development project, splitting independent business features when useful.
+A read-only request does not authorize map creation or any other write. Existing
+project authorities, commitments and gate decisions remain in force.
 
 ## Workflow
 
@@ -67,6 +76,7 @@ only when needed.
 
 | Task | Read |
 | --- | --- |
+| Project workflow, workspace profile, gates and specialized capabilities | [Unified Development Workflow](references/unified-development.md) and [Workspace Profile Contract](references/workspace-profile-contract.md) |
 | Repository scope, feature ownership and extraction triage | [Scope and Repository Boundaries](../../docs/scope-and-boundaries.md) |
 | Map boundaries, states, index | [Feature Map Contract](references/feature-map-contract.md) |
 | Lifecycle overview; selected phase only | [Development Lifecycle](references/development-lifecycle.md) |
@@ -123,12 +133,13 @@ only when needed.
   permissions, tests, HALT and human acceptance remain independent.
 - **Hooks:** obey current-content gates; schema proof belongs to the current XML
   hash. Stop continuations are bounded; ordinary Chat does not imply hooks ran.
-- **Review and approval:** deterministic checks precede fresh-context read-only
-  diff review. Resolve Important findings with verified fixes, supported dismissal
-  or authorized human disposition. At most three passes; otherwise HALT for a
-  human decision. Unavailable checks/review are NOT_RUN. Passing CI/AI review grants
-  no approval, merge, deploy or privilege change. HIGH/CRITICAL work remains
-  human-led outside the bounded runner; candidate status is HUMAN_REVIEW_REQUIRED.
+- **Review and approval:** review the actual diff and deterministic results.
+  Use independent review when material risk, the active profile, contract or
+  repository requires it; preserve existing project review requirements. Resolve
+  Important findings with verified fixes, supported dismissal or authorized human
+  disposition. When AI review is used, cap it at three passes; unavailable required
+  checks are NOT_RUN. CI/AI review grants no approval, merge, deploy or privilege
+  change. HIGH/CRITICAL work remains human-led outside the bounded runner.
 - **Target-state integrity:** check actual outputs and evidence against the agreed
   target instead of counting documents or phases. Keep unknowns and skipped steps
   explicit when material. Git cleanliness, file existence and a CI pass alone
@@ -144,5 +155,6 @@ only when needed.
 Use the relevant task contract (REVIEW.md for code review). Otherwise give feature/
 state, changed nodes or NO FEATURE MAP CHANGE, actual verification and unresolved
 blockers/next evidence. Do not echo the whole map. PR handoff contains Risk,
-Testing, AI review, Human decisions and How to revert. For Japanese follow
-Operable Japanese and natural-japanese when available, without adding facts.
+Testing, review when required or performed, Human decisions and How to revert.
+For Japanese follow Operable Japanese and the active user-approved language-tool
+policy, without adding facts.

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="../../../skills/feature-map-workflow/assets/feature-map.xsl"?>
+<featureMap version="1.3" mode="change" state="investigating">
+  <meta>
+    <system>Feature Map Workflow</system>
+    <feature>Unified development workflow</feature>
+  </meta>
+  <goal>
+    <purpose>Provide one development workflow entrypoint with project-specific profile mappings.</purpose>
+    <done>Existing consumers route to the verified workflow and superseded workflow assets are recoverably archived.</done>
+    <scope>Project intake through design, implementation, testing, delivery and safe workflow migration.</scope>
+    <exclude>Product behavior changes, production database writes, external delivery and automatic approval.</exclude>
+  </goal>
+  <sourceMap>
+    <ref kind="entry" target="skills/feature-map-workflow/SKILL.md"/>
+    <ref kind="other" target="docs/design/workflow-unification/DESIGN.md"/>
+    <ref kind="other" target="skills/feature-map-workflow/references/unified-development.md"/>
+    <ref kind="other" target="skills/feature-map-workflow/references/workspace-profile-contract.md"/>
+    <ref kind="test" target="scripts/test_core_profile.py"/>
+    <ref kind="test" target="scripts/test_verification_brief.py"/>
+  </sourceMap>
+  <knowledge>
+    <invariant id="INV-AUTHORITY">Accepted requirements, actual test evidence, project state and human decisions retain their established owners.</invariant>
+    <invariant id="INV-PROJECT-MAP">Each development project maintains at least one map; independent features may be split without replacing existing maps.</invariant>
+    <invariant id="INV-PROFILE">Workspace-specific gates, stores and procedures are resolved from the applicable profile without reentering a retired workflow.</invariant>
+    <invariant id="INV-TEST">Test selection follows changed guarantees; starting state is adjusted only when required for reliable judgment.</invariant>
+    <constraint id="CON-ARCHIVE">Preserve and verify old workflow assets and migrate their active consumers before removing their original folders.</constraint>
+  </knowledge>
+  <open>
+    <item id="OPEN-CONSUMERS" type="other" impact="high" next="Validate each affected consumer and its store before switching or retiring an old entrypoint.">Existing consumer routing and archive readiness must be established for the final candidate.</item>
+  </open>
+</featureMap>

@@ -21,8 +21,10 @@ existing authority boundaries remain unchanged. See
 
 ## Lifecycle
 
-This is a standard proposal to tailor by feature and risk, not project approval of
-every stage. Existing phase IDs are lookup keys, not a waterfall requirement.
+This is the common FMW development sequence, tailored by feature and risk;
+a phase name is not project approval. Existing phase IDs are lookup keys, not a
+waterfall requirement. Resolve project stores, specialized procedures and gate
+mappings through [Unified Development Workflow](unified-development.md).
 
 Use this feature-sized flow:
 

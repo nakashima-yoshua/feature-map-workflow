@@ -27,7 +27,7 @@ Do not expose this structure to the user unless structured output is useful. It 
 
 ## Natural rendering rules
 
-Use the following principles, aligned with the `natural-japanese` skill:
+Use the following principles while preserving the approved facts and meaning:
 
 1. Put the conclusion or current interpretation first. Remove ceremonial preambles.
 2. Prefer one semantic claim per sentence. Do not split a natural condition-action relation merely to shorten the text.

@@ -174,7 +174,7 @@ When the goal is to reach one specific BL method/procedure/branch from a real EX
 
 Trace **backwards** from the target through callers and branch gates, and **forwards** from launch arguments/configuration/deployed runtime until a candidate route connects. Recursively expand only the prerequisites on that route: DB rows/absence conditions, JOIN and WHERE filters, master data, API response contracts, roles, feature flags, execution order, clock, and transaction state. Mark source-supported possibilities separately from runtime observations.
 
-Prepare only the permitted isolated fixtures/stubs. Inspect the first failed gate in an observed run (the **blocking frontier**) and amend the smallest evidenced prerequisite; reset before rerunning. Confirm target entry, intended branch/data/effects, and repeatability as different proof levels. If the environment is unsafe or unavailable, supply a not-run plan and retain the blocker, never claim verification.
+Prepare only the permitted isolated fixtures/stubs. Inspect the first failed gate in an observed run (the **blocking frontier**) and amend the smallest evidenced prerequisite; verify the required state and adjust only what is necessary before rerunning. Confirm target entry, intended branch/data/effects, and repeatability as different proof levels. If the environment is unsafe or unavailable, supply a not-run plan and retain the blocker, never claim verification.
 
 ## Business flow, data flow and ER diagram
 

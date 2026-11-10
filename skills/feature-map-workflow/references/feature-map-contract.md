@@ -6,6 +6,9 @@ Feature Map XML is a compact navigation and decision artifact shared by a develo
 
 ## Per-feature boundaries and HTML presentation
 
+- Maintain at least one Feature Map for every development project. Reuse an existing
+  project map and create a missing one only within authorized project work; a
+  read-only request does not authorize creating files or changing other projects.
 - Keep **one Feature Map XML per cohesive business feature**, not one growing document per application. Split when independent business scenarios have different triggers, data effects, ownership, or acceptance conditions. Do not split merely because a file reaches a speculative size threshold.
 - Store the meaningful business rules for that feature completely. Refer to other Feature Maps or source objects rather than duplicating their knowledge; cross-feature understanding does **not** authorize unrelated code migration.
 - The existing `feature-map.xsl` displays purpose and primary scenarios/rules first. Additional scenarios/rules and technical source references, verification evidence, and diagrams are available in native HTML `details`; opening Diagrams triggers Mermaid loading. Collapsing content reduces visual load and startup work, **not the bytes in an individual XML/HTML document**.

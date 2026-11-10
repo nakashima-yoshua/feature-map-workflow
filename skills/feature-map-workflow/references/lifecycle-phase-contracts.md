@@ -158,7 +158,7 @@ explicitly not-run.
 
 **Input:** implementable design and test plan.
 
-**Activity:** compare the refined target to actual paths and current evidence, reuse already satisfied parts, implement the smallest safe change and run build, static checks, and relevant tests. For a migrated slice, keep surrounding legacy contracts unchanged unless separately approved and verify old/new observable outputs and data effects with equivalent isolated inputs wherever feasible. Before requesting human review, conduct a **separate-context, read-only AI diff review** using `REVIEW.md` and `code-review.md` when available, checking the accepted change, important invariants and actual evidence. Triage concrete Important findings and cap AI review/fix passes at **three**; if review is unavailable, record NOT_RUN and hand the risk to a human rather than claiming AI approval.
+**Activity:** compare the refined target to actual paths and current evidence, reuse already satisfied parts, implement the smallest safe change and run build, static checks, and relevant tests. For a migrated slice, keep surrounding legacy contracts unchanged unless separately approved and verify old/new observable outputs and data effects with equivalent isolated inputs wherever feasible. Review the accepted change, important invariants, actual diff and evidence. Use an independent read-only reviewer when material risk, the active profile, a contract or repository policy requires one; otherwise the parent performs the focused review. Triage concrete Important findings and cap any AI review/fix loop at **three**; report required but unavailable review as NOT_RUN.
 
 **Durable Feature Map delta:** changed source/test references and newly confirmed durable knowledge only.
 
@@ -170,7 +170,7 @@ explicitly not-run.
 
 **Output:** tested commit candidate with revision-bound review summary and unresolved human decisions (no machine-generated approval).
 
-**Before manual verification:** run automated preflight first, then issue a short focused brief plus an explicitly reviewed human session plan. Without approved oracle, isolatable test state or authorized environment, report HALT instead of inventing runnable steps.
+**Before manual verification:** run the necessary preflight and use a sufficient existing procedure or, when useful, a focused brief and reviewed session plan. Without an approved material oracle, verifiable safe state or authorized environment, block the affected cases instead of inventing runnable steps.
 
 For unclear operations, use the conditional procedure trials and optional v2 work
 plan in [Human Work Direction](human-work-direction.md#procedure-based-plan-version-2).

@@ -1,13 +1,13 @@
 # FMWの責務とリポジトリ境界（Scope and Repository Boundaries）
 
 > **位置付け:** feature-map-workflow（FMW）が引き受ける責務と、関連ツールへの分離判断を定義する。
-> **この変更の範囲:** 方針の文書化のみ。既存実装・利用経路・権限・XML形式は変更しない。
+> **統合後:** FMWを共通開発ワークフローの入口とし、実行基盤・状態・承認の正本は既存の管理先に保持する。
 
 ## 目的と成功条件
 
-**FMWは、ソフトウェアの業務機能を継続的に理解・変更・検証できるように、機能単位の永続的な知識と根拠への参照を保守する。**
+**FMWは、ソフトウェア開発の共通入口として工程と専門手順をつなぎ、機能単位の永続的な知識と根拠への参照を保守する。**
 
-English summary: FMW is a source-first, per-feature durable knowledge and traceability layer—not a general-purpose workflow scheduler, autonomous development platform, test executor, or release authority.
+English summary: FMW is the common development guidance and per-feature knowledge entrypoint. It is not a workflow scheduler, test executor, project store, or release authority.
 
 新しく参加した開発者やAIが、過去の会話や実行ログを再生しなくても、次の問いに必要な情報へ到達できる状態を目指す。
 
@@ -22,14 +22,14 @@ English summary: FMW is a source-first, per-feature durable knowledge and tracea
 
 ## FMWが所有するもの
 
-- 業務上まとまりのある**1機能につき1つのFeature Map XML**と、その形式・検証・最小更新規則（互換性を含む）。
+- 開発プロジェクトごとに少なくとも1つのFeature Mapを保持し、独立した業務機能は必要に応じて分割する。その形式・検証・最小更新規則と互換性を維持する。
 - 機能の目的、ユースケース、確認済みルール、不変条件、重要な設計判断、制約、影響先、未解決事項。
 - コード・テスト・DB・要求・意思決定・証跡への**識別子と版付きの参照**。詳細な原物や履歴は複製しない。
 - 根拠を伴う小さなMermaid/UML等の図と、XMLからの人向け表示・メタデータ索引。
 - 機能知識を収集・照会・更新するための軽量なツールと、その利用ガイド。
 - FMWに接続する任意のアダプター（Hooks、XML問い合わせ等）。**Coreでの利用を妨げる必須依存にしない。**
 
-FMWのガイドは既存機能分析、変更時の確認、設計・テスト・監査への参照方法を案内できる。ただし、**工程の全タスク実行や組織の承認プロセスをFMWが所有することにはならない**。
+FMWは既存機能分析から設計・実装・試験・提出までの共通工程を案内し、案件プロファイルに応じて専門手順へ接続する。実行状態、原証跡と組織の承認権限は既存の管理先に残す。
 
 ## FMWが所有しないもの（正本の境界）
 

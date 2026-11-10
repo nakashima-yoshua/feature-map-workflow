@@ -2,14 +2,17 @@
 
 # Feature Map Workflow Plugin
 
-Keep one compact Feature Map XML per business feature. Source/tests own executable
-behavior; the map preserves durable business rules, decisions, references and unknowns.
-Start with existing tools. Hooks, external advice, test helpers and the Runner are optional.
+Use FMW as the common development-workflow entrypoint. Maintain at least one
+Feature Map per development project, splitting independent business features when
+useful. Source/tests own executable behavior; maps preserve durable business rules,
+decisions, references and unknowns. Workspace profiles supply local gates and tools.
+Hooks, external advice, test helpers and the Runner remain optional.
 
 ## Responsibility and repository boundary
 
-FMW owns durable **feature knowledge and traceability**, not general workflow execution,
-test orchestration, quality-gate decisions or release authorization. Existing optional
+FMW routes the common development lifecycle and owns durable **feature knowledge
+and traceability**. Project state, test execution, quality decisions and release
+authorization remain with their existing owners. Existing optional
 runners and integrations remain available while candidates for separation are reviewed.
 See [Scope and Repository Boundaries](docs/scope-and-boundaries.md) (Japanese, with English summary)
 for ownership, current-component triage, and extraction criteria.
