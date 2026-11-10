@@ -16,7 +16,7 @@ Treat the agreed post-task target (deliverable, repository, evidence, maintenanc
 and next-task entry point) as the planning reference; progressively refine it
 without inventing physical file paths during requirements.
 For responsibility ownership and possible extraction of optional execution features,
-see [Scope and Repository Boundaries](../../docs/scope-and-boundaries.md). This
+see [Scope and Repository Boundaries](references/scope-and-boundaries.md). This
 does not change existing optional execution paths or authorize migration.
 
 ## Project and workspace routing
@@ -77,7 +77,7 @@ only when needed.
 | Task | Read |
 | --- | --- |
 | Project workflow, workspace profile, gates and specialized capabilities | [Unified Development Workflow](references/unified-development.md) and [Workspace Profile Contract](references/workspace-profile-contract.md) |
-| Repository scope, feature ownership and extraction triage | [Scope and Repository Boundaries](../../docs/scope-and-boundaries.md) |
+| Repository scope, feature ownership and extraction triage | [Scope and Repository Boundaries](references/scope-and-boundaries.md) |
 | Map boundaries, states, index | [Feature Map Contract](references/feature-map-contract.md) |
 | Lifecycle overview; selected phase only | [Development Lifecycle](references/development-lifecycle.md) |
 | Target-first refinement, Git structure and next-task handoff | [Target State and Handoff](references/target-state-and-handoff.md) |

@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -37,6 +39,23 @@ class StandaloneCoreTests(unittest.TestCase):
             cwd=ROOT, capture_output=True, text=True, timeout=20,
         )
         return result
+
+    def test_standalone_entry_links_resolve(self) -> None:
+        # The supported project-local Skill snapshot must not depend on a
+        # neighboring checkout for its core entrypoint references.
+        installed = self.root / "project" / ".agents" / "skills" / "feature-map-workflow"
+        shutil.copytree(ROOT / "skills" / "feature-map-workflow", installed,
+                        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        self.assertEqual((ROOT / "docs/scope-and-boundaries.md").read_bytes(),
+                         (installed / "references/scope-and-boundaries.md").read_bytes())
+        entry = installed / "SKILL.md"
+        links = re.findall(r"\]\(([^)#]+)(?:#[^)]*)?\)", entry.read_text(encoding="utf-8"))
+        self.assertTrue(links)
+        for link in links:
+            if "://" in link or link.startswith("mailto:"):
+                continue
+            with self.subTest(link=link):
+                self.assertTrue((entry.parent / link).is_file(), link)
 
     def test_init_validate_render_and_index(self) -> None:
         self.assertTrue(self.map.is_file())
