@@ -4,6 +4,8 @@ All notable user-visible changes are documented here.
 
 ## Unreleased
 
+- Unify the development workflow through FMW and workspace-specific profiles, preserve established gates and stores, and make standalone Skill references resolve. Clarify risk-based case preparation in verification briefs without treating generated guidance as a test result.
+
 - Define FMW's feature-knowledge ownership, non-goals, Explore/Build/Improve relationship and criteria for extracting existing optional execution components; link bilingual READMEs and Skill entry point. Documentation only; no runtime or schema changes.
 
 - Clarify bilingual README audit/evidence navigation, the contributor XSD path and conditional Mermaid check, and Human Work Plan v2 headings; documentation only.
