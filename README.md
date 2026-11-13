@@ -36,6 +36,13 @@ Examples are fictional and read only when their format is needed:
 [puzzle log](examples/fictional-puzzle-log/README.md) /
 [stock request](examples/fictional-stock-request/README.md).
 
+## Optional OKF knowledge reference
+
+Use [Feature Map to OKF draft export](skills/feature-map-workflow/references/okf-reference-export.md)
+to create a revision-pinned, unverified Markdown reference from an existing validated
+Feature Map XML. This never changes the XML/XSD, makes no network requests, and
+does not treat derived knowledge as an approved rule.
+
 ## Choose a workflow
 
 [SKILL.md](skills/feature-map-workflow/SKILL.md#choose-the-relevant-guide) is the single task
