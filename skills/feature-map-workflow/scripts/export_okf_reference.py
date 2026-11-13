@@ -52,10 +52,10 @@ def inline(value: str) -> str:
 
 
 def render(xml: Path, source: str, generated: str, xsd: Path) -> str:
+    if xml.stat().st_size > 1_048_576:
+        raise ValueError("Feature Map exceeds maximum input size")
     validate(xml, xsd)
     raw = xml.read_bytes()
-    if len(raw) > 1_048_576:
-        raise ValueError("Feature Map exceeds maximum input size")
     parser = etree.XMLParser(resolve_entities=False, load_dtd=False, no_network=True)
     node = etree.fromstring(raw, parser=parser)
     system, feature, purpose = (
