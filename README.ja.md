@@ -135,3 +135,10 @@ scriptsにテスト・導入・梱包・Runner、examplesに架空例、docsに�
 
 必要に応じて[SECURITY](SECURITY.md)、[保護設定](docs/github-repository-settings.md)、
 [LICENSE](LICENSE)、[依存関係の表記](THIRD_PARTY_NOTICES.md)を参照してください。
+
+
+## OKF参照知識の任意出力
+
+検証済みのFeature Map XMLから、[OKF参照ドラフト生成](skills/feature-map-workflow/references/okf-reference-export.md)により
+原典のGitコミットを明記したMarkdownを作成できる。XMLは正本のままで、生成文書は `draft` として扱う。
+ADSやquality-gateの導入をFMW Coreの必須条件にはしない。
