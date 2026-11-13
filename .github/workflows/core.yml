@@ -26,5 +26,7 @@ jobs:
         run: python scripts/test_core_profile.py
       - name: Regression tests for standalone index and XSLT
         run: python scripts/test_build_feature_index.py
+      - name: Optional OKF draft export regression (offline)
+        run: python scripts/test_export_okf_reference.py
       - name: Recovered coding-session brief (standard library only)
         run: python scripts/test_build_session_brief.py
