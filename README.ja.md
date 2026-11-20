@@ -142,3 +142,7 @@ scriptsにテスト・導入・梱包・Runner、examplesに架空例、docsに�
 検証済みのFeature Map XMLから、[OKF参照ドラフト生成](skills/feature-map-workflow/references/okf-reference-export.md)により
 原典のGitコミットを明記したMarkdownを作成できる。XMLは正本のままで、生成文書は `draft` として扱う。
 ADSやquality-gateの導入をFMW Coreの必須条件にはしない。
+
+## 新規参加者のキャッチアップ
+
+既存システムの機能を1件選んで実際の動作と照合する[キャッチアップ手順](skills/feature-map-workflow/references/new-member-catchup.md)を参照してください。[関連リポジトリ一覧](docs/repository-relationships.md)で責務と接続状態を確認できます。
