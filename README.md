@@ -149,3 +149,7 @@ reports candidates without automatic edits.
 
 See [SECURITY.md](SECURITY.md), [repository settings](docs/github-repository-settings.md),
 [LICENSE](LICENSE) and [dependency notices](THIRD_PARTY_NOTICES.md) when relevant.
+
+## Newcomer catch-up and related repositories
+
+The optional [new-member catch-up guide](skills/feature-map-workflow/references/new-member-catchup.md) traces one business feature with evidence. See [related repositories](docs/repository-relationships.md) for ownership and integration boundaries.
